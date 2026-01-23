@@ -1,10 +1,10 @@
 ### ChompSmart Backend Setup
 
-**1. Ensure python is installed**
+**1. Ensure Python is installed**
 
 ```bash
 python --version
-pip --version
+python -m pip --version
 ```
 **2. Navigate to the correct directory**
 
@@ -12,20 +12,24 @@ pip --version
 cd backend
 ```
 
-**3. Set up python virtual environment**
+**3. Set up Python virtual environment**
 ```bash
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
+If asked to select in workplace folder, select **Yes**
+
 If you see a warning, run PowerShell as administrator on your machine and paste:
 
 ```Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass```
 
+You should see (venv) in your terminal
+
 **4. Install dependencies and check for installation**
 ```bash
-pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 python -m pip list
 ```
 
