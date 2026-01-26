@@ -4,62 +4,67 @@ import "./Login.css";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
-    setError("");
-    alert("Login submitted (frontend only)");
+    console.log("Login:", { email, password });
   };
 
   return (
     <div className="loginPage">
 
-      <div className="logoContainer">
+      <div className="brandRow">
+
         <img
+          className="gatorLogo"
           src="/chompsmart-logo.png"
-          alt="ChompSmart Logo"
-          className="logo"
+          alt="ChompSmart Gator"
         />
+
+        <div className="brandWordmark" aria-label="ChompSmart">
+          <span className="chomp">Chomp</span>
+          <span className="smart">Smart</span>
+        </div>
       </div>
 
 
-      <div className="loginCard">
+      <div className="loginCard biteCorner">
         <h1 className="loginTitle">Login</h1>
 
-
-        <form className="loginForm" onSubmit={handleSubmit}>
-          <label>Email</label>
+        <form className="loginForm" onSubmit={onSubmit}>
+          <label className="fieldLabel" htmlFor="email">
+            Email
+          </label>
           <input
-              type="email"
-              placeholder="you@clinic.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+            id="email"
+            className="textInput"
+            type="email"
+            placeholder="you@clinic.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
+            required
           />
 
-          <label>Password</label>
+          <label className="fieldLabel" htmlFor="password">
+            Password
+          </label>
           <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+            id="password"
+            className="textInput"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
           />
 
-          <button type="submit">Log In</button>
-
-          {error && <div className="error">{error}</div>}
+          <button className="loginButton" type="submit">
+            Log In
+          </button>
         </form>
-
-        <p className="loginNote">
-          Accounts are created by your healthcare provider.
-          Please contact your physician for access.
-        </p>
       </div>
     </div>
   );
