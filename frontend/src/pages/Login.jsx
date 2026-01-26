@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./Login.css";
-import logo from "../assets/chompsmart-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,70 +15,52 @@ export default function Login() {
     }
 
     setError("");
-    alert("Login submitted (frontend only for now)");
+    alert("Login submitted (frontend only)");
   };
 
   return (
-    <div className="appShell">
-      {/* Top blue header like your mockups */}
-      <header className="topBar">
-        <img className="topLogo" src={logo} alt="ChompSmart logo" />
-      </header>
+    <div className="loginPage">
 
-      {/* Main content */}
-      <main className="content">
-        <div className="loginCard">
-          <h1 className="loginTitle">Provider Portal Login</h1>
-          <p className="loginSubtitle">Sign in to continue</p>
+      <div className="logoContainer">
+        <img
+          src="/chompsmart-logo.png"
+          alt="ChompSmart Logo"
+          className="logo"
+        />
+      </div>
 
-          <form className="loginForm" onSubmit={handleSubmit}>
-            <label className="loginLabel">Email</label>
-            <input
-              className="loginInput"
+
+      <div className="loginCard">
+        <h1 className="loginTitle">Login</h1>
+
+
+        <form className="loginForm" onSubmit={handleSubmit}>
+          <label>Email</label>
+          <input
               type="email"
-              placeholder="you@email.com"
+              placeholder="you@clinic.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-            />
+          />
 
-            <label className="loginLabel">Password</label>
-            <input
-              className="loginInput"
+          <label>Password</label>
+          <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-            />
+          />
 
-            <button className="loginButton" type="submit">
-              Login
-            </button>
+          <button type="submit">Log In</button>
 
-            {error && <div className="loginError">{error}</div>}
-          </form>
+          {error && <div className="error">{error}</div>}
+        </form>
 
-          <p className="loginInfo">
-            Accounts are created by your healthcare provider/office. Please
-            contact your physician if you need access.
-          </p>
-        </div>
-      </main>
-
-      {/* Bottom nav bar) */}
-      <footer className="bottomBar">
-        <div className="navItem">
-          <div className="navIcon">🏠</div>
-          <div className="navText">learn</div>
-        </div>
-        <div className="navItem">
-          <div className="navIcon">🍽️</div>
-          <div className="navText">log</div>
-        </div>
-        <div className="navItem">
-          <div className="navIcon">💬</div>
-          <div className="navText">message</div>
-        </div>
-      </footer>
+        <p className="loginNote">
+          Accounts are created by your healthcare provider.
+          Please contact your physician or office administrator for access.
+        </p>
+      </div>
     </div>
   );
 }
