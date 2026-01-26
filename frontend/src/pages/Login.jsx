@@ -58,7 +58,7 @@ export default function Login() {
 
         <p className="loginNote">
           Accounts are created by your healthcare provider.
-          Please contact your physician or office administrator for access.
+          Please contact your physician for access.
         </p>
       </div>
     </div>
