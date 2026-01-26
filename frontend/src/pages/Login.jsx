@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./Login.css";
+import logo from "../assets/chompsmart-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,39 +20,66 @@ export default function Login() {
   };
 
   return (
-    <div className="loginScreen">
-      <div className="loginCard">
-        <h1 className="loginTitle">ChompSmart</h1>
-        <p className="loginSubtitle">Log in to continue</p>
+    <div className="appShell">
+      {/* Top blue header like your mockups */}
+      <header className="topBar">
+        <img className="topLogo" src={logo} alt="ChompSmart logo" />
+      </header>
 
-        <form className="loginForm" onSubmit={handleSubmit}>
-          <label className="loginLabel">Email</label>
-          <input
-            className="loginInput"
-            type="email"
-            placeholder="you@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+      {/* Main content */}
+      <main className="content">
+        <div className="loginCard">
+          <h1 className="loginTitle">Provider Portal Login</h1>
+          <p className="loginSubtitle">Sign in to continue</p>
 
-          <label className="loginLabel">Password</label>
-          <input
-            className="loginInput"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <form className="loginForm" onSubmit={handleSubmit}>
+            <label className="loginLabel">Email</label>
+            <input
+              className="loginInput"
+              type="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-          <button className="loginButton" type="submit">
-            Login
-          </button>
+            <label className="loginLabel">Password</label>
+            <input
+              className="loginInput"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-          {error && <div className="loginError">{error}</div>}
-        </form>
+            <button className="loginButton" type="submit">
+              Login
+            </button>
 
+            {error && <div className="loginError">{error}</div>}
+          </form>
 
-      </div>
+          <p className="loginInfo">
+            Accounts are created by your healthcare provider/office. Please
+            contact your physician if you need access.
+          </p>
+        </div>
+      </main>
+
+      {/* Bottom nav bar) */}
+      <footer className="bottomBar">
+        <div className="navItem">
+          <div className="navIcon">🏠</div>
+          <div className="navText">learn</div>
+        </div>
+        <div className="navItem">
+          <div className="navIcon">🍽️</div>
+          <div className="navText">log</div>
+        </div>
+        <div className="navItem">
+          <div className="navIcon">💬</div>
+          <div className="navText">message</div>
+        </div>
+      </footer>
     </div>
   );
 }
