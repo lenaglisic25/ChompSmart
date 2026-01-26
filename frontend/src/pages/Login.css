@@ -86,7 +86,7 @@
   font-size: 16px;
   font-weight: 800;
   color: #1b3554;
-  margin-top: 0.5px;
+  margin-top: 0.2px;
 }
 
 
@@ -107,7 +107,7 @@
 
 
 .loginButton {
-  margin-top: 8px;
+  margin-top: 6px;
   height: 68px;
   border-radius: 18px;
   border: none;

@@ -1,0 +1,77 @@
+.appShell {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f3f6fb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.topBar {
+  height: 64px;
+  background: #2f66f1;
+  color: white;
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.profileBtn,
+.logoutBtn {
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profileBtn {
+  justify-self: start;
+  background: rgba(255, 255, 255, 0.22);
+  color: white;
+  padding: 0 14px;
+}
+
+.logoutBtn {
+  justify-self: end;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1b3554;
+  padding: 0 14px;
+}
+
+.topTitle {
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.appContent {
+  flex: 1;
+  padding: 18px 16px 88px; /* bottom space for tabs */
+}
+
+.bottomTabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72px;
+  background: white;
+  border-top: 1px solid #d9e2f3;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  text-decoration: none;
+  color: #64748b;
+}
+
+.tab.active {
+  color: #2f66f1;
+}

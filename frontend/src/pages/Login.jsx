@@ -1,15 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+ const onSubmit = (e) => {
+  e.preventDefault();
+  navigate("/app/learn");
+};
 
-    console.log("Login:", { email, password });
-  };
 
   return (
     <div className="loginPage">
