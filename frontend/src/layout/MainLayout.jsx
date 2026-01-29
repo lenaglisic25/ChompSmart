@@ -31,7 +31,7 @@ export default function MainLayout() {
           <span className="accountLabel">account</span>
         </button>
 
-        {
+        {/* CENTER: Logo */}
         <div className="topLogoWrap">
           <img className="topLogoImg" src={logo} alt="ChompSmart" />
         </div>
@@ -46,7 +46,7 @@ export default function MainLayout() {
         </button>
       </header>
 
-      {/* CONTENT */}
+      {/* PAGE CONTENT */}
       <main className="content">
         <Outlet />
       </main>
@@ -61,7 +61,10 @@ export default function MainLayout() {
           <span className="tabLabel">log</span>
         </NavLink>
 
-        <NavLink to="/app/message" className={isMessage ? "tab active" : "tab"}>
+        <NavLink
+          to="/app/message"
+          className={isMessage ? "tab active" : "tab"}
+        >
           <span className="tabLabel">message</span>
         </NavLink>
       </nav>
