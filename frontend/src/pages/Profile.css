@@ -1,0 +1,84 @@
+.psPage {
+  padding: 16px 0 10px;
+}
+
+.psForm {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.psTitle {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.psSection {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px 10px;
+  margin-bottom: 14px;
+  background: #fff;
+}
+
+.psSectionTitle {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.psField {
+  margin-bottom: 12px;
+}
+
+.psLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.psInput,
+.psSelect,
+.psTextarea {
+  width: 100%;
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.psTextarea {
+  resize: vertical;
+}
+
+.psChecks,
+.psRadios {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.psCheck,
+.psRadio {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.psSaveBtn {
+  height: 54px;
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 1000;
+  cursor: pointer;
+  background: #fff;
+  color: #1b3554;
+}

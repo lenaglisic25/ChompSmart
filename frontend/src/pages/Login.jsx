@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
+import logo from "../assets/chompsmart-logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,22 +9,17 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
- const onSubmit = (e) => {
-  e.preventDefault();
-  navigate("/app/learn");
-};
-
+  const onSubmit = (e) => {
+    e.preventDefault();
+    navigate("/app/learn");
+  };
 
   return (
     <div className="loginPage">
-
-      <div className="brandRow">
-
-        <img
-          className="gatorLogo"
-          src="/chompsmart-logo.png"
-          alt="ChompSmart Gator"
-        />
+      <div className="loginTop">
+        <div className="loginLogoFrame" aria-label="ChompSmart logo">
+          <img className="loginLogoImg" src={logo} alt="ChompSmart logo" />
+        </div>
 
         <div className="brandWordmark" aria-label="ChompSmart">
           <span className="chomp">Chomp</span>
@@ -31,17 +27,16 @@ export default function Login() {
         </div>
       </div>
 
-
-      <div className="loginCard biteCorner">
+      <div className="loginCard">
         <h1 className="loginTitle">Login</h1>
 
         <form className="loginForm" onSubmit={onSubmit}>
-          <label className="fieldLabel" htmlFor="email">
+          <label className="loginLabel" htmlFor="email">
             Email
           </label>
           <input
             id="email"
-            className="textInput"
+            className="loginInput"
             type="email"
             placeholder="you@clinic.com"
             value={email}
@@ -50,12 +45,12 @@ export default function Login() {
             required
           />
 
-          <label className="fieldLabel" htmlFor="password">
+          <label className="loginLabel" htmlFor="password">
             Password
           </label>
           <input
             id="password"
-            className="textInput"
+            className="loginInput"
             type="password"
             placeholder="••••••••"
             value={password}

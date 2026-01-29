@@ -2,77 +2,74 @@
 
 .loginPage {
   min-height: 100vh;
-  width: 100%;
+  background: var(--brand-600);
+  font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 18px 18px;
-
-
-  background: #2f66f1;
+  padding: 26px 16px 40px;
+  gap: 22px;
 }
 
 
-.brandRow {
+.loginTop {
+  width: min(520px, 92%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  margin-top: 10px;
 }
 
+.loginLogoFrame {
+  width: 260px;
+  height: 92px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.gatorLogo {
-  width: min(520px, 86vw);
-  height: auto;
+.loginLogoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  filter: drop-shadow(0px 12px 18px rgba(0, 0, 0, 0.22));
 }
 
 
 .brandWordmark {
-  font-size: clamp(48px, 6vw, 86px);
-  font-weight: 900;
-  letter-spacing: 1px;
-  line-height: 0.95;
-  text-align: center;
-
-
-  -webkit-text-stroke: 8px rgba(255, 255, 255, 0.95);
-  paint-order: stroke fill;
-  filter: drop-shadow(0px 10px 12px rgba(0, 0, 0, 0.25));
+  font-weight: 1000;
+  font-size: 34px;
+  letter-spacing: 0.3px;
+  line-height: 1;
 }
 
-.chomp {
-  display: inline-block;
-  transform: rotate(-2deg) translateY(2px);
-  color: #ff8a00;
+.brandWordmark .chomp {
+  color: var(--text-on-brand);
 }
 
-.smart {
-  display: inline-block;
-  transform: rotate(2deg) translateY(-3px);
-  color: #0a58ff;
-  margin-left: 6px;
+.brandWordmark .smart {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 
 .loginCard {
-  width: min(860px, 92vw);
-  padding: clamp(20px, 3vw, 32px);
-  border-radius: 22px;
-  background: #dfe3ea;
-  box-shadow: 0px 30px 70px rgba(0, 0, 0, 0.25);
-  position: relative;
+  width: min(520px, 92%);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
 }
 
-
 .loginTitle {
-  margin: 0 0 1px 0;
+  margin: 0 0 16px;
+  font-size: 26px;
+  font-weight: 1000;
   text-align: center;
-  font-size: clamp(34px, 3.2vw, 56px);
-  font-weight: 900;
   color: #1b3554;
 }
 
@@ -82,75 +79,35 @@
   gap: 10px;
 }
 
-.fieldLabel {
-  font-size: 16px;
-  font-weight: 800;
+.loginLabel {
+  font-size: 18px;
+  font-weight: 900;
   color: #1b3554;
-  margin-top: 0.2px;
+  margin-top: 8px;
 }
 
-
-.textInput {
-  height: 60px;
-  border-radius: 14px;
-  border: 2px solid rgba(0, 0, 0, 0.08);
-  padding: 0 18px;
+.loginInput {
+  width: 100%;
+  height: 56px;
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
   font-size: 18px;
   outline: none;
-  background: rgba(255, 255, 255, 0.55);
 }
-
-.textInput:focus {
-  border-color: rgba(10, 88, 255, 0.45);
-  box-shadow: 0 0 0 6px rgba(10, 88, 255, 0.12);
-}
-
 
 .loginButton {
-  margin-top: 6px;
-  height: 68px;
-  border-radius: 18px;
-  border: none;
-  background: #1e56e3;
-  color: white;
+  margin-top: 14px;
+  height: 56px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.95);
+  color: #1b3554;
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 1000;
   cursor: pointer;
-  box-shadow: 0px 14px 24px rgba(0, 0, 0, 0.18);
-}
-
-.loginButton:hover {
-  filter: brightness(1.05);
 }
 
 .loginButton:active {
   transform: translateY(1px);
-}
-
-
-
-.biteCorner::after {
-  content: "";
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 180px;
-  height: 180px;
-
-  background:
-    radial-gradient(circle at 90% 10%, #2f66f1 0 24px, transparent 25px),
-    radial-gradient(circle at 94% 22%, #2f66f1 0 18px, transparent 19px),
-    radial-gradient(circle at 92% 34%, #2f66f1 0 20px, transparent 21px),
-    radial-gradient(circle at 86% 20%, #2f66f1 0 18px, transparent 19px),
-    radial-gradient(circle at 82% 34%, #2f66f1 0 16px, transparent 17px),
-    radial-gradient(circle at 88% 46%, #2f66f1 0 18px, transparent 19px),
-    radial-gradient(circle at 78% 46%, #2f66f1 0 16px, transparent 17px),
-    radial-gradient(circle at 72% 34%, #2f66f1 0 14px, transparent 15px);
-
-  pointer-events: none;
-}
-
-
-.biteCorner {
-  overflow: hidden;
 }
