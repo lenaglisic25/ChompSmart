@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import "./Profile.css";
 
 const OPTIONS = {
@@ -299,6 +299,21 @@ export default function ProfileSetup() {
     technologyDevices: [],
   });
 
+  // fetch existing profile data
+  useEffect(() => {
+    const currentUserEmail = localStorage.getItem("currentUserEmail");
+    if (!currentUserEmail) return;
+
+    fetch(`http://localhost:8000/profile/${currentUserEmail}`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null; 
+      })
+      .then((data) => {
+        if (data) setForm((prev) => ({ ...prev, ...data }));
+      });
+  }, []);
+
   const showRaceOther = form.race.includes("Other");
   const showHealthOther = form.healthConditions.includes("Other");
   const showFoodHelpOther = form.foodHelpPrograms.includes("Other");
@@ -310,70 +325,71 @@ export default function ProfileSetup() {
   const dbPayload = useMemo(() => {
     // Send to backend / save to DB
     return {
-      user_email: "test@clinic.com",
-      name: form.name.trim(),
-      birthday_text: form.birthday.trim(),
-      home_address: form.homeAddress.trim(),
-      height_text: form.height.trim(),
-      weight_text: form.weight.trim(),
-      race: form.race,
-      race_other_text: showRaceOther ? form.raceOtherText.trim() : null,
-      ethnicity: form.ethnicity || null,
-      gender: form.gender || null,
+    user_email: localStorage.getItem("currentUserEmail"),
+    name: form.name.trim() || null,
+    birthday_text: form.birthday.trim() || null,
+    home_address: form.homeAddress.trim() || null,
+    height_text: form.height.trim() || null,
+    weight_text: form.weight.trim() || null,
+    race: form.race.length > 0 ? form.race : null,
+    race_other_text: showRaceOther ? form.raceOtherText.trim() || null : null,
+    ethnicity: form.ethnicity || null,
+    gender: form.gender || null,
 
-      health_conditions: form.healthConditions,
-      health_conditions_other_text: showHealthOther ? form.healthConditionsOtherText.trim() : null,
-      medications_text: form.medications.trim(),
-      med_allergies_text: form.medAllergies.trim(),
+    health_conditions: form.healthConditions.length > 0 ? form.healthConditions : null,
+    health_conditions_other_text: showHealthOther ? form.healthConditionsOtherText.trim() || null : null,
+    medications_text: form.medications.trim() || null,
+    med_allergies_text: form.medAllergies.trim() || null,
 
-      steps_range: form.stepsRange || null,
-      active_days_per_week: form.activeDays || null,
-      movement_types: form.movementTypes,
+    steps_range: form.stepsRange || null,
+    active_days_per_week: form.activeDays || null,
+    movement_types: form.movementTypes.length > 0 ? form.movementTypes : null,
 
-      household_size: form.householdSize ? Number(form.householdSize) : null,
-      household_age_groups: form.householdAgeGroups,
+    household_size: form.householdSize ? Number(form.householdSize) : null,
+    household_age_groups: form.householdAgeGroups.length > 0 ? form.householdAgeGroups : null,
 
-      dietary_restrictions: form.dietaryRestrictions,
-      cuisine_styles: form.cuisineStyles,
-      meal_types: form.mealTypes,
+    dietary_restrictions: form.dietaryRestrictions.length > 0 ? form.dietaryRestrictions : null,
+    cuisine_styles: form.cuisineStyles.length > 0 ? form.cuisineStyles : null,
+    meal_types: form.mealTypes.length > 0 ? form.mealTypes : null,
 
-      cooking_skill: form.cookingSkill || null,
-      cooking_methods: form.cookingMethods,
-      kitchen_equipment: form.kitchenEquipment,
+    cooking_skill: form.cookingSkill || null,
+    cooking_methods: form.cookingMethods.length > 0 ? form.cookingMethods : null,
+    kitchen_equipment: form.kitchenEquipment.length > 0 ? form.kitchenEquipment : null,
 
-      weekly_grocery_budget: form.groceryBudget || null,
-      food_help_programs: form.foodHelpPrograms,
-      food_help_other_text: showFoodHelpOther ? form.foodHelpOtherText.trim() : null,
-      grocery_stores: form.groceryStores,
+    weekly_grocery_budget: form.groceryBudget || null,
+    food_help_programs: form.foodHelpPrograms.length > 0 ? form.foodHelpPrograms : null,
+    food_help_other_text: showFoodHelpOther ? form.foodHelpOtherText.trim() || null : null,
+    grocery_stores: form.groceryStores.length > 0 ? form.groceryStores : null,
 
-      internet_access: form.internetAccess || null,
-      technology_devices: form.technologyDevices,
-    };
-  }, [form, showRaceOther, showHealthOther, showFoodHelpOther]);
-
-  function onSubmit(e) {
-  e.preventDefault();
-
-  const dbPayloadWithUser = {
-    ...dbPayload,
-    user_email: localStorage.getItem("currentUserEmail"), // link to the logged-in user
+    internet_access: form.internetAccess || null,
+    technology_devices: form.technologyDevices.length > 0 ? form.technologyDevices : null,
   };
+}, [form, showRaceOther, showHealthOther, showFoodHelpOther]);
 
-  fetch("http://localhost:8000/profile/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dbPayloadWithUser),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("Profile saved:", data);
+  async function onSubmit(e) {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:8000/profile/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dbPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error saving profile:", errorData);
+        alert("Error saving profile");
+        return;
+      }
+
+      const savedProfile = await response.json();
+      console.log("Profile saved:", savedProfile);
       alert("Profile saved successfully!");
-    })
-    .catch((err) => {
-      console.error(err);
+    } catch (err) {
+      console.error("Network or server error:", err);
       alert("Error saving profile");
-    });
-}
+    }
+  }
 
 
   return (

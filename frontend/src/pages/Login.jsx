@@ -12,25 +12,24 @@ export default function Login() {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:8000/users/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch("http://localhost:8000/users/login-or-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      if (!res.ok) throw new Error("Failed to create user");
+    if (!res.ok) throw new Error("Failed to login or create account");
 
-      const user = await res.json();
-      console.log("User created:", user);
+    const data = await res.json();
 
-      localStorage.setItem("currentUserEmail", user.email);
+    localStorage.setItem("currentUserEmail", data.email);
 
-      navigate("/app/learn");
-    } catch (err) {
-      console.error(err);
-      alert("Error creating account");
-    }
-  };
+    navigate("/app/learn"); // go to the next page
+  } catch (err) {
+    console.error(err);
+    alert("Error logging in or creating account");
+  }
+};
 
   return (
     <div className="loginPage">
