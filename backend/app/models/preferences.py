@@ -1,12 +1,18 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, String
 from app.database import Base
 
-class FoodPreferences(Base):
-    __tablename__ = "food_preferences"
+class Preferences(Base):
+    __tablename__ = "preferences"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-
+    user_email = Column(String, primary_key=True, index=True)
     dietary_restrictions = Column(String)
-    cuisine_styles = Column(String)
-    preferred_meal_types = Column(String)
+    cuisines = Column(String)
+    meal_types = Column(String)
+    cooking_skills = Column(String)
+    cooking_methods = Column(String)
+    kitchen_equipment = Column(String)
+    weekly_budget = Column(String)
+    food_programs = Column(String)
+    grocery_locations = Column(String)
+    internet_access = Column(String)
+    tech_devices = Column(String)

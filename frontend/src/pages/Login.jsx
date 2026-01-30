@@ -9,9 +9,27 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    navigate("/app/learn");
+    try {
+      const res = await fetch("http://localhost:8000/users/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create user");
+
+      const user = await res.json();
+      console.log("User created:", user);
+
+      localStorage.setItem("currentUserEmail", user.email);
+
+      navigate("/app/learn");
+    } catch (err) {
+      console.error(err);
+      alert("Error creating account");
+    }
   };
 
   return (

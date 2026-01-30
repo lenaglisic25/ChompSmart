@@ -310,6 +310,7 @@ export default function ProfileSetup() {
   const dbPayload = useMemo(() => {
     // Send to backend / save to DB
     return {
+      user_email: "test@clinic.com",
       name: form.name.trim(),
       birthday_text: form.birthday.trim(),
       home_address: form.homeAddress.trim(),
@@ -351,10 +352,29 @@ export default function ProfileSetup() {
   }, [form, showRaceOther, showHealthOther, showFoodHelpOther]);
 
   function onSubmit(e) {
-    e.preventDefault();
-    console.log("DB payload:", dbPayload);
-    alert("Saved (check console for DB payload).");
-  }
+  e.preventDefault();
+
+  const dbPayloadWithUser = {
+    ...dbPayload,
+    user_email: localStorage.getItem("currentUserEmail"), // link to the logged-in user
+  };
+
+  fetch("http://localhost:8000/profile/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dbPayloadWithUser),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Profile saved:", data);
+      alert("Profile saved successfully!");
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Error saving profile");
+    });
+}
+
 
   return (
     <div className="psPage">

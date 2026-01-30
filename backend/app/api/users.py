@@ -1,27 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app import models, schemas
 from app.database import get_db
-from app.schemas import user as user_schema
+from app.models.user import User as UserModel
+from app.schemas.user import UserCreate, User as UserSchema
 
-router = APIRouter() 
+router = APIRouter(
+    prefix="/users",
+    tags=["users"]
+)
 
-@router.post("/", response_model=user_schema.User, summary="Create user")
-def create_user(payload: user_schema.UserCreate, db: Session = Depends(get_db)):
-    db_user = models.user.User(**payload.dict())
-    db.add(db_user)
+@router.post("/", response_model=UserSchema, summary="Create user")
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+    
+    new_user = UserModel(
+        email=user.email,
+        password=user.password 
+    )
+    db.add(new_user)
     db.commit()
-    db.refresh(db_user)
-    return db_user
+    db.refresh(new_user)
+    return new_user
 
-@router.get("/", response_model=List[schemas.user.User], summary="List users")
+@router.get("/", response_model=list[UserSchema])
 def get_users(db: Session = Depends(get_db)):
-    return db.query(models.user.User).all()
+    users = db.query(UserModel).all()
+    return users
 
-@router.get("/{user_id}", response_model=schemas.user.User, summary="Get user by id")
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = db.query(models.user.User).filter(models.user.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
