@@ -22,12 +22,8 @@
 }
 
 .loginLogoFrame {
-  width: 260px;
-  height: 92px;
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  padding: 8px;
+  width: 520px;
+  height: 184px;
   display: flex;
   align-items: center;
   justify-content: center;

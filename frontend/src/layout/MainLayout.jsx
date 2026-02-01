@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import "./MainLayout.css";
-import logo from "../assets/chompsmart-logo.png";
+import logo from "../assets/Chomp Smart Logo Transparent.png";
 
 export default function MainLayout() {
   const navigate = useNavigate();
