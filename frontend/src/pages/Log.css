@@ -1,0 +1,179 @@
+.logPage {
+  padding: 0 0 10px;
+}
+
+.logContent {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.logWidgetPlaceholder {
+  min-height: 32vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.logCard {
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 14px 10px;
+  background: var(--surface);
+}
+
+.logSection {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logSection:last-of-type {
+  border-bottom: none;
+}
+
+.logSectionTitle {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.logAddRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.logAddBtn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #e2e8f0;
+  color: #1b3554;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logAddBtn:hover {
+  background: #cbd5e1;
+}
+
+.logAddPrompt {
+  font-weight: 700;
+  color: #1b3554;
+  cursor: pointer;
+  user-select: none;
+}
+
+.logInputRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.logInput {
+  flex: 1;
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.logOkBtn {
+  padding: 10px 18px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  background: #fff;
+  color: #1b3554;
+}
+
+.logOkBtn:active {
+  transform: translateY(1px);
+}
+
+.logItemList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.logItem:last-child {
+  border-bottom: none;
+}
+
+.logItemName {
+  flex: 1;
+  min-width: 0;
+}
+
+.logItemRemove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logItemRemove:hover {
+  background: #fee2e2;
+}
+
+.logEmptyState {
+  margin-top: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.logEmptyState strong {
+  color: #1b3554;
+}
+
+.logTutorialLink {
+  color: var(--blue);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.logTutorialLink:hover {
+  color: var(--blueBar);
+}

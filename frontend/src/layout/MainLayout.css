@@ -64,11 +64,8 @@
 }
 
 .topLogoImg{
-  height: 62px;
+  height: 84px;
   width: auto;
-  background: var(--white);
-  border: 2px solid var(--border);
-  padding: 6px 10px;
   object-fit: contain;
 }
 
