@@ -34,7 +34,6 @@ export default function Login() {
 
       localStorage.setItem("currentUserEmail", data.email);
 
-
       navigate(nextPath);
     } catch (err) {
       console.error(err);
@@ -87,7 +86,6 @@ export default function Login() {
             required
           />
 
-          {/* Log In -> app (tabs) */}
           <button
             type="button"
             className="loginButton"
@@ -96,7 +94,6 @@ export default function Login() {
             Log In
           </button>
 
-          {/* Create Account -> setup profile  */}
           <button
             type="button"
             className="loginButton"
