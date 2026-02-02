@@ -177,3 +177,595 @@
 .logTutorialLink:hover {
   color: var(--blueBar);
 }
+
+/* =========================
+   ADDED: Top dashboard styles
+   ========================= */
+
+.logWidgetPlaceholder {
+  margin-bottom: 14px;
+}
+
+/* Outer spacing like the mockups */
+.tdOuter {
+  width: 100%;
+}
+
+/* Rounded gray container like the images */
+.tdWidget {
+  background: #f1f2f5;
+  border: 3px solid rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.tdInner {
+  min-height: 150px;
+}
+
+/* 3 sections row like your first mockup (ring + goal + hydration) */
+.tdCardsRow {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.tdMiniCard {
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.10);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+/* Goal box text */
+.tdGoalTitle {
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 6px;
+}
+.tdGoalLine {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1b3554;
+  margin: 3px 0;
+}
+
+/* Hydration box text */
+.tdHydTitle {
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 6px;
+}
+.tdHydLine {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1b3554;
+}
+.tdHydCheer {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+/* Dots under widget */
+.tdDots {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tdDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+.tdDot.active {
+  background: rgba(0,0,0,0.65);
+}
+
+/* Ring styles */
+.tdRing {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.tdRingTrack {
+  fill: none;
+  stroke: rgba(0,0,0,0.12);
+}
+
+.tdRingFill {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.tdRingText {
+  position: absolute;
+  text-align: center;
+  width: 80px;
+}
+
+.tdRingTitle {
+  font-weight: 900;
+  font-size: 14px;
+  color: #1b3554;
+}
+
+.tdRingSub {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* Bar slide */
+.tdBars {
+  display: grid;
+  gap: 10px;
+}
+
+.tdBarRow {
+  display: grid;
+  gap: 6px;
+}
+
+.tdBarTop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.tdBarTrack {
+  height: 10px;
+  background: rgba(0,0,0,0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tdBarFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* color-changing status */
+.tdRingFill.good, .tdBarFill.good { stroke: #19a35c; background: #19a35c; }
+.tdRingFill.warn, .tdBarFill.warn { stroke: #f2b01e; background: #f2b01e; }
+.tdRingFill.bad,  .tdBarFill.bad  { stroke: #e34b4b; background: #e34b4b; }
+
+/* Alerts box */
+.tdAlerts {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.10);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+.tdAlertsTitle {
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 8px;
+}
+
+.tdAlertItem {
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 900;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.tdAlertItem.good {
+  background: rgba(25,163,92,0.12);
+  color: #0c6b3a;
+}
+
+.tdAlertItem.warn {
+  background: rgba(242,176,30,0.16);
+  color: #7a5300;
+}
+
+.tdAlertItem.bad {
+  background: rgba(227,75,75,0.14);
+  color: #8f1c1c;
+}
+
+/* ====== DOT 2 layout ====== */
+.tdSecondGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.tdAlertMascot {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+
+.tdMascotBubble {
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.12);
+  border-radius: 14px;
+  padding: 10px;
+  font-weight: 900;
+  font-size: 12px;
+  color: #1b3554;
+}
+
+/* ring cards on dot 2 */
+.tdCenterRing {
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.tdCenterRingSub {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.85;
+  color: #1b3554;
+}
+
+/* alerts box spans full width under the 3 mini cards */
+.tdAlertsBox {
+  grid-column: 1 / -1;
+}
+
+/* responsive */
+@media (max-width: 650px) {
+  .tdSecondGrid {
+    grid-template-columns: 1fr;
+  }
+  .tdAlertsBox {
+    grid-column: auto;
+  }
+}
+/* ===== Top widget spacing ===== */
+.logWidgetPlaceholder {
+  margin-bottom: 14px;
+}
+
+/* Big gray rounded container like your pictures */
+.tdWidget {
+  background: #f1f2f5;
+  border: 3px solid rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.tdInner {
+  min-height: 165px;
+}
+
+/* Dot 1 layout: 3 panels */
+.tdCardsRow {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.tdMiniCard {
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.10);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+.tdGoalTitle, .tdHydTitle {
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 6px;
+}
+
+.tdGoalLine, .tdHydLine {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1b3554;
+  margin: 3px 0;
+}
+
+.tdHydCheer {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.85;
+  color: #1b3554;
+}
+
+/* Dots */
+.tdDots {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tdDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+.tdDot.active { background: rgba(0,0,0,0.65); }
+
+/* Ring visuals */
+.tdRing { display: grid; place-items: center; position: relative; }
+.tdRingTrack { fill: none; stroke: rgba(0,0,0,0.12); }
+.tdRingFill { fill: none; stroke-linecap: round; }
+.tdRingText { position: absolute; text-align: center; width: 80px; }
+.tdRingTitle { font-weight: 900; font-size: 14px; color: #1b3554; }
+.tdRingSub { margin-top: 2px; font-size: 11px; opacity: 0.85; }
+
+/* Status colors */
+.tdRingFill.good { stroke: #19a35c; }
+.tdRingFill.warn { stroke: #f2b01e; }
+.tdRingFill.bad  { stroke: #e34b4b; }
+
+/* Dot 2 layout: 3 cards top + alerts full width */
+.tdSecondGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.tdMascotBubble {
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.12);
+  border-radius: 14px;
+  padding: 10px;
+  font-weight: 900;
+  font-size: 12px;
+  color: #1b3554;
+}
+
+.tdCenterRing { display: grid; place-items: center; text-align: center; }
+.tdCenterRingSub { margin-top: 8px; font-size: 12px; font-weight: 900; opacity: 0.85; color: #1b3554; }
+
+.tdAlertsBox { grid-column: 1 / -1; }
+
+.tdAlertsTitle { font-weight: 900; color: #1b3554; margin-bottom: 8px; }
+
+.tdAlertItem {
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 900;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.tdAlertItem.good { background: rgba(25,163,92,0.12); color: #0c6b3a; }
+.tdAlertItem.warn { background: rgba(242,176,30,0.16); color: #7a5300; }
+.tdAlertItem.bad  { background: rgba(227,75,75,0.14); color: #8f1c1c; }
+
+@media (max-width: 650px) {
+  .tdCardsRow { grid-template-columns: 1fr; }
+  .tdSecondGrid { grid-template-columns: 1fr; }
+  .tdAlertsBox { grid-column: auto; }
+}
+/* ===============================
+   MAKE DASHBOARD TEXT & ICONS BIGGER
+   =============================== */
+
+/* Ring numbers (big numbers inside circles) */
+.tdRingTitle {
+  font-size: 20px;     /* was ~14px */
+  font-weight: 900;
+}
+
+.tdRingSub {
+  font-size: 14px;     /* was ~11px */
+}
+
+/* Goal / Hydration text */
+.tdGoalTitle,
+.tdHydTitle {
+  font-size: 16px;
+}
+
+.tdGoalLine,
+.tdHydLine {
+  font-size: 14px;
+}
+
+.tdHydCheer {
+  font-size: 14px;
+}
+
+/* Mascot speech bubble text */
+.tdMascotBubble {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Streak + Weekly Avg captions */
+.tdCenterRingSub {
+  font-size: 14px;
+}
+
+/* Alerts title + items */
+.tdAlertsTitle {
+  font-size: 16px;
+}
+
+.tdAlertItem {
+  font-size: 14px;
+}
+
+/* Dots under carousel (make them easier to tap) */
+.tdDot {
+  width: 14px;
+  height: 14px;
+}
+
+/* Make the cards breathe more */
+.tdMiniCard {
+  padding: 14px;
+}
+
+/* Gator image slightly bigger */
+.tdGatorImg {
+  width: 90px;
+  height: 90px;
+}
+
+/* ===============================
+   OVERRIDE: make dashboard look like mockups
+   paste at BOTTOM of Log.css
+   =============================== */
+
+/* remove any dashed outline or placeholder styling */
+.logWidgetPlaceholder {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 18px auto 14px auto !important;
+  max-width: 920px;                 /* keeps it from looking weird on desktop */
+}
+
+/* main rounded container like the mockup */
+.tdWidget {
+  background: #eceef2 !important;
+  border: 4px solid rgba(0,0,0,0.18) !important;  /* thick soft border like phone mock */
+  border-radius: 28px !important;
+  padding: 16px !important;
+  box-shadow: none !important;
+}
+
+/* remove extra “boxy” feeling */
+.tdInner {
+  min-height: 155px !important;
+}
+
+/* inner cards should be flatter */
+.tdMiniCard {
+  background: #ffffff !important;
+  border: 2px solid rgba(0,0,0,0.10) !important;
+  border-radius: 20px !important;
+  padding: 14px !important;
+  box-shadow: none !important;
+}
+
+/* rings: slightly bigger and cleaner */
+.tdRingTitle { font-size: 22px !important; }
+.tdRingSub   { font-size: 14px !important; }
+
+/* dot 1: tighter like the mockup */
+.tdCardsRow {
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+/* dot 2: align like your mock (gator+speech, then 2 rings) */
+.tdSecondGrid {
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+/* speech bubble should look like a bubble, not a big empty box */
+.tdMascotBubble {
+  background: #ffffff !important;
+  border: 2px solid rgba(0,0,0,0.12) !important;
+  border-radius: 18px !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  color: #1b3554 !important;
+  line-height: 1.35 !important;
+}
+
+/* gator image bigger like mock */
+.tdGatorImg {
+  width: 92px !important;
+  height: 92px !important;
+  object-fit: contain !important;
+}
+
+/* dot buttons like the mock */
+.tdDots { margin-top: 12px !important; }
+.tdDot {
+  width: 12px !important;
+  height: 12px !important;
+  background: rgba(0,0,0,0.25) !important;
+}
+.tdDot.active {
+  background: rgba(0,0,0,0.65) !important;
+}
+
+/* alerts should look like one soft green bar */
+.tdAlertsBox {
+  border-radius: 20px !important;
+}
+.tdAlertsTitle {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  margin-bottom: 8px !important;
+  color: #1b3554 !important;
+}
+.tdAlertItem {
+  border-radius: 14px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  padding: 12px !important;
+  margin-bottom: 10px !important;
+}
+.tdAlertItem.good {
+  background: rgba(25,163,92,0.12) !important;
+  color: #0c6b3a !important;
+}
+
+/* ===============================
+   GATOR SPEECH BUBBLE
+   =============================== */
+
+.tdMascotWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tdGatorImg {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+/* Speech bubble */
+.tdSpeechBubble {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.15);
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1b3554;
+  line-height: 1.35;
+  max-width: 220px;
+}
+
+/* Bubble tail */
+.tdSpeechTail {
+  position: absolute;
+  left: -10px;
+  top: 24px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid #ffffff;
+}

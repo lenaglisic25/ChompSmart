@@ -31,7 +31,7 @@ export default function Login() {
 
       const data = JSON.parse(raw);
 
-      // store user email for profile fetch + saving
+
       localStorage.setItem("currentUserEmail", data.email);
 
       navigate(nextPath);
