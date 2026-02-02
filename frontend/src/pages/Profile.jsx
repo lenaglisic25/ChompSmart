@@ -150,7 +150,7 @@ const OPTIONS = {
   ],
 };
 
-// helpers
+// ---------- helpers ----------
 function toggleInArray(arr, value) {
   const safe = Array.isArray(arr) ? arr : [];
   return safe.includes(value) ? safe.filter((x) => x !== value) : [...safe, value];
@@ -218,11 +218,7 @@ function CheckboxGroup({ label, values, onToggle, options }) {
       <div className="psChecks">
         {options.map((o) => (
           <label key={o} className="psCheck">
-            <input
-              type="checkbox"
-              checked={safeValues.includes(o)}
-              onChange={() => onToggle(o)}
-            />
+            <input type="checkbox" checked={safeValues.includes(o)} onChange={() => onToggle(o)} />
             <span>{o}</span>
           </label>
         ))}
@@ -238,12 +234,7 @@ function RadioGroup({ label, value, onChange, options }) {
       <div className="psRadios">
         {options.map((o) => (
           <label key={o} className="psRadio">
-            <input
-              type="radio"
-              name={label}
-              checked={(value ?? "") === o}
-              onChange={() => onChange(o)}
-            />
+            <input type="radio" name={label} checked={(value ?? "") === o} onChange={() => onChange(o)} />
             <span>{o}</span>
           </label>
         ))}
@@ -253,6 +244,7 @@ function RadioGroup({ label, value, onChange, options }) {
 }
 
 const DEFAULT_FORM = {
+  // Personal Basics
   name: "",
   birthday: "",
   homeAddress: "",
@@ -263,36 +255,43 @@ const DEFAULT_FORM = {
   ethnicity: "",
   gender: "",
 
+  // Health & Medicine
   healthConditions: [],
   healthConditionsOtherText: "",
   medications: "",
   medAllergies: "",
 
+  // Physical Activity
   stepsRange: "",
   activeDays: "",
   movementTypes: [],
 
+  // Family & Home
   householdSize: "",
   householdAgeGroups: [],
 
+  // Food Palate
   dietaryRestrictions: [],
   cuisineStyles: [],
   mealTypes: [],
 
+  // Cooking & Kitchen
   cookingSkill: "",
   cookingMethods: [],
   kitchenEquipment: [],
 
+  // Budget
   groceryBudget: "",
   foodHelpPrograms: [],
   foodHelpOtherText: "",
   groceryStores: [],
 
+  // Technology
   internetAccess: "",
   technologyDevices: [],
 };
 
-// Convert DB/Backend fields (snake_case, nulls) into UI-safe state (camelCase, strings/arrays)
+// Convert backend snake_case + nulls into UI-friendly values
 function normalizeProfile(data) {
   if (!data) return null;
 
@@ -340,12 +339,13 @@ function normalizeProfile(data) {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(DEFAULT_FORM);
-  const [loading, setLoading] = useState(false);
 
   const currentUserEmail = localStorage.getItem("currentUserEmail") || "";
 
-  // fetch existing profile data
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch existing profile (if any)
   useEffect(() => {
     if (!currentUserEmail) return;
 
@@ -356,17 +356,13 @@ export default function Profile() {
         const normalized = normalizeProfile(data);
         if (normalized) setForm((prev) => ({ ...prev, ...normalized }));
       })
-      .catch((err) => {
-        console.error("Profile fetch failed:", err);
-      })
+      .catch((err) => console.error("Profile fetch failed:", err))
       .finally(() => setLoading(false));
   }, [currentUserEmail]);
 
   const showRaceOther = Array.isArray(form.race) && form.race.includes("Other");
-  const showHealthOther =
-    Array.isArray(form.healthConditions) && form.healthConditions.includes("Other");
-  const showFoodHelpOther =
-    Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.includes("Other");
+  const showHealthOther = Array.isArray(form.healthConditions) && form.healthConditions.includes("Other");
+  const showFoodHelpOther = Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.includes("Other");
 
   function update(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -390,39 +386,27 @@ export default function Profile() {
       gender: form.gender || null,
 
       health_conditions:
-        Array.isArray(form.healthConditions) && form.healthConditions.length > 0
-          ? form.healthConditions
-          : null,
-      health_conditions_other_text: showHealthOther
-        ? safeTrim(form.healthConditionsOtherText) || null
-        : null,
+        Array.isArray(form.healthConditions) && form.healthConditions.length > 0 ? form.healthConditions : null,
+      health_conditions_other_text: showHealthOther ? safeTrim(form.healthConditionsOtherText) || null : null,
       medications_text: safeTrim(form.medications) || null,
       med_allergies_text: safeTrim(form.medAllergies) || null,
 
       steps_range: form.stepsRange || null,
       active_days_per_week: form.activeDays || null,
       movement_types:
-        Array.isArray(form.movementTypes) && form.movementTypes.length > 0
-          ? form.movementTypes
-          : null,
+        Array.isArray(form.movementTypes) && form.movementTypes.length > 0 ? form.movementTypes : null,
 
       household_size: form.householdSize ? Number(form.householdSize) : null,
       household_age_groups:
-        Array.isArray(form.householdAgeGroups) && form.householdAgeGroups.length > 0
-          ? form.householdAgeGroups
-          : null,
+        Array.isArray(form.householdAgeGroups) && form.householdAgeGroups.length > 0 ? form.householdAgeGroups : null,
 
       dietary_restrictions:
-        Array.isArray(form.dietaryRestrictions) && form.dietaryRestrictions.length > 0
-          ? form.dietaryRestrictions
-          : null,
-      cuisine_styles:
-        Array.isArray(form.cuisineStyles) && form.cuisineStyles.length > 0 ? form.cuisineStyles : null,
+        Array.isArray(form.dietaryRestrictions) && form.dietaryRestrictions.length > 0 ? form.dietaryRestrictions : null,
+      cuisine_styles: Array.isArray(form.cuisineStyles) && form.cuisineStyles.length > 0 ? form.cuisineStyles : null,
       meal_types: Array.isArray(form.mealTypes) && form.mealTypes.length > 0 ? form.mealTypes : null,
 
       cooking_skill: form.cookingSkill || null,
-      cooking_methods:
-        Array.isArray(form.cookingMethods) && form.cookingMethods.length > 0 ? form.cookingMethods : null,
+      cooking_methods: Array.isArray(form.cookingMethods) && form.cookingMethods.length > 0 ? form.cookingMethods : null,
       kitchen_equipment:
         Array.isArray(form.kitchenEquipment) && form.kitchenEquipment.length > 0 ? form.kitchenEquipment : null,
 
@@ -430,8 +414,7 @@ export default function Profile() {
       food_help_programs:
         Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.length > 0 ? form.foodHelpPrograms : null,
       food_help_other_text: showFoodHelpOther ? safeTrim(form.foodHelpOtherText) || null : null,
-      grocery_stores:
-        Array.isArray(form.groceryStores) && form.groceryStores.length > 0 ? form.groceryStores : null,
+      grocery_stores: Array.isArray(form.groceryStores) && form.groceryStores.length > 0 ? form.groceryStores : null,
 
       internet_access: form.internetAccess || null,
       technology_devices:
@@ -462,11 +445,8 @@ export default function Profile() {
         return;
       }
 
-      const savedProfile = await response.json();
-      console.log("Profile saved:", savedProfile);
+      await response.json();
       alert("Profile saved successfully!");
-
-      // optional: go into app after saving
       navigate("/app/learn");
     } catch (err) {
       console.error("Network or server error:", err);
@@ -479,11 +459,7 @@ export default function Profile() {
       <form className="psForm" onSubmit={onSubmit}>
         <h1 className="psTitle">ChompSmart User Profile Set-Up</h1>
 
-        {loading && (
-          <div style={{ marginBottom: 12, fontWeight: 600 }}>
-            Loading profile...
-          </div>
-        )}
+        {loading && <div style={{ marginBottom: 12, fontWeight: 600 }}>Loading profile...</div>}
 
         <Section title="Personal Basics">
           <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
@@ -525,7 +501,7 @@ export default function Profile() {
 
           {showRaceOther && (
             <TextField
-              label="Race (Other) — please specify"
+              label="Race (Other) - please specify"
               value={form.raceOtherText}
               onChange={(v) => update("raceOtherText", v)}
             />
@@ -548,7 +524,7 @@ export default function Profile() {
 
         <Section title="Health & Medicine">
           <CheckboxGroup
-            label='Health problems: "Do you have any diseases or health conditions?" (select all that apply)'
+            label="Health problems: Do you have any diseases or health conditions? (select all that apply)"
             values={form.healthConditions}
             onToggle={(o) => update("healthConditions", toggleInArray(form.healthConditions, o))}
             options={OPTIONS.healthConditions}
@@ -564,14 +540,14 @@ export default function Profile() {
           )}
 
           <TextAreaField
-            label='Medications: "What medicines do you take every day?"'
+            label="Medications: What medicines do you take every day?"
             value={form.medications}
             onChange={(v) => update("medications", v)}
             placeholder="List medication names (no dosage needed)"
           />
 
           <TextAreaField
-            label='Allergies to medicine: "Do you have any medication allergies (e.g., penicillin)?"'
+            label="Allergies to medicine: Do you have any medication allergies (e.g., penicillin)?"
             value={form.medAllergies}
             onChange={(v) => update("medAllergies", v)}
             placeholder="List medication allergies"
@@ -580,21 +556,21 @@ export default function Profile() {
 
         <Section title="Physical Activity">
           <RadioGroup
-            label='“How many steps do you walk in a typical day?”'
+            label="How many steps do you walk in a typical day?"
             value={form.stepsRange}
             onChange={(v) => update("stepsRange", v)}
             options={OPTIONS.steps}
           />
 
           <RadioGroup
-            label="“How many days each week do you do at least 30 minutes of moderate to vigorous activity?”"
+            label="How many days each week do you do at least 30 minutes of moderate to vigorous activity?"
             value={form.activeDays}
             onChange={(v) => update("activeDays", v)}
             options={OPTIONS.activeDays}
           />
 
           <CheckboxGroup
-            label="“What kinds of movement do you do most often?” (select all that apply)"
+            label="What kinds of movement do you do most often? (select all that apply)"
             values={form.movementTypes}
             onToggle={(o) => update("movementTypes", toggleInArray(form.movementTypes, o))}
             options={OPTIONS.movement}
@@ -603,14 +579,14 @@ export default function Profile() {
 
         <Section title="Family & Home">
           <SelectField
-            label='Household size: “How many people live in your home?”'
+            label="Household size: How many people live in your home?"
             value={form.householdSize}
             onChange={(v) => update("householdSize", v)}
             options={OPTIONS.householdSizes}
           />
 
           <CheckboxGroup
-            label='Age of members: “What are the ages of your family household?” (select all that apply)'
+            label="Age groups in household: What are the ages of your household members? (select all that apply)"
             values={form.householdAgeGroups}
             onToggle={(o) => update("householdAgeGroups", toggleInArray(form.householdAgeGroups, o))}
             options={OPTIONS.householdAges}
@@ -619,21 +595,21 @@ export default function Profile() {
 
         <Section title="Food Palate">
           <CheckboxGroup
-            label='Dietary restrictions: “What foods can’t you eat?” (select all that apply)'
+            label="Dietary restrictions: What foods cannot you eat? (select all that apply)"
             values={form.dietaryRestrictions}
             onToggle={(o) => update("dietaryRestrictions", toggleInArray(form.dietaryRestrictions, o))}
             options={OPTIONS.dietaryRestrictions}
           />
 
           <CheckboxGroup
-            label='Cuisine style: “Do you like a particular kind of cooking?” (select all that apply)'
+            label="Cuisine style: What kinds of cooking do you like? (select all that apply)"
             values={form.cuisineStyles}
             onToggle={(o) => update("cuisineStyles", toggleInArray(form.cuisineStyles, o))}
             options={OPTIONS.cuisineStyles}
           />
 
           <CheckboxGroup
-            label='Meal type: “What meals do you want preferences for?” (select all that apply)'
+            label="Meal preferences: What meals do you want recommendations for? (select all that apply)"
             values={form.mealTypes}
             onToggle={(o) => update("mealTypes", toggleInArray(form.mealTypes, o))}
             options={OPTIONS.mealTypes}
@@ -642,21 +618,21 @@ export default function Profile() {
 
         <Section title="Cooking & Kitchen Details">
           <SelectField
-            label='Cooking Skills: “What’s your baseline cooking knowledge?”'
+            label="Cooking skills: What is your baseline cooking knowledge?"
             value={form.cookingSkill}
             onChange={(v) => update("cookingSkill", v)}
             options={OPTIONS.cookingSkill}
           />
 
           <CheckboxGroup
-            label='Cooking Methods: “What way do you prefer to cook?” (select all that apply)'
+            label="Cooking methods: What ways do you prefer to cook? (select all that apply)"
             values={form.cookingMethods}
             onToggle={(o) => update("cookingMethods", toggleInArray(form.cookingMethods, o))}
             options={OPTIONS.cookingMethods}
           />
 
           <CheckboxGroup
-            label='Kitchen Equipment Check-In: “What type of equipment do you have in your kitchen?” (select all that apply)'
+            label="Kitchen equipment: What equipment do you have in your kitchen? (select all that apply)"
             values={form.kitchenEquipment}
             onToggle={(o) => update("kitchenEquipment", toggleInArray(form.kitchenEquipment, o))}
             options={OPTIONS.kitchenEquipment}
@@ -665,14 +641,14 @@ export default function Profile() {
 
         <Section title="Meal Budget Assessment">
           <RadioGroup
-            label="“How much can you spend on groceries each week?”"
+            label="How much can you spend on groceries each week?"
             value={form.groceryBudget}
             onChange={(v) => update("groceryBudget", v)}
             options={OPTIONS.groceryBudget}
           />
 
           <CheckboxGroup
-            label="“Do you use food-help programs?” (select all that apply)"
+            label="Do you use food-help programs? (select all that apply)"
             values={form.foodHelpPrograms}
             onToggle={(o) => update("foodHelpPrograms", toggleInArray(form.foodHelpPrograms, o))}
             options={OPTIONS.foodHelp}
@@ -680,14 +656,14 @@ export default function Profile() {
 
           {showFoodHelpOther && (
             <TextField
-              label="Food-help program (Other) — please specify"
+              label="Food-help program (Other) - please specify"
               value={form.foodHelpOtherText}
               onChange={(v) => update("foodHelpOtherText", v)}
             />
           )}
 
           <CheckboxGroup
-            label="“Where do you usually buy groceries?” (select all that apply)"
+            label="Where do you usually buy groceries? (select all that apply)"
             values={form.groceryStores}
             onToggle={(o) => update("groceryStores", toggleInArray(form.groceryStores, o))}
             options={OPTIONS.groceryStores}
@@ -696,14 +672,14 @@ export default function Profile() {
 
         <Section title="Technology Skills">
           <RadioGroup
-            label="“Do you have internet access?”"
+            label="Do you have internet access?"
             value={form.internetAccess}
             onChange={(v) => update("internetAccess", v)}
             options={OPTIONS.internetAccess}
           />
 
           <CheckboxGroup
-            label="“What type of technology do you use?” (select all that apply)"
+            label="What technology do you use? (select all that apply)"
             values={form.technologyDevices}
             onToggle={(o) => update("technologyDevices", toggleInArray(form.technologyDevices, o))}
             options={OPTIONS.technology}
