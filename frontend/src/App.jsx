@@ -11,6 +11,10 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Login />} />
 
+
+      <Route path="/setup-profile" element={<Profile />} />
+
+
       <Route path="/app" element={<MainLayout />}>
         <Route index element={<Navigate to="learn" replace />} />
         <Route path="learn" element={<Learn />} />

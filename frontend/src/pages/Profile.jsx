@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 
 const OPTIONS = {
@@ -42,7 +43,6 @@ const OPTIONS = {
   ],
 
   householdSizes: Array.from({ length: 20 }, (_, i) => String(i + 1)),
-
   householdAges: ["Children", "Teenagers", "Adults", "Seniors"],
 
   dietaryRestrictions: [
@@ -152,7 +152,8 @@ const OPTIONS = {
 
 // helpers
 function toggleInArray(arr, value) {
-  return arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
+  const safe = Array.isArray(arr) ? arr : [];
+  return safe.includes(value) ? safe.filter((x) => x !== value) : [...safe, value];
 }
 
 function Section({ title, children }) {
@@ -170,7 +171,7 @@ function TextField({ label, value, onChange, placeholder }) {
       <label className="psLabel">{label}</label>
       <input
         className="psInput"
-        value={value}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || ""}
       />
@@ -185,7 +186,7 @@ function TextAreaField({ label, value, onChange, placeholder }) {
       <textarea
         className="psTextarea"
         rows={4}
-        value={value}
+        value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || ""}
       />
@@ -197,7 +198,7 @@ function SelectField({ label, value, onChange, options }) {
   return (
     <div className="psField">
       <label className="psLabel">{label}</label>
-      <select className="psSelect" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="psSelect" value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
         <option value=""></option>
         {options.map((o) => (
           <option key={o} value={o}>
@@ -210,6 +211,7 @@ function SelectField({ label, value, onChange, options }) {
 }
 
 function CheckboxGroup({ label, values, onToggle, options }) {
+  const safeValues = Array.isArray(values) ? values : [];
   return (
     <div className="psField">
       <div className="psLabel">{label}</div>
@@ -218,7 +220,7 @@ function CheckboxGroup({ label, values, onToggle, options }) {
           <label key={o} className="psCheck">
             <input
               type="checkbox"
-              checked={values.includes(o)}
+              checked={safeValues.includes(o)}
               onChange={() => onToggle(o)}
             />
             <span>{o}</span>
@@ -239,7 +241,7 @@ function RadioGroup({ label, value, onChange, options }) {
             <input
               type="radio"
               name={label}
-              checked={value === o}
+              checked={(value ?? "") === o}
               onChange={() => onChange(o)}
             />
             <span>{o}</span>
@@ -250,124 +252,202 @@ function RadioGroup({ label, value, onChange, options }) {
   );
 }
 
-export default function ProfileSetup() {
-  const [form, setForm] = useState({
-    // Personal Basics
-    name: "",
-    birthday: "",
-    homeAddress: "",
-    height: "",
-    weight: "",
-    race: [],
-    raceOtherText: "",
-    ethnicity: "",
-    gender: "",
+const DEFAULT_FORM = {
+  name: "",
+  birthday: "",
+  homeAddress: "",
+  height: "",
+  weight: "",
+  race: [],
+  raceOtherText: "",
+  ethnicity: "",
+  gender: "",
 
-    // Health & Medicine
-    healthConditions: [],
-    healthConditionsOtherText: "",
-    medications: "",
-    medAllergies: "",
+  healthConditions: [],
+  healthConditionsOtherText: "",
+  medications: "",
+  medAllergies: "",
 
-    // Physical Activity
-    stepsRange: "",
-    activeDays: "",
-    movementTypes: [],
+  stepsRange: "",
+  activeDays: "",
+  movementTypes: [],
 
-    // Family & Home
-    householdSize: "",
-    householdAgeGroups: [],
+  householdSize: "",
+  householdAgeGroups: [],
 
-    // Food Palate
-    dietaryRestrictions: [],
-    cuisineStyles: [],
-    mealTypes: [],
+  dietaryRestrictions: [],
+  cuisineStyles: [],
+  mealTypes: [],
 
-    // Cooking & Kitchen
-    cookingSkill: "",
-    cookingMethods: [],
-    kitchenEquipment: [],
+  cookingSkill: "",
+  cookingMethods: [],
+  kitchenEquipment: [],
 
-    // Budget
-    groceryBudget: "",
-    foodHelpPrograms: [],
-    foodHelpOtherText: "",
-    groceryStores: [],
+  groceryBudget: "",
+  foodHelpPrograms: [],
+  foodHelpOtherText: "",
+  groceryStores: [],
 
-    // Technology
-    internetAccess: "",
-    technologyDevices: [],
-  });
+  internetAccess: "",
+  technologyDevices: [],
+};
+
+// Convert DB/Backend fields (snake_case, nulls) into UI-safe state (camelCase, strings/arrays)
+function normalizeProfile(data) {
+  if (!data) return null;
+
+  return {
+    name: data.name ?? "",
+    birthday: data.birthday_text ?? "",
+    homeAddress: data.home_address ?? "",
+    height: data.height_text ?? "",
+    weight: data.weight_text ?? "",
+
+    race: data.race ?? [],
+    raceOtherText: data.race_other_text ?? "",
+    ethnicity: data.ethnicity ?? "",
+    gender: data.gender ?? "",
+
+    healthConditions: data.health_conditions ?? [],
+    healthConditionsOtherText: data.health_conditions_other_text ?? "",
+    medications: data.medications_text ?? "",
+    medAllergies: data.med_allergies_text ?? "",
+
+    stepsRange: data.steps_range ?? "",
+    activeDays: data.active_days_per_week ?? "",
+    movementTypes: data.movement_types ?? [],
+
+    householdSize: data.household_size ? String(data.household_size) : "",
+    householdAgeGroups: data.household_age_groups ?? [],
+
+    dietaryRestrictions: data.dietary_restrictions ?? [],
+    cuisineStyles: data.cuisine_styles ?? [],
+    mealTypes: data.meal_types ?? [],
+
+    cookingSkill: data.cooking_skill ?? "",
+    cookingMethods: data.cooking_methods ?? [],
+    kitchenEquipment: data.kitchen_equipment ?? [],
+
+    groceryBudget: data.weekly_grocery_budget ?? "",
+    foodHelpPrograms: data.food_help_programs ?? [],
+    foodHelpOtherText: data.food_help_other_text ?? "",
+    groceryStores: data.grocery_stores ?? [],
+
+    internetAccess: data.internet_access ?? "",
+    technologyDevices: data.technology_devices ?? [],
+  };
+}
+
+export default function Profile() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [loading, setLoading] = useState(false);
+
+  const currentUserEmail = localStorage.getItem("currentUserEmail") || "";
 
   // fetch existing profile data
   useEffect(() => {
-    const currentUserEmail = localStorage.getItem("currentUserEmail");
     if (!currentUserEmail) return;
 
+    setLoading(true);
     fetch(`http://localhost:8000/profile/${currentUserEmail}`)
-      .then((res) => {
-        if (res.ok) return res.json();
-        return null; 
-      })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data) setForm((prev) => ({ ...prev, ...data }));
-      });
-  }, []);
+        const normalized = normalizeProfile(data);
+        if (normalized) setForm((prev) => ({ ...prev, ...normalized }));
+      })
+      .catch((err) => {
+        console.error("Profile fetch failed:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [currentUserEmail]);
 
-  const showRaceOther = form.race.includes("Other");
-  const showHealthOther = form.healthConditions.includes("Other");
-  const showFoodHelpOther = form.foodHelpPrograms.includes("Other");
+  const showRaceOther = Array.isArray(form.race) && form.race.includes("Other");
+  const showHealthOther =
+    Array.isArray(form.healthConditions) && form.healthConditions.includes("Other");
+  const showFoodHelpOther =
+    Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.includes("Other");
 
   function update(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   const dbPayload = useMemo(() => {
-    // Send to backend / save to DB
+    const safeTrim = (v) => (v ?? "").trim();
+
     return {
-    user_email: localStorage.getItem("currentUserEmail"),
-    name: form.name.trim() || null,
-    birthday_text: form.birthday.trim() || null,
-    home_address: form.homeAddress.trim() || null,
-    height_text: form.height.trim() || null,
-    weight_text: form.weight.trim() || null,
-    race: form.race.length > 0 ? form.race : null,
-    race_other_text: showRaceOther ? form.raceOtherText.trim() || null : null,
-    ethnicity: form.ethnicity || null,
-    gender: form.gender || null,
+      user_email: currentUserEmail || null,
 
-    health_conditions: form.healthConditions.length > 0 ? form.healthConditions : null,
-    health_conditions_other_text: showHealthOther ? form.healthConditionsOtherText.trim() || null : null,
-    medications_text: form.medications.trim() || null,
-    med_allergies_text: form.medAllergies.trim() || null,
+      name: safeTrim(form.name) || null,
+      birthday_text: safeTrim(form.birthday) || null,
+      home_address: safeTrim(form.homeAddress) || null,
+      height_text: safeTrim(form.height) || null,
+      weight_text: safeTrim(form.weight) || null,
 
-    steps_range: form.stepsRange || null,
-    active_days_per_week: form.activeDays || null,
-    movement_types: form.movementTypes.length > 0 ? form.movementTypes : null,
+      race: Array.isArray(form.race) && form.race.length > 0 ? form.race : null,
+      race_other_text: showRaceOther ? safeTrim(form.raceOtherText) || null : null,
+      ethnicity: form.ethnicity || null,
+      gender: form.gender || null,
 
-    household_size: form.householdSize ? Number(form.householdSize) : null,
-    household_age_groups: form.householdAgeGroups.length > 0 ? form.householdAgeGroups : null,
+      health_conditions:
+        Array.isArray(form.healthConditions) && form.healthConditions.length > 0
+          ? form.healthConditions
+          : null,
+      health_conditions_other_text: showHealthOther
+        ? safeTrim(form.healthConditionsOtherText) || null
+        : null,
+      medications_text: safeTrim(form.medications) || null,
+      med_allergies_text: safeTrim(form.medAllergies) || null,
 
-    dietary_restrictions: form.dietaryRestrictions.length > 0 ? form.dietaryRestrictions : null,
-    cuisine_styles: form.cuisineStyles.length > 0 ? form.cuisineStyles : null,
-    meal_types: form.mealTypes.length > 0 ? form.mealTypes : null,
+      steps_range: form.stepsRange || null,
+      active_days_per_week: form.activeDays || null,
+      movement_types:
+        Array.isArray(form.movementTypes) && form.movementTypes.length > 0
+          ? form.movementTypes
+          : null,
 
-    cooking_skill: form.cookingSkill || null,
-    cooking_methods: form.cookingMethods.length > 0 ? form.cookingMethods : null,
-    kitchen_equipment: form.kitchenEquipment.length > 0 ? form.kitchenEquipment : null,
+      household_size: form.householdSize ? Number(form.householdSize) : null,
+      household_age_groups:
+        Array.isArray(form.householdAgeGroups) && form.householdAgeGroups.length > 0
+          ? form.householdAgeGroups
+          : null,
 
-    weekly_grocery_budget: form.groceryBudget || null,
-    food_help_programs: form.foodHelpPrograms.length > 0 ? form.foodHelpPrograms : null,
-    food_help_other_text: showFoodHelpOther ? form.foodHelpOtherText.trim() || null : null,
-    grocery_stores: form.groceryStores.length > 0 ? form.groceryStores : null,
+      dietary_restrictions:
+        Array.isArray(form.dietaryRestrictions) && form.dietaryRestrictions.length > 0
+          ? form.dietaryRestrictions
+          : null,
+      cuisine_styles:
+        Array.isArray(form.cuisineStyles) && form.cuisineStyles.length > 0 ? form.cuisineStyles : null,
+      meal_types: Array.isArray(form.mealTypes) && form.mealTypes.length > 0 ? form.mealTypes : null,
 
-    internet_access: form.internetAccess || null,
-    technology_devices: form.technologyDevices.length > 0 ? form.technologyDevices : null,
-  };
-}, [form, showRaceOther, showHealthOther, showFoodHelpOther]);
+      cooking_skill: form.cookingSkill || null,
+      cooking_methods:
+        Array.isArray(form.cookingMethods) && form.cookingMethods.length > 0 ? form.cookingMethods : null,
+      kitchen_equipment:
+        Array.isArray(form.kitchenEquipment) && form.kitchenEquipment.length > 0 ? form.kitchenEquipment : null,
+
+      weekly_grocery_budget: form.groceryBudget || null,
+      food_help_programs:
+        Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.length > 0 ? form.foodHelpPrograms : null,
+      food_help_other_text: showFoodHelpOther ? safeTrim(form.foodHelpOtherText) || null : null,
+      grocery_stores:
+        Array.isArray(form.groceryStores) && form.groceryStores.length > 0 ? form.groceryStores : null,
+
+      internet_access: form.internetAccess || null,
+      technology_devices:
+        Array.isArray(form.technologyDevices) && form.technologyDevices.length > 0 ? form.technologyDevices : null,
+    };
+  }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail]);
 
   async function onSubmit(e) {
     e.preventDefault();
+
+    if (!currentUserEmail) {
+      alert("No logged-in user found. Please log in first.");
+      navigate("/");
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:8000/profile/", {
         method: "POST",
@@ -376,8 +456,8 @@ export default function ProfileSetup() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error saving profile:", errorData);
+        const raw = await response.text();
+        console.error("Error saving profile:", raw);
         alert("Error saving profile");
         return;
       }
@@ -385,17 +465,25 @@ export default function ProfileSetup() {
       const savedProfile = await response.json();
       console.log("Profile saved:", savedProfile);
       alert("Profile saved successfully!");
+
+      // optional: go into app after saving
+      navigate("/app/learn");
     } catch (err) {
       console.error("Network or server error:", err);
       alert("Error saving profile");
     }
   }
 
-
   return (
     <div className="psPage">
       <form className="psForm" onSubmit={onSubmit}>
         <h1 className="psTitle">ChompSmart User Profile Set-Up</h1>
+
+        {loading && (
+          <div style={{ marginBottom: 12, fontWeight: 600 }}>
+            Loading profile...
+          </div>
+        )}
 
         <Section title="Personal Basics">
           <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
@@ -418,7 +506,7 @@ export default function ProfileSetup() {
             label="Height"
             value={form.height}
             onChange={(v) => update("height", v)}
-            placeholder="Feet and inches (e.g., 5'7&quot;)"
+            placeholder={`Feet and inches (e.g., 5'7")`}
           />
 
           <TextField
@@ -524,9 +612,7 @@ export default function ProfileSetup() {
           <CheckboxGroup
             label='Age of members: “What are the ages of your family household?” (select all that apply)'
             values={form.householdAgeGroups}
-            onToggle={(o) =>
-              update("householdAgeGroups", toggleInArray(form.householdAgeGroups, o))
-            }
+            onToggle={(o) => update("householdAgeGroups", toggleInArray(form.householdAgeGroups, o))}
             options={OPTIONS.householdAges}
           />
         </Section>
@@ -535,9 +621,7 @@ export default function ProfileSetup() {
           <CheckboxGroup
             label='Dietary restrictions: “What foods can’t you eat?” (select all that apply)'
             values={form.dietaryRestrictions}
-            onToggle={(o) =>
-              update("dietaryRestrictions", toggleInArray(form.dietaryRestrictions, o))
-            }
+            onToggle={(o) => update("dietaryRestrictions", toggleInArray(form.dietaryRestrictions, o))}
             options={OPTIONS.dietaryRestrictions}
           />
 
@@ -574,9 +658,7 @@ export default function ProfileSetup() {
           <CheckboxGroup
             label='Kitchen Equipment Check-In: “What type of equipment do you have in your kitchen?” (select all that apply)'
             values={form.kitchenEquipment}
-            onToggle={(o) =>
-              update("kitchenEquipment", toggleInArray(form.kitchenEquipment, o))
-            }
+            onToggle={(o) => update("kitchenEquipment", toggleInArray(form.kitchenEquipment, o))}
             options={OPTIONS.kitchenEquipment}
           />
         </Section>
@@ -592,9 +674,7 @@ export default function ProfileSetup() {
           <CheckboxGroup
             label="“Do you use food-help programs?” (select all that apply)"
             values={form.foodHelpPrograms}
-            onToggle={(o) =>
-              update("foodHelpPrograms", toggleInArray(form.foodHelpPrograms, o))
-            }
+            onToggle={(o) => update("foodHelpPrograms", toggleInArray(form.foodHelpPrograms, o))}
             options={OPTIONS.foodHelp}
           />
 
@@ -625,9 +705,7 @@ export default function ProfileSetup() {
           <CheckboxGroup
             label="“What type of technology do you use?” (select all that apply)"
             values={form.technologyDevices}
-            onToggle={(o) =>
-              update("technologyDevices", toggleInArray(form.technologyDevices, o))
-            }
+            onToggle={(o) => update("technologyDevices", toggleInArray(form.technologyDevices, o))}
             options={OPTIONS.technology}
           />
         </Section>

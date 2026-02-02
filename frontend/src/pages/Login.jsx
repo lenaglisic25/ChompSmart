@@ -9,27 +9,37 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  const isValidEmail = (s) => /\S+@\S+\.\S+/.test(s);
+
+  const loginOrCreate = async (nextPath) => {
+    const e = email.trim();
+    const p = password;
+
+    if (!e) return alert("Please enter an email.");
+    if (!isValidEmail(e)) return alert("Please enter a valid email (must include @).");
+    if (!p) return alert("Please enter a password.");
+
     try {
-    const res = await fetch("http://localhost:8000/users/login-or-create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+      const res = await fetch("http://localhost:8000/users/login-or-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: e, password: p }),
+      });
 
-    if (!res.ok) throw new Error("Failed to login or create account");
+      const raw = await res.text();
+      if (!res.ok) throw new Error(raw || `HTTP ${res.status}`);
 
-    const data = await res.json();
+      const data = JSON.parse(raw);
 
-    localStorage.setItem("currentUserEmail", data.email);
+      // store user email for profile fetch + saving
+      localStorage.setItem("currentUserEmail", data.email);
 
-    navigate("/app/learn"); // go to the next page
-  } catch (err) {
-    console.error(err);
-    alert("Error logging in or creating account");
-  }
-};
+      navigate(nextPath);
+    } catch (err) {
+      console.error(err);
+      alert(`Error logging in or creating account: ${err.message}`);
+    }
+  };
 
   return (
     <div className="loginPage">
@@ -47,7 +57,7 @@ export default function Login() {
       <div className="loginCard">
         <h1 className="loginTitle">Login</h1>
 
-        <form className="loginForm" onSubmit={onSubmit}>
+        <form className="loginForm" onSubmit={(e) => e.preventDefault()}>
           <label className="loginLabel" htmlFor="email">
             Email
           </label>
@@ -76,8 +86,21 @@ export default function Login() {
             required
           />
 
-          <button className="loginButton" type="submit">
+          <button
+            type="button"
+            className="loginButton"
+            onClick={() => loginOrCreate("/app/learn")}
+          >
             Log In
+          </button>
+
+          <button
+            type="button"
+            className="loginButton"
+            onClick={() => loginOrCreate("/setup-profile")}
+            style={{ marginTop: 10 }}
+          >
+            Create Account
           </button>
         </form>
       </div>
