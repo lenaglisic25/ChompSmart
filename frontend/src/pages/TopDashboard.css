@@ -1,0 +1,174 @@
+.tdWrap {
+  width: 100%;
+}
+
+/* main widget container */
+.tdCarousel {
+  background: #f6f7fb;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.tdTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.tdTopTitle {
+  font-weight: 900;
+  font-size: 14px;
+  color: #1b3554;
+}
+
+.tdTopMeta {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.7;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tdCarouselInner {
+  min-height: 150px;
+}
+
+.tdDots {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tdDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+.tdDot.active {
+  background: rgba(0,0,0,0.55);
+}
+
+/* Rings row */
+.tdSlideGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.tdRing {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.tdRingTrack {
+  fill: none;
+  stroke: rgba(0,0,0,0.12);
+}
+
+.tdRingFill {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.tdRingText {
+  position: absolute;
+  text-align: center;
+  width: 80px;
+}
+
+.tdRingTitle {
+  font-weight: 900;
+  font-size: 14px;
+  color: #1b3554;
+}
+
+.tdRingSub {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* Bars */
+.tdBars {
+  display: grid;
+  gap: 10px;
+}
+
+.tdBarRow {
+  display: grid;
+  gap: 6px;
+}
+
+.tdBarTop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1b3554;
+}
+
+.tdBarTrack {
+  height: 10px;
+  background: rgba(0,0,0,0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tdBarFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* status colors */
+.tdRingFill.good, .tdBarFill.good { stroke: #19a35c; background: #19a35c; }
+.tdRingFill.warn, .tdBarFill.warn { stroke: #f2b01e; background: #f2b01e; }
+.tdRingFill.bad,  .tdBarFill.bad  { stroke: #e34b4b; background: #e34b4b; }
+
+/* Alerts */
+.tdAlerts {
+  margin-top: 10px;
+  background: #fff;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+.tdAlertsTitle {
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 8px;
+}
+
+.tdAlertItem {
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.tdAlertItem.good {
+  background: rgba(25,163,92,0.12);
+  color: #0c6b3a;
+}
+
+.tdAlertItem.warn {
+  background: rgba(242,176,30,0.16);
+  color: #7a5300;
+}
+
+.tdAlertItem.bad {
+  background: rgba(227,75,75,0.14);
+  color: #8f1c1c;
+}
