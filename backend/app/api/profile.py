@@ -13,26 +13,57 @@ router = APIRouter(prefix="/profile", tags=["profiles"])
 
 @router.post("/", response_model=profile_schema.Profile)
 def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session = Depends(get_db)):
-    email = profile.user_email 
+    email = profile.user_email
     profile_data = profile.dict(exclude_unset=True)
 
     existing_profile = db.query(Profile).filter(Profile.user_email == email).first()
+
     if existing_profile:
         for key, value in profile_data.items():
             if value is not None:
                 setattr(existing_profile, key, value)
-        db.commit()
-        db.refresh(existing_profile)
-        return existing_profile
+        new_profile = existing_profile
     else:
         new_profile = Profile(**profile_data)
         db.add(new_profile)
-        db.commit()
-        db.refresh(new_profile)
-        return new_profile
 
+    db.commit()
+    db.refresh(new_profile)
 
+    try:
+        if (
+            new_profile.birthday_text
+            and new_profile.height_text
+            and new_profile.weight_text
+            and new_profile.gender
+        ):
+            result = compute_tdee(
+                birthday_text=new_profile.birthday_text,
+                height_text=new_profile.height_text,
+                weight_text=new_profile.weight_text,
+                steps_range=new_profile.steps_range,
+                active_days_per_week=new_profile.active_days_per_week,
+            )
 
+            new_profile.bmr_male = result.mifflin_bmr_male
+            new_profile.bmr_female = result.mifflin_bmr_female
+            new_profile.tdee_male = result.mifflin_tdee_male
+            new_profile.tdee_female = result.mifflin_tdee_female
+            new_profile.activity_factor = result.pal
+
+            # set calorie goal based on gender
+            if new_profile.gender.lower() == "male":
+                new_profile.calorie_goal = round(result.mifflin_tdee_male)
+            else:
+                new_profile.calorie_goal = round(result.mifflin_tdee_female)
+
+            db.commit()
+            db.refresh(new_profile)
+
+    except Exception as e:
+        print("TDEE calculation failed:", e)
+
+    return new_profile
 
 @router.get("/", response_model=list[profile_schema.Profile])
 def get_profiles(db: Session = Depends(get_db)):

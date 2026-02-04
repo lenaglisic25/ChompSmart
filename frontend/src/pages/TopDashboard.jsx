@@ -122,9 +122,20 @@ function mapTotalsToGoals(data) {
   };
 }
 
-function TopDashboard() {
+function TopDashboard({ user }) {
   // MOCK VALUES for now (front-end only)
-  const goals = { calories: 2100, protein: 95, sodiumMg: 2300, fluidsL: 3.0 };
+  // (yavna) update to fetch from backend
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`http://localhost:8000/profile/${user}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setProfile(data))
+      .catch((err) => console.error("Profile fetch failed:", err));
+  }, [user]);
+
+  const goals = { calories: Number(profile?.calorie_goal ?? 2100), protein: 95, sodiumMg: 2300, fluidsL: 3.0 };
 
   const metrics = {
     calories: 0,

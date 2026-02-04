@@ -34,8 +34,17 @@ class ProfileCreate(BaseModel):
     internet_access: Optional[str] = None
     technology_devices: Optional[List[str]] = None
 
+
+
 class Profile(ProfileCreate):
     id: Optional[int] = None
-    
+
+    # for tdee
+    calorie_goal: Optional[int] = None
+    bmr_male: Optional[float] = None
+    bmr_female: Optional[float] = None
+    tdee_male: Optional[float] = None
+    tdee_female: Optional[float] = None
+    activity_factor: Optional[float] = None
     class Config:
         from_attributes = True #jack - changed from orm_mode = True

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Float
 from app.database import Base
 
 class Profile(Base):
@@ -39,3 +39,12 @@ class Profile(Base):
     weekly_grocery_budget = Column(String, nullable=True)
     food_help_other_text = Column(String, nullable=True)
     internet_access = Column(String, nullable=True)
+
+    calorie_goal = Column(Integer, nullable=True)
+
+    bmr_male = Column(Float, nullable=True)
+    bmr_female = Column(Float, nullable=True)
+    tdee_male = Column(Float, nullable=True)
+    tdee_female = Column(Float, nullable=True)
+    activity_factor = Column(Float, nullable=True)
+

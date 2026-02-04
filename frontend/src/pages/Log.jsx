@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./Log.css";
 
 
@@ -56,9 +56,24 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
   );
 }
 
-function TopDashboard() {
-  const goals = { calories: 2100, protein: 95, sodiumMg: 2300, fluidsL: 3.0 };
+// (yavna) Update dashboard to fetch data
+function TopDashboard({ user }) {
+  const [profile, setProfile] = useState(null);
 
+  useEffect(() => {
+    if (!user) return;
+    fetch(`http://localhost:8000/profile/${user}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setProfile(data))
+      .catch((err) => console.error("Profile fetch failed:", err));
+  }, [user]);
+
+  // connect to calorie goals, default to 2100
+  const goals = { calories: Number(profile?.calorie_goal ?? 2100),
+    protein: 95,
+    sodiumMg: 2300,
+    fluidsL: 3.0,
+  };
 
   const metrics = {
     calories: 0,
@@ -222,6 +237,7 @@ function getSectionForEmptySuggestion(meals) {
 }
 
 export default function Log() {
+  const email = localStorage.getItem("currentUserEmail");
   const [meals, setMeals] = useState({
     breakfast: [],
     lunch: [],
@@ -266,7 +282,7 @@ export default function Log() {
     <div className="logPage">
       <div className="logContent">
         <div className="logWidgetPlaceholder">
-          <TopDashboard />
+          <TopDashboard user={email} />
         </div>
 
         <div className="logCard">
@@ -355,3 +371,4 @@ export default function Log() {
     </div>
   );
 }
+
