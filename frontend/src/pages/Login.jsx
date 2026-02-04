@@ -11,7 +11,7 @@ export default function Login() {
 
   const isValidEmail = (s) => /\S+@\S+\.\S+/.test(s);
 
-  const loginOrCreate = async (nextPath) => {
+  const login = async () => {
     const e = email.trim();
     const p = password;
 
@@ -20,7 +20,7 @@ export default function Login() {
     if (!p) return alert("Please enter a password.");
 
     try {
-      const res = await fetch("http://localhost:8000/users/login-or-create", {
+      const res = await fetch("http://localhost:8000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: e, password: p }),
@@ -34,10 +34,10 @@ export default function Login() {
 
       localStorage.setItem("currentUserEmail", data.email);
 
-      navigate(nextPath);
+      navigate("/app/learn");
     } catch (err) {
       console.error(err);
-      alert(`Error logging in or creating account: ${err.message}`);
+      alert(`Error logging in: ${err.message}`);
     }
   };
 
@@ -89,15 +89,14 @@ export default function Login() {
           <button
             type="button"
             className="loginButton"
-            onClick={() => loginOrCreate("/app/learn")}
+            onClick={() => login()}
           >
             Log In
           </button>
-
           <button
             type="button"
             className="loginButton"
-            onClick={() => loginOrCreate("/setup-profile")}
+            onClick={() => navigate("/setup-profile")}
             style={{ marginTop: 10 }}
           >
             Create Account
