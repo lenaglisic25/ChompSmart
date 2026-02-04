@@ -4,6 +4,11 @@ from app.database import get_db
 from app.models.profile import Profile
 from app.schemas import profile as profile_schema
 
+#jack- added these for TDEE calculations
+from app.schemas import tdee as tdee_schema
+from app.services.tdee import compute_tdee
+#all i added
+
 router = APIRouter(prefix="/profile", tags=["profiles"])
 
 @router.post("/", response_model=profile_schema.Profile)
@@ -40,3 +45,40 @@ def get_profile(user_email: str, db: Session = Depends(get_db)):
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
+
+#jack - added endpoints for tdee calculations
+@router.get("/{user_email}/tdee", response_model=tdee_schema.TdeeOut)
+def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_email == user_email).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    if not profile.birthday_text or not profile.height_text or not profile.weight_text:
+        raise HTTPException(
+            status_code=422,
+            detail="Missing required fields: birthday_text, height_text, weight_text",
+        )
+
+    try:
+        result = compute_tdee(
+            birthday_text=profile.birthday_text,
+            height_text=profile.height_text,
+            weight_text=profile.weight_text,
+            steps_range=profile.steps_range,
+            active_days_per_week=profile.active_days_per_week,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    return {
+        "user_email": user_email,
+        "age_years": result.age_years,
+        "height_cm": round(result.height_cm, 2),
+        "weight_kg": round(result.weight_kg, 2),
+        "activity_factor": round(result.activity_factor, 3),
+        "bmr_male": round(result.bmr_male),
+        "bmr_female": round(result.bmr_female),
+        "tdee_male": round(result.tdee_male),
+        "tdee_female": round(result.tdee_female),
+    }
+#all i added
