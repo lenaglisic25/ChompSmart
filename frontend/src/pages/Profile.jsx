@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Profile.css";
 
 const OPTIONS = {
@@ -165,12 +165,13 @@ function Section({ title, children }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder }) {
+function TextField({ label, value, onChange, placeholder, type = "text" }) {
   return (
     <div className="psField">
       <label className="psLabel">{label}</label>
       <input
         className="psInput"
+        type={type}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || ""}
@@ -244,6 +245,10 @@ function RadioGroup({ label, value, onChange, options }) {
 }
 
 const DEFAULT_FORM = {
+  // Account
+  email: "",
+  password: "",
+
   // Personal Basics
   name: "",
   birthday: "",
@@ -296,6 +301,9 @@ function normalizeProfile(data) {
   if (!data) return null;
 
   return {
+    email: data.email ?? "",
+    password: data.password ? "••••••••" : "",
+
     name: data.name ?? "",
     birthday: data.birthday_text ?? "",
     homeAddress: data.home_address ?? "",
@@ -339,26 +347,33 @@ function normalizeProfile(data) {
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const currentUserEmail = localStorage.getItem("currentUserEmail") || "";
 
-  const [form, setForm] = useState(DEFAULT_FORM);
+  const [form, setForm] = useState({ 
+    ...DEFAULT_FORM, 
+    email: location.pathname === "/setup-profile" ? "" : currentUserEmail 
+  });
   const [loading, setLoading] = useState(false);
 
-  // Fetch existing profile (if any)
   useEffect(() => {
-    if (!currentUserEmail) return;
+    if (!currentUserEmail || location.pathname === "/setup-profile") return;
 
     setLoading(true);
     fetch(`http://localhost:8000/profile/${currentUserEmail}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const normalized = normalizeProfile(data);
-        if (normalized) setForm((prev) => ({ ...prev, ...normalized }));
+        if (normalized) {
+
+          const { email: _email, password, ...rest } = normalized;
+          setForm((prev) => ({ ...prev, ...rest, password }));
+        }
       })
       .catch((err) => console.error("Profile fetch failed:", err))
       .finally(() => setLoading(false));
-  }, [currentUserEmail]);
+  }, [currentUserEmail, location.pathname]);
 
   const showRaceOther = Array.isArray(form.race) && form.race.includes("Other");
   const showHealthOther = Array.isArray(form.healthConditions) && form.healthConditions.includes("Other");
@@ -370,9 +385,12 @@ export default function Profile() {
 
   const dbPayload = useMemo(() => {
     const safeTrim = (v) => (v ?? "").trim();
+    const isSetup = location.pathname === "/setup-profile";
 
     return {
-      user_email: currentUserEmail || null,
+      user_email: isSetup ? safeTrim(form.email) || null : currentUserEmail || null,
+      email: safeTrim(form.email) || null,
+      password: safeTrim(form.password) || null,
 
       name: safeTrim(form.name) || null,
       birthday_text: safeTrim(form.birthday) || null,
@@ -420,18 +438,44 @@ export default function Profile() {
       technology_devices:
         Array.isArray(form.technologyDevices) && form.technologyDevices.length > 0 ? form.technologyDevices : null,
     };
-  }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail]);
+  }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail, location.pathname]);
 
   async function onSubmit(e) {
     e.preventDefault();
 
-    if (!currentUserEmail) {
-      alert("No logged-in user found. Please log in first.");
-      navigate("/");
+    const isSetup = location.pathname === "/setup-profile";
+    const userEmail = isSetup ? form.email : currentUserEmail;
+
+    if (!userEmail) {
+      alert("No email provided. Please enter an email.");
       return;
     }
 
+    // Only require password on setup-profile
+    if (isSetup && !form.password) {
+      alert("Please enter a password.");
+      return;
+    }
+
+    setLoading(true);
     try {
+      // if on setup-profile, first create the user account
+      if (isSetup) {
+        const userResponse = await fetch("http://localhost:8000/users/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail, password: form.password }),
+        });
+
+        if (!userResponse.ok) {
+          const raw = await userResponse.text();
+          console.error("Error creating user:", raw);
+          alert(`Error creating account: ${raw}`);
+          return;
+        }
+      }
+
+      // Then save the profile
       const response = await fetch("http://localhost:8000/profile/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -441,25 +485,73 @@ export default function Profile() {
       if (!response.ok) {
         const raw = await response.text();
         console.error("Error saving profile:", raw);
-        alert("Error saving profile");
+        alert(`Error saving profile: ${raw}`);
         return;
       }
 
       await response.json();
       alert("Profile saved successfully!");
+      
+      // if on setup-profile, log in the new user
+      if (isSetup) {
+        localStorage.setItem("currentUserEmail", userEmail);
+      }
+      
       navigate("/app/learn");
     } catch (err) {
       console.error("Network or server error:", err);
       alert("Error saving profile");
+    } finally {
+      setLoading(false);
     }
   }
 
+  // changes for when we are in setup-profile (logged in)
   return (
     <div className="psPage">
       <form className="psForm" onSubmit={onSubmit}>
-        <h1 className="psTitle">ChompSmart User Profile Set-Up</h1>
+        <h1 className="psTitle">
+          {location.pathname !== "/setup-profile" ? "User Profile" : "ChompSmart User Profile Set-Up"}
+        </h1>
 
         {loading && <div style={{ marginBottom: 12, fontWeight: 600 }}>Loading profile...</div>}
+
+        <Section title="Account">
+          {location.pathname === "/setup-profile" ? (
+            <>
+              <TextField
+                label="Email"
+                value={form.email}
+                onChange={(v) => update("email", v)}
+                placeholder="you@clinic.com"
+              />
+
+              <TextField
+                label="Password"
+                type="password"
+                value={form.password}
+                onChange={(v) => update("password", v)}
+                placeholder="Enter password"
+              />
+            </>
+          ) : (
+            <>
+              <div className="psField">
+                <label className="psLabel">Email</label>
+                <div style={{ padding: "8px 12px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                  {form.email}
+                </div>
+              </div>
+
+              <div className="psField">
+                <label className="psLabel">Password</label>
+                <div style={{ padding: "8px 12px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
+                  ••••••••
+                </div>
+              </div>
+            </>
+          )}
+        </Section>
 
         <Section title="Personal Basics">
           <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
