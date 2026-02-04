@@ -75,10 +75,11 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
         "age_years": result.age_years,
         "height_cm": round(result.height_cm, 2),
         "weight_kg": round(result.weight_kg, 2),
-        "activity_factor": round(result.activity_factor, 3),
-        "bmr_male": round(result.bmr_male),
-        "bmr_female": round(result.bmr_female),
-        "tdee_male": round(result.tdee_male),
-        "tdee_female": round(result.tdee_female),
+        # yavna - updated names to match algorithm
+        "activity_factor": round(result.pal, 3),
+        "bmr_male": round(result.mifflin_bmr_male),
+        "bmr_female": round(result.mifflin_bmr_female),
+        "tdee_male": round(result.mifflin_tdee_male),
+        "tdee_female": round(result.mifflin_tdee_female),
     }
 #all i added
