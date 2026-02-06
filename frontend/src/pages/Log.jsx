@@ -60,13 +60,17 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
 function TopDashboard({ userEmail, refreshKey }) {
   const [profile, setProfile] = useState(null);
   
-  const [metrics, setMetrics] = useState({
-    calories: 0,
-    protein: 0,
-    fluidsL: 0,
-    streakDays: 0,
-    weeklyAvgCalories: 0,
-  });
+const [metrics, setMetrics] = useState({
+  calories: 0,
+  carbs: 0,
+  fiber: 0,
+  protein: 0,
+  fats: 0,
+  fluidsL: 0,
+  streakDays: 0,
+  weeklyAvgCalories: 0,
+});
+
 
   useEffect(() => {
     if (!userEmail) return;
@@ -85,25 +89,35 @@ function TopDashboard({ userEmail, refreshKey }) {
         const totalCals = meals.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
         const totalProt = meals.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
         const totalFluids = meals.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
+        const totalCarbs = meals.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
+const totalFats  = meals.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
+const totalFiber = meals.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
 
-        setMetrics(prev => ({
-          ...prev,
-          calories: totalCals,
-          protein: totalProt,
-          fluidsL: totalFluids
-        }));
+
+      setMetrics(prev => ({
+  ...prev,
+  calories: totalCals,
+  carbs: totalCarbs,
+  fiber: totalFiber,
+  protein: totalProt,
+  fats: totalFats,
+  fluidsL: totalFluids
+}));
+
       })
       .catch((err) => console.error("Metrics fetch failed:", err));
   }, [userEmail, refreshKey]);
 
   // connect to calorie goals, default to 2100
   const goals = { 
-    calories: Number(profile?.calorie_goal ?? 2100),
-    protein: 95,
-    carbs: 275,
-    fats: 90,
-    fluidsL: 3.0,
-  };
+  calories: Number(profile?.calorie_goal ?? 2100),
+  protein: 95,
+  carbs: 275,
+  fiber: 25,
+  fats: 90,
+  fluidsL: 3.0,
+};
+
 
   const remainingCalories = Math.max(0, goals.calories - metrics.calories);
 
@@ -135,9 +149,11 @@ function TopDashboard({ userEmail, refreshKey }) {
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
             <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
-            <div className="tdGoalLine">Carbs: 0/275g</div>
-            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
-            <div className="tdGoalLine">Fats: 0/90g</div>
+            <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{goals.carbs}g</div>
+            <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
+            <div className="tdGoalLine">Protein: {Math.round(metrics.protein)}/{goals.protein}g</div>
+            <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{goals.fats}g</div>
+
           </div>
 
           <div className="tdMiniCard tdHydCard">

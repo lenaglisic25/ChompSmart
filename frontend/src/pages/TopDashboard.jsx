@@ -96,6 +96,9 @@ function buildAlerts(metrics, goals) {
   const hydP = metrics.fluidsL / goals.fluidsL;
   if (hydP < 0.35) alerts.push({ level: "warn", text: "Hydration is behind. Drink a glass of water now." });
 
+  const fibP = metrics.fiber / goals.fiber;
+if (fibP < 0.5) alerts.push({ level: "warn", text: "Fiber is low today. Add fruit, beans, or whole grains." });
+
   return alerts.slice(0, 4);
 }
 
@@ -135,16 +138,28 @@ function TopDashboard({ user }) {
       .catch((err) => console.error("Profile fetch failed:", err));
   }, [user]);
 
-  const goals = { calories: Number(profile?.calorie_goal ?? 2100), protein: 95, sodiumMg: 2300, fluidsL: 3.0 };
+const goals = {
+  calories: Number(profile?.calorie_goal ?? 2100),
+  carbs: 275,
+  fiber: 25,
+  protein: 95,
+  fats: 90,
+  sodiumMg: 2300,
+  fluidsL: 3.0,
+};
 
-  const metrics = {
-    calories: 0,
-    protein: 0,
-    sodiumMg: 0,
-    fluidsL: 0,
-    streakDays: 0,
-    weeklyAvgCalories: 0,
-  };
+ const metrics = {
+  calories: 0,
+  carbs: 0,
+  fiber: 0,
+  protein: 0,
+  fats: 0,
+  sodiumMg: 0,
+  fluidsL: 0,
+  streakDays: 0,
+  weeklyAvgCalories: 0,
+};
+
 
   const remainingCalories = Math.max(0, goals.calories - metrics.calories);
 
@@ -164,52 +179,54 @@ function TopDashboard({ user }) {
     {
       key: "dot1",
       content: (
-        <div className="tdCardsRow">
-          <div className="tdMiniCard">
-            <Ring
-              title={`${remainingCalories}`}
-              subtitle="Cals Remaining"
-              current={remainingCalories}
-              goal={goals.calories}
-              mode="goal"
-            />
-          </div>
-
-          <div className="tdMiniCard tdGoalCard">
-            <div className="tdGoalTitle">Goal</div>
-            <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
-            <div className="tdGoalLine">Carbs: 0/275g</div>
-            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
-            <div className="tdGoalLine">Fats: 0/90g</div>
-          </div>
-
-          <div className="tdMiniCard tdHydCard">
-            <div className="tdHydTitle">Hydration</div>
-            <div className="tdHydLine">
-              Fluids: {metrics.fluidsL.toFixed(1)}/{goals.fluidsL.toFixed(1)}L
+          <div className="tdCardsRow">
+            <div className="tdMiniCard">
+              <Ring
+                  title={`${remainingCalories}`}
+                  subtitle="Cals Remaining"
+                  current={remainingCalories}
+                  goal={goals.calories}
+                  mode="goal"
+              />
             </div>
-            <div className="tdHydCheer">
-              Only {(goals.fluidsL - metrics.fluidsL).toFixed(1)}L more to go, you got this!
+
+            <div className="tdMiniCard tdGoalCard">
+              <div className="tdGoalTitle">Goal</div>
+              <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
+              <div className="tdGoalLine">Carbs: {metrics.carbs}/{goals.carbs}g</div>
+              <div className="tdGoalLine">Fiber: {metrics.fiber}/{goals.fiber}g</div>
+              <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
+              <div className="tdGoalLine">Fats: {metrics.fats}/{goals.fats}g</div>
+            </div>
+
+
+            <div className="tdMiniCard tdHydCard">
+              <div className="tdHydTitle">Hydration</div>
+              <div className="tdHydLine">
+                Fluids: {metrics.fluidsL.toFixed(1)}/{goals.fluidsL.toFixed(1)}L
+              </div>
+              <div className="tdHydCheer">
+                Only {(goals.fluidsL - metrics.fluidsL).toFixed(1)}L more to go, you got this!
+              </div>
             </div>
           </div>
-        </div>
       ),
     },
 
     {
       key: "dot2",
       content: (
-        <div className="tdSecondGrid">
-          <div className="tdMiniCard tdAlertMascot">
-            {/* simple mascot placeholder box (optional) */}
-            <div className="tdMascotBubble">
-              You are doing great! Keep logging to keep up the progress!
+          <div className="tdSecondGrid">
+            <div className="tdMiniCard tdAlertMascot">
+              {/* simple mascot placeholder box (optional) */}
+              <div className="tdMascotBubble">
+                You are doing great! Keep logging to keep up the progress!
+              </div>
             </div>
-          </div>
 
-          <div className="tdMiniCard tdCenterRing">
-            <Ring
-              title={`${metrics.streakDays}`}
+            <div className="tdMiniCard tdCenterRing">
+              <Ring
+                  title={`${metrics.streakDays}`}
               subtitle="Day Streak"
               current={metrics.streakDays}
               goal={7}
