@@ -13,7 +13,8 @@ const OPTIONS = {
     "Other",
   ],
   ethnicity: ["Hispanic or Latino", "Not Hispanic or Latino", "Prefer not to say"],
-  gender: ["Male", "Female", "Non-binary", "Prefer not to say"],
+sexAtBirth: ["Male", "Female"],
+
 
   healthConditions: [
     "Obesity",
@@ -201,7 +202,7 @@ function SelectField({ label, value, onChange, options }) {
       <label className="psLabel">{label}</label>
       <select className="psSelect" value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
         <option value=""></option>
-        {options.map((o) => (
+        {(options || []).map((o) => (
           <option key={o} value={o}>
             {o}
           </option>
@@ -258,7 +259,7 @@ const DEFAULT_FORM = {
   race: [],
   raceOtherText: "",
   ethnicity: "",
-  gender: "",
+sexAtBirth: "",
 
   // Health & Medicine
   healthConditions: [],
@@ -313,7 +314,8 @@ function normalizeProfile(data) {
     race: data.race ?? [],
     raceOtherText: data.race_other_text ?? "",
     ethnicity: data.ethnicity ?? "",
-    gender: data.gender ?? "",
+   sexAtBirth: data.sex_at_birth ?? "",
+
 
     healthConditions: data.health_conditions ?? [],
     healthConditionsOtherText: data.health_conditions_other_text ?? "",
@@ -401,7 +403,8 @@ export default function Profile() {
       race: Array.isArray(form.race) && form.race.length > 0 ? form.race : null,
       race_other_text: showRaceOther ? safeTrim(form.raceOtherText) || null : null,
       ethnicity: form.ethnicity || null,
-      gender: form.gender || null,
+ sex_at_birth: form.sexAtBirth || null,
+
 
       health_conditions:
         Array.isArray(form.healthConditions) && form.healthConditions.length > 0 ? form.healthConditions : null,
@@ -607,11 +610,12 @@ export default function Profile() {
           />
 
           <SelectField
-            label="Gender"
-            value={form.gender}
-            onChange={(v) => update("gender", v)}
-            options={OPTIONS.gender}
-          />
+  label="Sex Assigned at Birth"
+  value={form.sexAtBirth}
+  onChange={(v) => update("sexAtBirth", v)}
+  options={OPTIONS.sexAtBirth}
+/>
+
         </Section>
 
         <Section title="Health & Medicine">

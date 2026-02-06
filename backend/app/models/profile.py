@@ -29,7 +29,7 @@ class Profile(Base):
 
     race_other_text = Column(String, nullable=True)
     ethnicity = Column(String, nullable=True)
-    gender = Column(String, nullable=True)
+    sex_at_birth = Column(String, nullable=True)
     health_conditions_other_text = Column(String, nullable=True)
     medications_text = Column(String, nullable=True)
     med_allergies_text = Column(String, nullable=True)

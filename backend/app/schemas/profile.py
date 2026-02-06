@@ -11,7 +11,7 @@ class ProfileCreate(BaseModel):
     race: Optional[List[str]] = None
     race_other_text: Optional[str] = None
     ethnicity: Optional[str] = None
-    gender: Optional[str] = None
+    sex_at_birth: Optional[str] = None
     health_conditions: Optional[List[str]] = None
     health_conditions_other_text: Optional[str] = None
     medications_text: Optional[str] = None
