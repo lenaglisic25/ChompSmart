@@ -100,50 +100,6 @@ def get_profile(user_email: str, db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_email == user_email).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    
-    if not profile.calorie_goal and profile.birthday_text and profile.height_text and profile.weight_text:
-        try:
-            result = compute_tdee(
-                birthday_text=profile.birthday_text,
-                height_text=profile.height_text,
-                weight_text=profile.weight_text,
-                steps_range=profile.steps_range,
-                active_days_per_week=profile.active_days_per_week,
-            )
-
-            profile.bmr_male = result.mifflin_bmr_male
-            profile.bmr_female = result.mifflin_bmr_female
-            profile.tdee_male = result.mifflin_tdee_male
-            profile.tdee_female = result.mifflin_tdee_female
-            profile.activity_factor = result.pal
-
-            if profile.gender and profile.gender.lower() == "male":
-                profile.calorie_goal = round(result.mifflin_tdee_male)
-            else:
-                profile.calorie_goal = round(result.mifflin_tdee_female)
-            
-            db.commit()
-            db.refresh(profile)
-        except Exception as e:
-            print("TDEE calculation failed:", e)
-
-    totals = (
-        db.query(
-            func.sum(Meal.calories),
-            func.sum(Meal.protein),
-            func.sum(Meal.carbs),
-            func.sum(Meal.fats),
-        )
-        .filter(Meal.user_email == user_email)
-        .first()
-    )
-
-    cal, protein, carbs, fats = totals or (0, 0, 0, 0)
-
-    profile.calories = cal or 0
-    profile.protein = protein or 0
-    profile.carbs = carbs or 0
-    profile.fats = fats or 0
     return profile
 
 #jack - added endpoints for tdee calculations
