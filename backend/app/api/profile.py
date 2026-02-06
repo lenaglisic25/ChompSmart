@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.profile import Profile
 from app.schemas import profile as profile_schema
+from sqlalchemy import func
+from app.models.meals import Meal
 
 #jack- added these for TDEE calculations
 from app.schemas import tdee as tdee_schema
