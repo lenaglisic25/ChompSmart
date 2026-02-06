@@ -11,6 +11,22 @@ PalCategory = Literal["inactive", "low_active", "active", "very_active"]
 
 
 @dataclass(frozen=True)
+
+#macros
+class MacroResult:
+    """Macronutrient breakdown for a given calorie target"""
+    calories: float
+    carbs_g: float
+    protein_g: float
+    fats_g: float
+    fiber_g: float
+    
+    # percentages for reference
+    carbs_pct: float
+    protein_pct: float
+    fats_pct: float
+
+@dataclass(frozen=True)
 class TdeeResult:
     age_years: int
     height_cm: float
@@ -29,6 +45,10 @@ class TdeeResult:
 
     eer_male: float
     eer_female: float
+    #for the macros
+    macros_male: MacroResult
+    macros_female: MacroResult
+
 
 
 def parse_dob_mmddyyyy(dob_text: str) -> date:
@@ -193,6 +213,50 @@ def eer_adult_19_plus(weight_kg: float, height_cm: float, age_years: int, sex: s
 
     raise ValueError("sex must be 'male' or 'female'")
 
+def calculate_macros(
+    calories: float,
+    carbs_pct: Optional[float] = None,
+    protein_pct: Optional[float] = None,
+    fats_pct: Optional[float] = None,
+) -> MacroResult:
+    # default set to balanced macro split (45% carbs / 20% protein / 35% fat)
+    if carbs_pct is None and protein_pct is None and fats_pct is None:
+        carbs_pct = 45.0
+        protein_pct = 20.0
+        fats_pct = 35.0
+    elif carbs_pct is None or protein_pct is None or fats_pct is None:
+        # error message if not all values are inputed
+        raise ValueError("If providing custom macros, all three percentages (carbs, protein, fats) must be specified")
+    
+    # make sure all percentages add up to 100
+    total_pct = carbs_pct + protein_pct + fats_pct
+    if not (99.9 <= total_pct <= 100.1): # rounds incase
+        raise ValueError(f"Percentages must sum to 100, got {total_pct}")
+    
+    # calculate calories per macro
+    carbs_calories = calories * (carbs_pct / 100)
+    protein_calories = calories * (protein_pct / 100)
+    fats_calories = calories * (fats_pct / 100)
+    
+    # Convert to grams
+    carbs_g = carbs_calories / 4
+    protein_g = protein_calories / 4
+    fats_g = fats_calories / 9
+    
+    # fiber calcucations
+    fiber_g = (calories / 1000) * 14
+    
+    return MacroResult(
+        calories=calories,
+        carbs_g=round(carbs_g, 1),
+        protein_g=round(protein_g, 1),
+        fats_g=round(fats_g, 1),
+        fiber_g=round(fiber_g, 1),
+        carbs_pct=carbs_pct,
+        protein_pct=protein_pct,
+        fats_pct=fats_pct
+    )
+
 
 def compute_tdee(
     birthday_text: str,
@@ -220,6 +284,9 @@ def compute_tdee(
     eer_m = eer_adult_19_plus(weight_kg, height_cm, age, "male", pal_cat)
     eer_f = eer_adult_19_plus(weight_kg, height_cm, age, "female", pal_cat)
 
+    macros_m = calculate_macros(mifflin_tdee_m)
+    macros_f = calculate_macros(mifflin_tdee_f)
+
     return TdeeResult(
         age_years=age,
         height_cm=height_cm,
@@ -232,4 +299,6 @@ def compute_tdee(
         mifflin_tdee_female=mifflin_tdee_f,
         eer_male=eer_m,
         eer_female=eer_f,
+        macros_male=macros_m,
+        macros_female=macros_f,
     )

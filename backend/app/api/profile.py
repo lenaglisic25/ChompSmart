@@ -51,11 +51,34 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             new_profile.tdee_female = result.mifflin_tdee_female
             new_profile.activity_factor = result.pal
 
+            
             # set calorie goal based on gender
+            #if new_profile.gender.lower() == "male":
+            #    new_profile.calorie_goal = round(result.mifflin_tdee_male)
+            #else:
+            #    new_profile.calorie_goal = round(result.mifflin_tdee_female)
+
+            # set calorie goal based on gender - UPDATED THIS- jack
             if new_profile.gender.lower() == "male":
                 new_profile.calorie_goal = round(result.mifflin_tdee_male)
+                # Save male macros
+                new_profile.carbs_g = result.macros_male.carbs_g
+                new_profile.protein_g = result.macros_male.protein_g
+                new_profile.fats_g = result.macros_male.fats_g
+                new_profile.fiber_g = result.macros_male.fiber_g
+                new_profile.carbs_pct = result.macros_male.carbs_pct
+                new_profile.protein_pct = result.macros_male.protein_pct
+                new_profile.fats_pct = result.macros_male.fats_pct
             else:
                 new_profile.calorie_goal = round(result.mifflin_tdee_female)
+                # Save female macros
+                new_profile.carbs_g = result.macros_female.carbs_g
+                new_profile.protein_g = result.macros_female.protein_g
+                new_profile.fats_g = result.macros_female.fats_g
+                new_profile.fiber_g = result.macros_female.fiber_g
+                new_profile.carbs_pct = result.macros_female.carbs_pct
+                new_profile.protein_pct = result.macros_female.protein_pct
+                new_profile.fats_pct = result.macros_female.fats_pct
 
             db.commit()
             db.refresh(new_profile)
@@ -112,5 +135,8 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
         "bmr_female": round(result.mifflin_bmr_female),
         "tdee_male": round(result.mifflin_tdee_male),
         "tdee_female": round(result.mifflin_tdee_female),
+        #jack - added these
+        "macros_male": result.macros_male,
+        "macros_female": result.macros_female,
     }
 #all i added

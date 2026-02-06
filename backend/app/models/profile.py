@@ -48,3 +48,11 @@ class Profile(Base):
     tdee_female = Column(Float, nullable=True)
     activity_factor = Column(Float, nullable=True)
 
+    #added these for macro goals and macro percentages - jack
+    carbs_g = Column(Float, nullable=True)
+    protein_g = Column(Float, nullable=True)
+    fats_g = Column(Float, nullable=True)
+    fiber_g = Column(Float, nullable=True)
+    carbs_pct = Column(Float, nullable=True)
+    protein_pct = Column(Float, nullable=True)
+    fats_pct = Column(Float, nullable=True)
