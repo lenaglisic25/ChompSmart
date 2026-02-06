@@ -66,6 +66,7 @@ const [metrics, setMetrics] = useState({
   fiber: 0,
   protein: 0,
   fats: 0,
+  sodiumMg: 0,
   fluidsL: 0,
   streakDays: 0,
   weeklyAvgCalories: 0,
@@ -92,6 +93,11 @@ const [metrics, setMetrics] = useState({
         const totalCarbs = meals.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
 const totalFats  = meals.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
 const totalFiber = meals.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
+const totalSodium = meals.reduce(
+  (acc, item) => acc + (Number(item.sodium_mg ?? item.sodium) || 0),
+  0
+);
+
 
 
       setMetrics(prev => ({
@@ -101,7 +107,8 @@ const totalFiber = meals.reduce((acc, item) => acc + (Number(item.fiber) || 0), 
   fiber: totalFiber,
   protein: totalProt,
   fats: totalFats,
-  fluidsL: totalFluids
+  fluidsL: totalFluids,
+          sodiumMg: totalSodium,
 }));
 
       })
@@ -112,6 +119,7 @@ const totalFiber = meals.reduce((acc, item) => acc + (Number(item.fiber) || 0), 
   const goals = { 
   calories: Number(profile?.calorie_goal ?? 2100),
   protein: 95,
+      sodiumMg: 2300,
   carbs: 275,
   fiber: 25,
   fats: 90,
@@ -149,10 +157,13 @@ const totalFiber = meals.reduce((acc, item) => acc + (Number(item.fiber) || 0), 
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
             <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
-            <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{goals.carbs}g</div>
+            <div className="tdGoalLine">Carbs: 0/275g</div>
+            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
+            <div className="tdGoalLine">Fats: 0/90g</div>
             <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
-            <div className="tdGoalLine">Protein: {Math.round(metrics.protein)}/{goals.protein}g</div>
-            <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{goals.fats}g</div>
+            <div className="tdGoalLine">
+              Sodium: {Math.round(metrics.sodiumMg)}/{goals.sodiumMg}mg
+            </div>
 
           </div>
 
