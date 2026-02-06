@@ -55,5 +55,10 @@ class Profile(ProfileCreate):
     carbs_pct: Optional[float] = None
     protein_pct: Optional[float] = None
     fats_pct: Optional[float] = None
+    calories: float = 0
+    protein: float = 0
+    fats: float = 0
+    carbs: float = 0
+
     class Config:
         from_attributes = True #jack - changed from orm_mode = True

@@ -57,31 +57,52 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
 }
 
 // (yavna) Update dashboard to fetch data
-function TopDashboard({ user }) {
+function TopDashboard({ userEmail, refreshKey }) {
   const [profile, setProfile] = useState(null);
-
-  useEffect(() => {
-    if (!user) return;
-    fetch(`http://localhost:8000/profile/${user}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setProfile(data))
-      .catch((err) => console.error("Profile fetch failed:", err));
-  }, [user]);
-
-  // connect to calorie goals, default to 2100
-  const goals = { calories: Number(profile?.calorie_goal ?? 2100),
-    protein: 95,
-    sodiumMg: 2300,
-    fluidsL: 3.0,
-  };
-
-  const metrics = {
+  
+  const [metrics, setMetrics] = useState({
     calories: 0,
     protein: 0,
-    sodiumMg: 0,
     fluidsL: 0,
     streakDays: 0,
     weeklyAvgCalories: 0,
+  });
+
+  useEffect(() => {
+    if (!userEmail) return;
+    fetch(`http://localhost:8000/profile/${userEmail}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setProfile(data))
+      .catch((err) => console.error("Profile fetch failed:", err));
+  }, [userEmail]);
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    fetch(`http://localhost:8000/meals/today?user_email=${userEmail}`) 
+      .then((res) => (res.ok ? res.json() : []))
+      .then((meals) => {
+        const totalCals = meals.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
+        const totalProt = meals.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
+        const totalFluids = meals.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
+
+        setMetrics(prev => ({
+          ...prev,
+          calories: totalCals,
+          protein: totalProt,
+          fluidsL: totalFluids
+        }));
+      })
+      .catch((err) => console.error("Metrics fetch failed:", err));
+  }, [userEmail, refreshKey]);
+
+  // connect to calorie goals, default to 2100
+  const goals = { 
+    calories: Number(profile?.calorie_goal ?? 2100),
+    protein: 95,
+    carbs: 275,
+    fats: 90,
+    fluidsL: 3.0,
   };
 
   const remainingCalories = Math.max(0, goals.calories - metrics.calories);
@@ -225,8 +246,42 @@ const MEAL_LABELS = {
   snacks: "Snacks",
 };
 
-function logMealToBackend(mealType, foodName) {
-  console.log("logMealToBackend", { mealType, foodName });
+async function logMealToBackend(mealType, foodName) {
+  const email = localStorage.getItem("currentUserEmail");
+
+  const searchRes = await fetch(
+    `http://localhost:8000/usda/search?query=${encodeURIComponent(foodName)}`
+  );
+
+  const foods = await searchRes.json();
+  if (!foods.length) return null;
+
+  const f = foods[0];
+
+  const response = await fetch("http://localhost:8000/meals/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_email: email,
+      meal_type: mealType,
+      food_name: f.description,
+
+      calories: Number(f.calories || 0),
+      protein: Number(f.protein || 0),
+      carbs: Number(f.carbohydrates || 0),   
+      fats: Number(f.fats || 0),              
+    }),
+  });
+  
+  return await response.json();
+}
+
+// (yavna) added clear backend meals function for testing
+async function clearBackendMeals() {
+  const email = localStorage.getItem("currentUserEmail");
+  await fetch(`http://localhost:8000/meals/reset?user_email=${email}`, {
+    method: "DELETE",
+  });
 }
 
 function getSectionForEmptySuggestion(meals) {
@@ -238,6 +293,7 @@ function getSectionForEmptySuggestion(meals) {
 
 export default function Log() {
   const email = localStorage.getItem("currentUserEmail");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [meals, setMeals] = useState({
     breakfast: [],
     lunch: [],
@@ -262,29 +318,81 @@ export default function Log() {
     setInputValues((prev) => ({ ...prev, [mealKey]: value }));
   }
 
-  function addItem(mealKey) {
+  async function addItem(mealKey) {
     const value = (inputValues[mealKey] || "").trim();
     if (!value) return;
-    setMeals((prev) => ({ ...prev, [mealKey]: [...prev[mealKey], value] }));
+    
     setInput(mealKey, "");
     setExpandedSection(null);
-    logMealToBackend(mealKey, value);
+    
+    // (yavna) connect meal id so that it can be deleted from database
+    const result = await logMealToBackend(mealKey, value);
+    
+    if (result && result.ok && result.id) {
+        const newItem = { name: value, id: result.id };
+        setMeals((prev) => ({ ...prev, [mealKey]: [...prev[mealKey], newItem] }));
+        
+        setRefreshKey((k) => k + 1);
+    }
   }
 
-  function removeItem(mealKey, index) {
+  async function removeItem(mealKey, index) {
+    const itemToRemove = meals[mealKey][index];
+    
     setMeals((prev) => ({
       ...prev,
       [mealKey]: prev[mealKey].filter((_, i) => i !== index),
     }));
+
+
+    // (yavna) delete from backend
+    if (itemToRemove && itemToRemove.id) {
+        await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
+            method: "DELETE"
+        });
+        setRefreshKey((k) => k + 1);
+    }
+  }
+
+  // (yavna) clear log
+  async function handleClearAll() {
+    if(!window.confirm("Are you sure you want to clear your meal log?")) return;
+
+    await clearBackendMeals();
+
+    setMeals({
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snacks: [],
+    });
+
+    setRefreshKey((k) => k + 1);
   }
 
   return (
     <div className="logPage">
       <div className="logContent">
         <div className="logWidgetPlaceholder">
-          <TopDashboard user={email} />
+          <TopDashboard userEmail={email} refreshKey={refreshKey} />
         </div>
-
+        {/* RESET BUTTON * (yavna) (change this to match style)*/ }
+        <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+             <button 
+                onClick={handleClearAll}
+                style={{
+                    background: 'none', 
+                    border: '1px solid #ccc', 
+                    borderRadius: '4px',
+                    padding: '5px 10px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    color: '#666'
+                }}
+             >
+                 Reset Log
+             </button>
+        </div>
         <div className="logCard">
           {MEAL_ORDER.map((mealKey) => {
             const label = MEAL_LABELS[mealKey];
@@ -337,14 +445,14 @@ export default function Log() {
 
                 {items.length > 0 && (
                   <ul className="logItemList">
-                    {items.map((name, i) => (
+                    {items.map((item, i) => (
                       <li key={`${mealKey}-${i}`} className="logItem">
-                        <span className="logItemName">{name}</span>
+                        <span className="logItemName">{item.name}</span>
                         <button
                           type="button"
                           className="logItemRemove"
                           onClick={() => removeItem(mealKey, i)}
-                          aria-label={`Remove ${name}`}
+                          aria-label={`Remove ${item.name}`}
                         >
                           ×
                         </button>

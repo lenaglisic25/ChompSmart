@@ -18,19 +18,11 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-If asked to select in workplace folder, select **Yes**
-
-If you see a warning, run PowerShell as administrator on your machine and paste:
-
-```Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass```
-
 You should see (venv) in your terminal
 
 **4. Install dependencies and check for installation**
 ```bash
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip list
 ```
 
 (You may have to save and restart your IDE for them to import properly)
