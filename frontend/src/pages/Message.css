@@ -1,0 +1,142 @@
+.msgPage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+/* Header */
+.msgHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 2px solid #1f1f1f;
+  background: #2f69a8;
+  color: #fff;
+}
+
+.msgHeaderTitle {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.msgClearBtn {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Message list */
+.msgList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  background: #ffffff;
+}
+
+/* Each row */
+.msgRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.msgRow.me {
+  justify-content: flex-end;
+}
+
+.msgAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  border: 2px solid #1f1f1f;
+  background: #f2f2f2;
+  flex: 0 0 auto;
+}
+
+.msgAvatar.gator {
+  background: #eaf6ee;
+}
+
+.msgAvatar.doctor {
+  background: #eef3ff;
+}
+
+.msgAvatar.me {
+  background: #fff2e8;
+}
+
+.msgBubble {
+  max-width: 72%;
+  border: 2px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.msgRow.me .msgBubble {
+  background: #f3f8ff;
+}
+
+.msgTopLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.msgName {
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+.msgTime {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.msgBody {
+  font-size: 14px;
+  line-height: 1.25rem;
+  color: #1f1f1f;
+}
+
+
+.msgComposer {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-top: 2px solid #1f1f1f;
+  background: #ffffff;
+
+
+  padding-bottom: 18px;
+}
+
+.msgInput {
+  flex: 1;
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.msgSendBtn {
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #ffb43a;
+}
