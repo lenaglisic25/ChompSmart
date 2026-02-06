@@ -1,3 +1,73 @@
+
+.msgInboxPage {
+  height: 100%;
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  padding: 18px 12px;
+}
+
+.msgInboxContainer {
+  width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.msgInboxCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 2px solid #1f1f1f;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.msgInboxAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  border: 2px solid #1f1f1f;
+  flex: 0 0 auto;
+  background: #f2f2f2;
+}
+
+.msgInboxAvatar.gator {
+  background: #eaf6ee;
+}
+
+.msgInboxAvatar.doctor {
+  background: #eef3ff;
+}
+
+.msgInboxText {
+  min-width: 0;
+}
+
+.msgInboxName {
+  font-weight: 900;
+  color: #1f1f1f;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.msgInboxPreview {
+  font-size: 14px;
+  color: #1f1f1f;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+
+
 .msgPage {
   height: 100%;
   display: flex;
@@ -7,9 +77,10 @@
 
 /* Header */
 .msgHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   padding: 12px 14px;
   border-bottom: 2px solid #1f1f1f;
   background: #2f69a8;
@@ -17,8 +88,20 @@
 }
 
 .msgHeaderTitle {
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.msgBackBtn {
+  width: 40px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
 }
 
 .msgClearBtn {
@@ -28,7 +111,7 @@
   padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Message list */
@@ -111,15 +194,12 @@
   color: #1f1f1f;
 }
 
-
 .msgComposer {
   display: flex;
   gap: 10px;
   padding: 12px;
   border-top: 2px solid #1f1f1f;
   background: #ffffff;
-
-
   padding-bottom: 18px;
 }
 
@@ -136,7 +216,7 @@
   border: 2px solid #1f1f1f;
   border-radius: 10px;
   padding: 10px 14px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
   background: #ffb43a;
 }

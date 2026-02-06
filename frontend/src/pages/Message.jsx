@@ -10,60 +10,79 @@ function nowTime() {
 
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
-  const storageKey = useMemo(() => `chompsmart_messages_${email}`, [email]);
+  const storageKey = useMemo(() => `chompsmart_threads_${email}`, [email]);
 
-  const [text, setText] = useState("");
-
-  // starter messages
-  const starter = useMemo(
-    () => [
-      {
-        id: "m1",
-        from: "bot",
-        name: "Chompy",
-        avatar: "gator",
-        time: nowTime(),
-        body: "Yeah! That food combo works best! I like the way you are thinking, keep it up.",
-      },
-      {
-        id: "m2",
-        from: "staff",
-        name: "Dr. Smith",
-        avatar: "doctor",
-        time: nowTime(),
-        body: "Nothing has been said yet. Click here to start a conversation with your professional.",
-      },
-    ],
+  const starterThreads = useMemo(
+    () => ({
+      chompy: [
+        {
+          id: "c1",
+          from: "bot",
+          name: "Chompy",
+          avatar: "gator",
+          time: nowTime(),
+          body: "Yeah! That food combo works best! I like the way you are thinking, keep it up.",
+        },
+      ],
+      doctor: [
+        {
+          id: "d1",
+          from: "staff",
+          name: "Dr. Smith",
+          avatar: "doctor",
+          time: nowTime(),
+          body: "Nothing has been said yet. Click here to start a conversation with your professional.",
+        },
+      ],
+    }),
     []
   );
 
-  const [messages, setMessages] = useState(() => {
+
+  const [view, setView] = useState("inbox"); // "inbox" | "chat"
+  const [activeThread, setActiveThread] = useState(null); // "chompy" | "doctor"
+  const [text, setText] = useState("");
+
+  const [threads, setThreads] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) return JSON.parse(raw);
     } catch {}
-    return starter;
+    return starterThreads;
   });
-
-  const listRef = useRef(null);
 
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(messages));
+      localStorage.setItem(storageKey, JSON.stringify(threads));
     } catch {}
-  }, [messages, storageKey]);
+  }, [threads, storageKey]);
 
-  // auto-scroll to bottom on new messages
+  const listRef = useRef(null);
+  const messages = activeThread ? threads?.[activeThread] || [] : [];
+
+  // scroll only in chat view
   useEffect(() => {
+    if (view !== "chat") return;
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [view, activeThread, messages.length]);
+
+  function openChat(threadKey) {
+    setActiveThread(threadKey);
+    setView("chat");
+  }
+
+  function backToInbox() {
+    setView("inbox");
+    setActiveThread(null);
+    setText("");
+  }
 
   function sendMessage() {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || !activeThread) return;
 
     const newMsg = {
       id: `${Date.now()}`,
@@ -74,36 +93,90 @@ export default function Message() {
       body: trimmed,
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    setThreads((prev) => ({
+      ...prev,
+      [activeThread]: [...(prev[activeThread] || []), newMsg],
+    }));
     setText("");
 
-    //auto bot reply
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}_bot`,
-          from: "bot",
-          name: "Chompy",
-          avatar: "gator",
-          time: nowTime(),
-          body: "Got it! I saved your message. Want meal ideas or a goal check?",
-        },
-      ]);
-    }, 450);
+
+    if (activeThread === "chompy") {
+      setTimeout(() => {
+        setThreads((prev) => ({
+          ...prev,
+          chompy: [
+            ...(prev.chompy || []),
+            {
+              id: `${Date.now()}_bot`,
+              from: "bot",
+              name: "Chompy",
+              avatar: "gator",
+              time: nowTime(),
+              body: "Got it! Want meal ideas or a goal check?",
+            },
+          ],
+        }));
+      }, 450);
+    }
   }
 
-  function clearChat() {
-    if (!window.confirm("Clear messages?")) return;
-    setMessages(starter);
+  function clearActiveChat() {
+    if (!activeThread) return;
+    if (!window.confirm("Clear this chat?")) return;
+    setThreads((prev) => ({
+      ...prev,
+      [activeThread]: starterThreads[activeThread],
+    }));
   }
+
+  function previewOf(threadKey) {
+    const arr = threads?.[threadKey] || [];
+    const last = arr[arr.length - 1];
+    return last?.body || "";
+  }
+
+  const chatTitle = activeThread === "chompy" ? "Chompy" : "Dr. Smith";
+
+
+  if (view === "inbox") {
+    return (
+      <div className="msgInboxPage">
+        <div className="msgInboxContainer">
+          <div className="msgInboxCard" role="button" onClick={() => openChat("chompy")}>
+            <div className="msgInboxAvatar gator" aria-hidden="true">
+              🐊
+            </div>
+            <div className="msgInboxText">
+              <div className="msgInboxName">Chompy</div>
+              <div className="msgInboxPreview">{previewOf("chompy")}</div>
+            </div>
+          </div>
+
+          <div className="msgInboxCard" role="button" onClick={() => openChat("doctor")}>
+            <div className="msgInboxAvatar doctor" aria-hidden="true">
+              👨‍⚕️
+            </div>
+            <div className="msgInboxText">
+              <div className="msgInboxName">Dr. Smith</div>
+              <div className="msgInboxPreview">{previewOf("doctor")}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="msgPage">
       <div className="msgHeader">
-        <div className="msgHeaderTitle">Messages</div>
+        <button className="msgBackBtn" type="button" onClick={backToInbox}>
+          ←
+        </button>
 
-        <button className="msgClearBtn" type="button" onClick={clearChat}>
+        <div className="msgHeaderTitle">{chatTitle}</div>
+
+        <button className="msgClearBtn" type="button" onClick={clearActiveChat}>
           Clear
         </button>
       </div>
