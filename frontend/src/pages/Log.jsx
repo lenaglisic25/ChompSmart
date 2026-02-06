@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
 import "./Log.css";
 
-/* =========================
-   TOP DASHBOARD (frontend-only)
-   Dot 1: Remaining + Goal + Hydration
-   Dot 2: Gator + Speech + Streak + Weekly Avg + Alerts
-   ========================= */
+
 
 function clamp01(x) {
   return Math.max(0, Math.min(1, x));
@@ -63,7 +59,7 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
 function TopDashboard() {
   const goals = { calories: 2100, protein: 95, sodiumMg: 2300, fluidsL: 3.0 };
 
-  // frontend-only placeholders
+
   const metrics = {
     calories: 0,
     protein: 0,
@@ -204,9 +200,7 @@ function TopDashboard() {
   );
 }
 
-/* =========================
-   ORIGINAL LOG CODE (unchanged)
-   ========================= */
+
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snacks"];
 const MEAL_LABELS = {

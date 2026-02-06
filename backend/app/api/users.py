@@ -9,21 +9,33 @@ router = APIRouter(
     tags=["users"]
 )
 
-@router.post("/login-or-create", response_model=UserSchema)
-def login_or_create(user: UserCreate, db: Session = Depends(get_db)):
+@router.post("/login", response_model=UserSchema)
+def login_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
 
     if existing_user:
         return existing_user
-    else:
-        new_user = UserModel(
-            email=user.email,
-            password=user.password 
-        )
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        return new_user
+    
+    if not existing_user:
+        return {"message": "User not found."}, status.HTTP_404_NOT_FOUND
+    
+    if existing_user.password != user.password:
+        return {"message": "Incorrect password."}, status.HTTP_401_UNAUTHORIZED
+    
+    return existing_user
+
+@router.post("/create", response_model=UserSchema)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+
+    if existing_user:
+        return {"message": "User already exists."}, status.HTTP_400_BAD_REQUEST
+      
+    new_user = UserModel(email=user.email, password=user.password)
+    db.add(new_user)
+    db.commit()
+
+    return new_user
 
 @router.get("/", response_model=list[UserSchema])
 def get_users(db: Session = Depends(get_db)):

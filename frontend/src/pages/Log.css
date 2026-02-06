@@ -178,20 +178,18 @@
   color: var(--blueBar);
 }
 
-/* =========================
-   ADDED: Top dashboard styles
-   ========================= */
+
 
 .logWidgetPlaceholder {
   margin-bottom: 14px;
 }
 
-/* Outer spacing like the mockups */
+
 .tdOuter {
   width: 100%;
 }
 
-/* Rounded gray container like the images */
+
 .tdWidget {
   background: #f1f2f5;
   border: 3px solid rgba(0, 0, 0, 0.15);
@@ -203,7 +201,7 @@
   min-height: 150px;
 }
 
-/* 3 sections row like your first mockup (ring + goal + hydration) */
+
 .tdCardsRow {
   display: grid;
   grid-template-columns: 1fr 1.15fr 1fr;
@@ -417,12 +415,11 @@
   color: #1b3554;
 }
 
-/* alerts box spans full width under the 3 mini cards */
 .tdAlertsBox {
   grid-column: 1 / -1;
 }
 
-/* responsive */
+
 @media (max-width: 650px) {
   .tdSecondGrid {
     grid-template-columns: 1fr;
@@ -436,7 +433,7 @@
   margin-bottom: 14px;
 }
 
-/* Big gray rounded container like your pictures */
+
 .tdWidget {
   background: #f1f2f5;
   border: 3px solid rgba(0, 0, 0, 0.15);
@@ -556,18 +553,16 @@
   .tdSecondGrid { grid-template-columns: 1fr; }
   .tdAlertsBox { grid-column: auto; }
 }
-/* ===============================
-   MAKE DASHBOARD TEXT & ICONS BIGGER
-   =============================== */
 
-/* Ring numbers (big numbers inside circles) */
+
+
 .tdRingTitle {
-  font-size: 20px;     /* was ~14px */
+  font-size: 20px;
   font-weight: 900;
 }
 
 .tdRingSub {
-  font-size: 14px;     /* was ~11px */
+  font-size: 14px;
 }
 
 /* Goal / Hydration text */
@@ -605,53 +600,47 @@
   font-size: 14px;
 }
 
-/* Dots under carousel (make them easier to tap) */
+
 .tdDot {
   width: 14px;
   height: 14px;
 }
 
-/* Make the cards breathe more */
+
 .tdMiniCard {
   padding: 14px;
 }
 
-/* Gator image slightly bigger */
+
 .tdGatorImg {
   width: 90px;
   height: 90px;
 }
 
-/* ===============================
-   OVERRIDE: make dashboard look like mockups
-   paste at BOTTOM of Log.css
-   =============================== */
 
-/* remove any dashed outline or placeholder styling */
 .logWidgetPlaceholder {
   border: none !important;
   outline: none !important;
   background: transparent !important;
   padding: 0 !important;
   margin: 18px auto 14px auto !important;
-  max-width: 920px;                 /* keeps it from looking weird on desktop */
+  max-width: 920px;
 }
 
-/* main rounded container like the mockup */
 .tdWidget {
   background: #eceef2 !important;
-  border: 4px solid rgba(0,0,0,0.18) !important;  /* thick soft border like phone mock */
+  border: 4px solid rgba(0,0,0,0.18) !important;
   border-radius: 28px !important;
   padding: 16px !important;
   box-shadow: none !important;
 }
 
-/* remove extra “boxy” feeling */
+
 .tdInner {
   min-height: 155px !important;
 }
 
-/* inner cards should be flatter */
+
 .tdMiniCard {
   background: #ffffff !important;
   border: 2px solid rgba(0,0,0,0.10) !important;
@@ -660,23 +649,23 @@
   box-shadow: none !important;
 }
 
-/* rings: slightly bigger and cleaner */
+
 .tdRingTitle { font-size: 22px !important; }
 .tdRingSub   { font-size: 14px !important; }
 
-/* dot 1: tighter like the mockup */
+
 .tdCardsRow {
   gap: 12px !important;
   align-items: center !important;
 }
 
-/* dot 2: align like your mock (gator+speech, then 2 rings) */
+
 .tdSecondGrid {
   gap: 12px !important;
   align-items: center !important;
 }
 
-/* speech bubble should look like a bubble, not a big empty box */
+
 .tdMascotBubble {
   background: #ffffff !important;
   border: 2px solid rgba(0,0,0,0.12) !important;
@@ -688,14 +677,14 @@
   line-height: 1.35 !important;
 }
 
-/* gator image bigger like mock */
+
 .tdGatorImg {
   width: 92px !important;
   height: 92px !important;
   object-fit: contain !important;
 }
 
-/* dot buttons like the mock */
+
 .tdDots { margin-top: 12px !important; }
 .tdDot {
   width: 12px !important;
@@ -706,7 +695,7 @@
   background: rgba(0,0,0,0.65) !important;
 }
 
-/* alerts should look like one soft green bar */
+
 .tdAlertsBox {
   border-radius: 20px !important;
 }
@@ -728,9 +717,7 @@
   color: #0c6b3a !important;
 }
 
-/* ===============================
-   GATOR SPEECH BUBBLE
-   =============================== */
+
 
 .tdMascotWrap {
   display: flex;
