@@ -5,7 +5,8 @@
 # Python virtual envs
 venv/
 .venv/
-backend/venv/
+**/venv/
+**/.venv/
 
 # Python cache
 __pycache__/
@@ -19,6 +20,12 @@ backend/*.sqlite3
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 
 # Node
 frontend/node_modules/
