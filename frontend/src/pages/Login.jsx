@@ -27,13 +27,18 @@ export default function Login() {
       });
 
       const raw = await res.text();
-      if (!res.ok) throw new Error(raw || `HTTP ${res.status}`);
+      
+      if (!res.ok) {
+        try {
+          const errorData = JSON.parse(raw);
+          throw new Error(errorData.detail || raw || `HTTP ${res.status}`);
+        } catch {
+          throw new Error(raw || `HTTP ${res.status}`);
+        }
+      }
 
       const data = JSON.parse(raw);
-
-
       localStorage.setItem("currentUserEmail", data.email);
-
       navigate("/app/learn");
     } catch (err) {
       console.error(err);

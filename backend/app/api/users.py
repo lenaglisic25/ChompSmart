@@ -13,14 +13,11 @@ router = APIRouter(
 def login_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
 
-    if existing_user:
-        return existing_user
-    
     if not existing_user:
-        return {"message": "User not found."}, status.HTTP_404_NOT_FOUND
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     
     if existing_user.password != user.password:
-        return {"message": "Incorrect password."}, status.HTTP_401_UNAUTHORIZED
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password.")
     
     return existing_user
 
