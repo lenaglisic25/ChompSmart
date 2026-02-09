@@ -42,6 +42,8 @@ export default function Message() {
   const [view, setView] = useState("inbox"); // "inbox" | "chat"
   const [activeThread, setActiveThread] = useState(null); // "chompy" | "doctor"
   const [text, setText] = useState("");
+  // (yavna) added simple typing indicator for ai loading
+  const [typing, setTyping] = useState(false);
 
   const [threads, setThreads] = useState(() => {
     try {
@@ -67,7 +69,7 @@ export default function Message() {
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [view, activeThread, messages.length]);
+  }, [view, activeThread, messages.length, typing]);
 
   function openChat(threadKey) {
     setActiveThread(threadKey);
@@ -80,7 +82,8 @@ export default function Message() {
     setText("");
   }
 
-  function sendMessage() {
+  // (backend) edit sendMessage to use api
+  async function sendMessage() {
     const trimmed = text.trim();
     if (!trimmed || !activeThread) return;
 
@@ -101,22 +104,39 @@ export default function Message() {
 
 
     if (activeThread === "chompy") {
-      setTimeout(() => {
-        setThreads((prev) => ({
-          ...prev,
-          chompy: [
-            ...(prev.chompy || []),
-            {
-              id: `${Date.now()}_bot`,
-              from: "bot",
-              name: "Chompy",
-              avatar: "gator",
-              time: nowTime(),
-              body: "Got it! Want meal ideas or a goal check?",
-            },
-          ],
-        }));
-      }, 450);
+      setTyping(true);
+      try {
+        const res = await fetch("http://localhost:8000/chat/message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: trimmed,
+          }),
+        });
+        const data = await res.json();
+        if (data?.reply) {
+          setThreads((prev) => ({
+            ...prev,
+            chompy: [
+              ...(prev.chompy || []),
+              {
+                id: `${Date.now()}_bot`,
+                from: "bot",
+                name: "Chompy",
+                avatar: "gator",
+                time: nowTime(),
+                body: data.reply,
+              },
+            ],
+          }));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      finally { setTyping(false);
+      }
     }
   }
 
@@ -212,8 +232,9 @@ export default function Message() {
           onKeyDown={(e) => {
             if (e.key === "Enter") sendMessage();
           }}
+          disabled={typing}
         />
-        <button className="msgSendBtn" type="button" onClick={sendMessage}>
+        <button className="msgSendBtn" type="button" onClick={sendMessage} disabled={typing}>
           Send
         </button>
       </div>
