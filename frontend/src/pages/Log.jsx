@@ -118,11 +118,11 @@ const totalSodium = meals.reduce(
   // connect to calorie goals, default to 2100
   const goals = { 
   calories: Number(profile?.calorie_goal ?? 2100),
-  protein: 95,
-      sodiumMg: 2300,
-  carbs: 275,
-  fiber: 25,
-  fats: 90,
+  protein: Number(profile?.protein_g ?? 95),
+  sodiumMg: Number(profile?.sodium_g ?? 2300),
+  carbs: Number(profile?.carbs_g ?? 275),
+  fiber: Number(profile?.fiber_g ?? 25),
+  fats: Number(profile?.fats_g ?? 90),
   fluidsL: 3.0,
 };
 
@@ -157,9 +157,9 @@ const totalSodium = meals.reduce(
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
             <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
-            <div className="tdGoalLine">Carbs: 0/275g</div>
+            <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{Math.round(goals.carbs)}g</div>
             <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
-            <div className="tdGoalLine">Fats: 0/90g</div>
+            <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{Math.round(goals.fats)}g</div>
             <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
             <div className="tdGoalLine">
               Sodium: {Math.round(metrics.sodiumMg)}/{goals.sodiumMg}mg
@@ -296,7 +296,9 @@ async function logMealToBackend(mealType, foodName) {
       calories: Number(f.calories || 0),
       protein: Number(f.protein || 0),
       carbs: Number(f.carbohydrates || 0),   
-      fats: Number(f.fats || 0),              
+      fats: Number(f.fats || 0),
+      fiber: Number(f.fiber || 0),
+      sodium: Number(f.sodium || 0)              
     }),
   });
   

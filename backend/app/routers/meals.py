@@ -9,7 +9,20 @@ router = APIRouter(prefix="/meals", tags=["meals"])
 
 @router.post("/log")
 def log_meal(meal: dict, db: Session = Depends(get_db)):
-    m = Meal(**meal)
+
+    meal_data = {
+        "user_email": meal.get("user_email"),
+        "meal_type": meal.get("meal_type"),
+        "food_name": meal.get("food_name"),
+        "calories": meal.get("calories", 0),
+        "protein": meal.get("protein", 0),
+        "carbs": meal.get("carbs", 0),
+        "fats": meal.get("fats", 0),
+        "fiber": meal.get("fiber", 0),
+        "sodium": meal.get("sodium", 0),
+    }
+
+    m = Meal(**meal_data)
     db.add(m)
     db.commit()
     db.refresh(m) 

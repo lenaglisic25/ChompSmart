@@ -82,7 +82,7 @@ export default function Message() {
     setText("");
   }
 
-  // (backend) edit sendMessage to use api
+  // (backend) edit sendMessage to use api and fetch/send history
   async function sendMessage() {
     const trimmed = text.trim();
     if (!trimmed || !activeThread) return;
@@ -96,16 +96,23 @@ export default function Message() {
       body: trimmed,
     };
 
-    setThreads((prev) => ({
-      ...prev,
-      [activeThread]: [...(prev[activeThread] || []), newMsg],
-    }));
+    const updatedThreads = {
+      ...threads,
+      [activeThread]: [...(threads[activeThread] || []), newMsg],
+    };
+
+    setThreads(updatedThreads);
     setText("");
 
 
     if (activeThread === "chompy") {
       setTyping(true);
       try {
+        const history = updatedThreads.chompy.map(m => ({
+            from: m.from, 
+            body: m.body 
+        }));
+
         const res = await fetch("http://localhost:8000/chat/message", {
           method: "POST",
           headers: {
@@ -113,8 +120,11 @@ export default function Message() {
           },
           body: JSON.stringify({
             message: trimmed,
+            history: history,
+            user_email: email
           }),
         });
+
         const data = await res.json();
         if (data?.reply) {
           setThreads((prev) => ({
@@ -134,8 +144,8 @@ export default function Message() {
         }
       } catch (err) {
         console.error(err);
-      }
-      finally { setTyping(false);
+      } finally {
+        setTyping(false);
       }
     }
   }
@@ -221,6 +231,18 @@ export default function Message() {
             {m.from === "me" && <div className="msgAvatar me">🙂</div>}
           </div>
         ))}
+        
+        {/* (yavna) simple typing indicator to show chatbot is generating a response*/}
+        {typing && (
+          <div className="msgRow other">
+            <div className="msgAvatar gator">🐊</div>
+            <div className="msgBubble">
+              <div className="msgBody">
+                 <span className="typing-indicator">Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="msgComposer">
