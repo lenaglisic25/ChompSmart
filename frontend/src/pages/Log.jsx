@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import "./Log.css";
 
 
@@ -307,6 +308,74 @@ export default function Log() {
     dinner: "",
     snacks: "",
   });
+    // ---------------- CAMERA / UPLOAD (added) ----------------
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [previewImage, setPreviewImage] = useState(null); // dataURL string
+
+  function stopCamera() {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) videoRef.current.srcObject = null;
+    } catch {}
+    setIsCameraOpen(false);
+  }
+
+  async function openCamera() {
+    setCameraError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }, // phone back cam if available
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setIsCameraOpen(true);
+    } catch {
+      setCameraError("Camera not available. Use Upload instead.");
+    }
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    setPreviewImage(canvas.toDataURL("image/jpeg", 0.9));
+    stopCamera();
+  }
+
+  function onPickFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => setPreviewImage(reader.result);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+  // ---------------------------------------------------------
+
 
   const suggestionSection = getSectionForEmptySuggestion(meals);
 
@@ -425,23 +494,78 @@ export default function Log() {
                 </div>
 
                 {isExpanded && (
-                  <div className="logInputRow">
-                    <input
-                      type="text"
-                      className="logInput"
-                      placeholder="Food name"
-                      value={inputValues[mealKey] || ""}
-                      onChange={(e) => setInput(mealKey, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") addItem(mealKey);
-                      }}
-                      autoFocus
-                    />
-                    <button type="button" className="logOkBtn" onClick={() => addItem(mealKey)}>
-                      Add
-                    </button>
-                  </div>
-                )}
+  <>
+    <div className="logInputRow">
+      <input
+        type="text"
+        className="logInput"
+        placeholder="Food name"
+        value={inputValues[mealKey] || ""}
+        onChange={(e) => setInput(mealKey, e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") addItem(mealKey);
+        }}
+        autoFocus
+      />
+
+      {/* hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: "none" }}
+        onChange={onPickFile}
+      />
+
+      {/* camera + upload buttons */}
+      <button type="button" className="logIconBtn" onClick={openCamera} title="Open Camera">
+        📷
+      </button>
+
+      <button
+        type="button"
+        className="logIconBtn"
+        onClick={() => fileInputRef.current?.click()}
+        title="Upload Photo"
+      >
+        ⬆️
+      </button>
+
+      <button type="button" className="logOkBtn" onClick={() => addItem(mealKey)}>
+        Add
+      </button>
+    </div>
+
+    {cameraError ? <div className="logError">{cameraError}</div> : null}
+
+    {previewImage ? (
+      <div className="logPreviewRow">
+        <img src={previewImage} className="logPreviewThumb" alt="preview" />
+        <button type="button" className="logPreviewClear" onClick={() => setPreviewImage(null)}>
+          Remove Photo
+        </button>
+      </div>
+    ) : null}
+
+    {isCameraOpen ? (
+      <div className="logCameraOverlay" role="dialog" aria-modal="true">
+        <div className="logCameraCard">
+          <video ref={videoRef} className="logCameraVideo" playsInline muted />
+          <div className="logCameraActions">
+            <button type="button" className="logOkBtn" onClick={capturePhoto}>
+              Capture
+            </button>
+            <button type="button" className="logOkBtn" onClick={stopCamera}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+  </>
+)}
+
 
                 {items.length > 0 && (
                   <ul className="logItemList">
