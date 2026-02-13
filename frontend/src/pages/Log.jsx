@@ -132,15 +132,13 @@ function TopDashboard({ userEmail, refreshKey }) {
             />
           </div>
 
-       <div className="tdMiniCard tdGoalCard">
-  <div className="tdGoalTitle">Goal</div>
-  <div className="tdGoalLine">Carbs: 0/275g</div>
-  <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
-  <div className="tdGoalLine">Fats: 0/90g</div>
-  <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
-</div>
-
-
+          <div className="tdMiniCard tdGoalCard">
+            <div className="tdGoalTitle">Goal</div>
+            <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
+            <div className="tdGoalLine">Carbs: 0/275g</div>
+            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
+            <div className="tdGoalLine">Fats: 0/90g</div>
+          </div>
 
           <div className="tdMiniCard tdHydCard">
             <div className="tdHydTitle">Hydration</div>

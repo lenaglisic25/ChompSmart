@@ -376,7 +376,7 @@
   color: #8f1c1c;
 }
 
-/* ====== DOT 2 layout ====== */
+/* DOT 2 layout */
 .tdSecondGrid {
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr;
@@ -428,7 +428,7 @@
     grid-column: auto;
   }
 }
-/* ===== Top widget spacing ===== */
+/* Top widget spacing */
 .logWidgetPlaceholder {
   margin-bottom: 14px;
 }

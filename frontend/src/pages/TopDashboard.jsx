@@ -167,7 +167,7 @@ const goals = {
   const alerts = useMemo(() => {
     return [
       { level: "good", text: "You are doing great! Keep logging to keep up the progress!" },
-      // add/remove placeholders as needed
+
 
     ];
   }, []);
