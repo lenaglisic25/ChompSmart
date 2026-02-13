@@ -63,6 +63,9 @@ function TopDashboard({ userEmail, refreshKey }) {
   const [metrics, setMetrics] = useState({
     calories: 0,
     protein: 0,
+    carbs: 0,
+    fats: 0,
+    fiber: 0,
     fluidsL: 0,
     streakDays: 0,
     weeklyAvgCalories: 0,
@@ -70,38 +73,46 @@ function TopDashboard({ userEmail, refreshKey }) {
 
   useEffect(() => {
     if (!userEmail) return;
-    fetch(`http://localhost:8000/profile/${userEmail}`)
+    fetch(`http://localhost:8000/profile/${encodeURIComponent(userEmail)}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setProfile(data))
+      .then((data) => {
+        if (data != null) setProfile(data);
+      })
       .catch((err) => console.error("Profile fetch failed:", err));
   }, [userEmail]);
 
   useEffect(() => {
     if (!userEmail) return;
 
-    fetch(`http://localhost:8000/meals/today?user_email=${userEmail}`)
+    fetch(`http://localhost:8000/meals/today?user_email=${encodeURIComponent(userEmail)}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((meals) => {
-        const totalCals = meals.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
-        const totalProt = meals.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
-        const totalFluids = meals.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
+        const list = Array.isArray(meals) ? meals : [];
+        const totalCals = list.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
+        const totalProt = list.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
+        const totalCarbs = list.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
+        const totalFats = list.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
+        const totalFluids = list.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
 
-        setMetrics(prev => ({
+        setMetrics((prev) => ({
           ...prev,
           calories: totalCals,
           protein: totalProt,
-          fluidsL: totalFluids
+          carbs: totalCarbs,
+          fats: totalFats,
+          fluidsL: totalFluids,
         }));
       })
       .catch((err) => console.error("Metrics fetch failed:", err));
   }, [userEmail, refreshKey]);
 
-  // connect to calorie goals, default to 2100
+  // goals from profile (TDEE/macros when set), with fallbacks
   const goals = {
     calories: Number(profile?.calorie_goal ?? 2100),
-    protein: 95,
-    carbs: 275,
-    fats: 90,
+    protein: Number(profile?.protein_g ?? 95),
+    carbs: Number(profile?.carbs_g ?? 275),
+    fats: Number(profile?.fats_g ?? 90),
+    fiber: Number(profile?.fiber_g ?? 25),
     fluidsL: 3.0,
   };
 
@@ -134,10 +145,10 @@ function TopDashboard({ userEmail, refreshKey }) {
 
        <div className="tdMiniCard tdGoalCard">
   <div className="tdGoalTitle">Goal</div>
-  <div className="tdGoalLine">Carbs: 0/275g</div>
-  <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
-  <div className="tdGoalLine">Fats: 0/90g</div>
-  <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
+  <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs || 0)}/{goals.carbs}g</div>
+  <div className="tdGoalLine">Protein: {Math.round(metrics.protein || 0)}/{goals.protein}g</div>
+  <div className="tdGoalLine">Fats: {Math.round(metrics.fats || 0)}/{goals.fats}g</div>
+  <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber || 0)}/{goals.fiber}g</div>
 </div>
 
 
@@ -248,6 +259,15 @@ const MEAL_LABELS = {
   snacks: "Snacks",
 };
 
+async function searchFood(query) {
+  if (!query.trim()) return [];
+  const res = await fetch(
+    `http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
 async function logMealToBackend(mealType, foodName) {
   const email = localStorage.getItem("currentUserEmail");
 
@@ -278,6 +298,25 @@ async function logMealToBackend(mealType, foodName) {
   return await response.json();
 }
 
+async function logMealWithFood(mealType, food, servingMultiplier) {
+  const email = localStorage.getItem("currentUserEmail");
+  const mult = Number(servingMultiplier) || 1;
+  const response = await fetch("http://localhost:8000/meals/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_email: email,
+      meal_type: mealType,
+      food_name: food.description,
+      calories: Number(food.calories || 0) * mult,
+      protein: Number(food.protein || 0) * mult,
+      carbs: Number(food.carbohydrates || 0) * mult,
+      fats: Number(food.fat || 0) * mult,
+    }),
+  });
+  return response.json();
+}
+
 // (yavna) added clear backend meals function for testing
 async function clearBackendMeals() {
   const email = localStorage.getItem("currentUserEmail");
@@ -291,6 +330,13 @@ function getSectionForEmptySuggestion(meals) {
   if (!meals.lunch || meals.lunch.length === 0) return "lunch";
   if (!meals.dinner || meals.dinner.length === 0) return "dinner";
   return null;
+}
+
+const SERVING_OPTIONS = [0.25, 0.5, 1, 1.5, 2, 2.5, 3];
+
+function scaledNutrient(value, servingMult) {
+  const mult = Number(servingMult) || 1;
+  return Math.round((Number(value) || 0) * mult);
 }
 
 export default function Log() {
@@ -309,33 +355,57 @@ export default function Log() {
     dinner: "",
     snacks: "",
   });
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedForModal, setSelectedForModal] = useState(null);
+  const [servingMultiplier, setServingMultiplier] = useState(1);
 
   const suggestionSection = getSectionForEmptySuggestion(meals);
 
+  useEffect(() => {
+    const currentQuery = expandedSection ? (inputValues[expandedSection] || "").trim() : "";
+    if (!currentQuery) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    searchFood(currentQuery)
+      .then((list) => setSearchResults(list || []))
+      .catch(() => setSearchResults([]))
+      .finally(() => setSearchLoading(false));
+  }, [expandedSection, inputValues]);
+
   function toggleExpand(mealKey) {
     setExpandedSection(expandedSection === mealKey ? null : mealKey);
+    if (expandedSection === mealKey) setSearchResults([]);
   }
 
   function setInput(mealKey, value) {
     setInputValues((prev) => ({ ...prev, [mealKey]: value }));
   }
 
-  async function addItem(mealKey) {
-    const value = (inputValues[mealKey] || "").trim();
-    if (!value) return;
-
+  function openAddModal(food, mealKey) {
+    setSelectedForModal({ food, mealKey });
+    setServingMultiplier(1);
+    setSearchResults([]);
     setInput(mealKey, "");
-    setExpandedSection(null);
+  }
+
+  async function confirmAddFromModal() {
+    if (!selectedForModal) return;
+    const { food, mealKey } = selectedForModal;
+    const result = await logMealWithFood(mealKey, food, servingMultiplier);
+    if (!result || !result.ok || !result.id) return;
 
     // (yavna) connect meal id so that it can be deleted from database
-    const result = await logMealToBackend(mealKey, value);
-
-    if (result && result.ok && result.id) {
-        const newItem = { name: value, id: result.id };
-        setMeals((prev) => ({ ...prev, [mealKey]: [...prev[mealKey], newItem] }));
-
-        setRefreshKey((k) => k + 1);
-    }
+    const newItem = { name: food.description, id: result.id };
+    setMeals((prev) => ({
+      ...prev,
+      [mealKey]: [...prev[mealKey], newItem],
+    }));
+    setSelectedForModal(null);
+    setExpandedSection(null);
+    setRefreshKey((k) => k + 1);
   }
 
   async function removeItem(mealKey, index) {
@@ -346,13 +416,12 @@ export default function Log() {
       [mealKey]: prev[mealKey].filter((_, i) => i !== index),
     }));
 
-
     // (yavna) delete from backend
     if (itemToRemove && itemToRemove.id) {
-        await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
-            method: "DELETE"
-        });
-        setRefreshKey((k) => k + 1);
+      await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
+        method: "DELETE",
+      });
+      setRefreshKey((k) => k + 1);
     }
   }
 
@@ -374,6 +443,53 @@ export default function Log() {
 
   return (
     <div className="logPage">
+      {selectedForModal && (
+        <div className="logModalOverlay" onClick={() => setSelectedForModal(null)}>
+          <div className="logModal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="logModalTitle">{selectedForModal.food.description}</h3>
+            <div className="logModalNutrients">
+              <div className="logModalNutrientRow">
+                <span>Calories</span>
+                <span>{scaledNutrient(selectedForModal.food.calories, servingMultiplier)}</span>
+              </div>
+              <div className="logModalNutrientRow">
+                <span>Protein</span>
+                <span>{scaledNutrient(selectedForModal.food.protein, servingMultiplier)}g</span>
+              </div>
+              <div className="logModalNutrientRow">
+                <span>Carbs</span>
+                <span>{scaledNutrient(selectedForModal.food.carbohydrates, servingMultiplier)}g</span>
+              </div>
+              <div className="logModalNutrientRow">
+                <span>Fat</span>
+                <span>{scaledNutrient(selectedForModal.food.fat, servingMultiplier)}g</span>
+              </div>
+            </div>
+            <div className="logModalServing">
+              <label className="logModalServingLabel">Serving size</label>
+              <select
+                className="logModalServingSelect"
+                value={servingMultiplier}
+                onChange={(e) => setServingMultiplier(Number(e.target.value))}
+              >
+                {SERVING_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt === 1 ? "1 (default)" : opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="logModalActions">
+              <button type="button" className="logModalCancel" onClick={() => setSelectedForModal(null)}>
+                Cancel
+              </button>
+              <button type="button" className="logModalAdd" onClick={confirmAddFromModal}>
+                Add to {MEAL_LABELS[selectedForModal.mealKey]}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="logContent">
         <div className="logWidgetPlaceholder">
           <TopDashboard userEmail={email} refreshKey={refreshKey} />
@@ -427,21 +543,38 @@ export default function Log() {
                 </div>
 
                 {isExpanded && (
-                  <div className="logInputRow">
+                  <div className="logSearchWrap">
                     <input
                       type="text"
                       className="logInput"
-                      placeholder="Food name"
+                      placeholder="Search food..."
                       value={inputValues[mealKey] || ""}
                       onChange={(e) => setInput(mealKey, e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") addItem(mealKey);
+                        if (e.key === "Enter" && searchResults.length > 0) {
+                          e.preventDefault();
+                          openAddModal(searchResults[0], mealKey);
+                        }
                       }}
                       autoFocus
                     />
-                    <button type="button" className="logOkBtn" onClick={() => addItem(mealKey)}>
-                      Add
-                    </button>
+                    {searchLoading && <div className="logSearchLoading">Searching...</div>}
+                    {!searchLoading && searchResults.length > 0 && (
+                      <ul className="logSearchDropdown">
+                        {searchResults.map((food, i) => (
+                          <li
+                            key={i}
+                            className="logSearchDropdownItem"
+                            onClick={() => openAddModal(food, mealKey)}
+                          >
+                            {food.description}
+                            <span className="logSearchDropdownCals">
+                              {Math.round(Number(food.calories || 0))} cal
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
 
