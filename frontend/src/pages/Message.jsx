@@ -68,6 +68,7 @@ export default function Message() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [previewImage, setPreviewImage] = useState(null); // dataURL
+  const [cameraStream, setCameraStream] = useState(null);
 
   function stopCamera() {
     try {
@@ -75,40 +76,69 @@ export default function Message() {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
-      if (videoRef.current) videoRef.current.srcObject = null;
     } catch {}
+
+    setCameraStream(null);
     setIsCameraOpen(false);
   }
 
   async function openCamera() {
     setCameraError("");
     setPreviewImage(null);
+    setIsCameraOpen(true);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: true,
         audio: false,
       });
 
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setIsCameraOpen(true);
-    } catch {
+      setCameraStream(stream);
+    } catch (e) {
+      console.error(e);
       setCameraError("Camera permission denied or camera not available. Use Upload instead.");
       setIsCameraOpen(false);
     }
   }
 
+  useEffect(() => {
+    if (!isCameraOpen) return;
+    if (!cameraStream) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.srcObject = cameraStream;
+
+    const play = async () => {
+      try {
+        await video.play();
+      } catch (e) {
+        console.error("video.play() failed:", e);
+      }
+    };
+
+    video.onloadedmetadata = play;
+    play();
+
+    return () => {
+      video.onloadedmetadata = null;
+    };
+  }, [isCameraOpen, cameraStream]);
+
   function capturePhoto() {
     const video = videoRef.current;
     if (!video) return;
 
+    if (!video.videoWidth || !video.videoHeight) {
+      setCameraError("Camera is still loading — wait a second and try again.");
+      return;
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -117,6 +147,7 @@ export default function Message() {
     setPreviewImage(dataUrl);
     stopCamera();
   }
+
 
   function onPickFile(e) {
     const file = e.target.files?.[0];
@@ -375,7 +406,7 @@ export default function Message() {
       {isCameraOpen ? (
         <div className="msgCameraOverlay" role="dialog" aria-modal="true">
           <div className="msgCameraCard">
-            <video ref={videoRef} className="msgCameraVideo" playsInline muted />
+            <video ref={videoRef} className="msgCameraVideo" playsInline muted autoPlay/>
             <div className="msgCameraActions">
               <button type="button" className="msgSmallBtn" onClick={capturePhoto}>
                 Capture

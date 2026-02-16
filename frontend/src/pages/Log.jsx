@@ -360,57 +360,90 @@ export default function Log() {
   const [servingMultiplier, setServingMultiplier] = useState(1);
 
   // ---------------- CAMERA / UPLOAD ----------------
-  const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
+const fileInputRef = useRef(null);
+const videoRef = useRef(null);
+const streamRef = useRef(null);
 
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [previewImage, setPreviewImage] = useState(null);
+const [isCameraOpen, setIsCameraOpen] = useState(false);
+const [cameraStream, setCameraStream] = useState(null);
+const [cameraError, setCameraError] = useState("");
+const [previewImage, setPreviewImage] = useState(null);
 
-  function stopCamera() {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-      }
-      if (videoRef.current) videoRef.current.srcObject = null;
-    } catch {}
+function stopCamera() {
+  try {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  } catch {}
+  setCameraStream(null);
+  setIsCameraOpen(false);
+}
+
+async function openCamera() {
+  setCameraError("");
+  setIsCameraOpen(true);
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: false,
+    });
+
+    streamRef.current = stream;
+    setCameraStream(stream);
+  } catch (e) {
+    console.error(e);
+    setCameraError("Camera not available. Use Upload instead.");
     setIsCameraOpen(false);
   }
+}
 
-  async function openCamera() {
-    setCameraError("");
+
+useEffect(() => {
+  if (!isCameraOpen) return;
+  if (!cameraStream) return;
+
+  const video = videoRef.current;
+  if (!video) return;
+
+  video.srcObject = cameraStream;
+
+  const play = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setIsCameraOpen(true);
-    } catch {
-      setCameraError("Camera not available. Use Upload instead.");
+      await video.play();
+    } catch (e) {
+      console.error("video.play() failed:", e);
     }
+  };
+
+  video.onloadedmetadata = play;
+  play();
+
+  return () => {
+    video.onloadedmetadata = null;
+  };
+}, [isCameraOpen, cameraStream]);
+
+function capturePhoto() {
+  const video = videoRef.current;
+  if (!video) return;
+
+  if (!video.videoWidth || !video.videoHeight) {
+    setCameraError("Camera is still loading — wait a second and try again.");
+    return;
   }
 
-  function capturePhoto() {
-    const video = videoRef.current;
-    if (!video) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    setPreviewImage(canvas.toDataURL("image/jpeg", 0.9));
-    stopCamera();
-  }
+  setPreviewImage(canvas.toDataURL("image/jpeg", 0.9));
+  stopCamera();
+}
 
   function onPickFile(e) {
     const file = e.target.files?.[0];
@@ -680,7 +713,7 @@ export default function Log() {
                     {isCameraOpen ? (
                       <div className="logCameraOverlay" role="dialog" aria-modal="true">
                         <div className="logCameraCard">
-                          <video ref={videoRef} className="logCameraVideo" playsInline muted />
+                          <video ref={videoRef} className="logCameraVideo" playsInline muted autoPlay/>
                           <div className="logCameraActions">
                             <button type="button" className="logOkBtn" onClick={capturePhoto}>
                               Capture
