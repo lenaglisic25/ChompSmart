@@ -42,6 +42,8 @@ export default function Message() {
   const [view, setView] = useState("inbox"); // "inbox" | "chat"
   const [activeThread, setActiveThread] = useState(null); // "chompy" | "doctor"
   const [text, setText] = useState("");
+  // (yavna) added simple typing indicator for ai loading
+  const [typing, setTyping] = useState(false);
 
   const [threads, setThreads] = useState(() => {
     try {
@@ -209,7 +211,7 @@ export default function Message() {
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [view, activeThread, messages.length]);
+  }, [view, activeThread, messages.length, typing]);
 
   function openChat(threadKey) {
     setActiveThread(threadKey);
@@ -224,7 +226,8 @@ export default function Message() {
     setPreviewImage(null);
   }
 
-  function sendMessage() {
+  // (backend) edit sendMessage to use api and fetch/send history
+  async function sendMessage() {
     const trimmed = text.trim();
     if (!trimmed || !activeThread) return;
 
@@ -237,29 +240,56 @@ export default function Message() {
       body: trimmed,
     };
 
-    setThreads((prev) => ({
-      ...prev,
-      [activeThread]: [...(prev[activeThread] || []), newMsg],
-    }));
+    const updatedThreads = {
+      ...threads,
+      [activeThread]: [...(threads[activeThread] || []), newMsg],
+    };
+
+    setThreads(updatedThreads);
     setText("");
 
     if (activeThread === "chompy") {
-      setTimeout(() => {
-        setThreads((prev) => ({
-          ...prev,
-          chompy: [
-            ...(prev.chompy || []),
-            {
-              id: `${Date.now()}_bot`,
-              from: "bot",
-              name: "Chompy",
-              avatar: "gator",
-              time: nowTime(),
-              body: "Got it! Want meal ideas or a goal check?",
-            },
-          ],
+      setTyping(true);
+      try {
+        const history = updatedThreads.chompy.map(m => ({
+            from: m.from, 
+            body: m.body 
         }));
-      }, 450);
+
+        const res = await fetch("http://localhost:8000/chat/message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: trimmed,
+            history: history,
+            user_email: email
+          }),
+        });
+
+        const data = await res.json();
+        if (data?.reply) {
+          setThreads((prev) => ({
+            ...prev,
+            chompy: [
+              ...(prev.chompy || []),
+              {
+                id: `${Date.now()}_bot`,
+                from: "bot",
+                name: "Chompy",
+                avatar: "gator",
+                time: nowTime(),
+                body: data.reply,
+              },
+            ],
+          }));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTyping(false);
+      }
     }
   }
 
@@ -349,6 +379,18 @@ export default function Message() {
             {m.from === "me" && <div className="msgAvatar me">🙂</div>}
           </div>
         ))}
+        
+        {/* (yavna) simple typing indicator to show chatbot is generating a response*/}
+        {typing && (
+          <div className="msgRow other">
+            <div className="msgAvatar gator">🐊</div>
+            <div className="msgBubble">
+              <div className="msgBody">
+                 <span className="typing-indicator">Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="msgComposer">
@@ -360,6 +402,7 @@ export default function Message() {
           onKeyDown={(e) => {
             if (e.key === "Enter") sendMessage();
           }}
+          disabled={typing}
         />
 
         <input

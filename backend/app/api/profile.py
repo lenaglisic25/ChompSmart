@@ -15,6 +15,7 @@ router = APIRouter(prefix="/profile", tags=["profiles"])
 
 @router.post("/", response_model=profile_schema.Profile)
 def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session = Depends(get_db)):
+    
     email = profile.user_email
     profile_data = profile.dict(exclude_unset=True)
 
@@ -37,7 +38,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             new_profile.birthday_text
             and new_profile.height_text
             and new_profile.weight_text
-            and new_profile.gender
+            and new_profile.sex_at_birth
         ):
             result = compute_tdee(
                 birthday_text=new_profile.birthday_text,
@@ -61,7 +62,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             #    new_profile.calorie_goal = round(result.mifflin_tdee_female)
 
             # set calorie goal based on gender - UPDATED THIS- jack
-            if new_profile.gender.lower() == "male":
+            if new_profile.sex_at_birth.lower() == "male":
                 new_profile.calorie_goal = round(result.mifflin_tdee_male)
                 # Save male macros
                 new_profile.carbs_g = result.macros_male.carbs_g

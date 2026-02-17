@@ -146,10 +146,15 @@ function TopDashboard({ userEmail, refreshKey }) {
 
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
-            <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs || 0)}/{goals.carbs}g</div>
-            <div className="tdGoalLine">Protein: {Math.round(metrics.protein || 0)}/{goals.protein}g</div>
-            <div className="tdGoalLine">Fats: {Math.round(metrics.fats || 0)}/{goals.fats}g</div>
-            <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber || 0)}/{goals.fiber}g</div>
+            <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
+            <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{Math.round(goals.carbs)}g</div>
+            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
+            <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{Math.round(goals.fats)}g</div>
+            <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
+            <div className="tdGoalLine">
+              Sodium: {Math.round(metrics.sodiumMg)}/{goals.sodiumMg}mg
+            </div>
+
           </div>
 
           <div className="tdMiniCard tdHydCard">
@@ -289,8 +294,10 @@ async function logMealToBackend(mealType, foodName) {
 
       calories: Number(f.calories || 0),
       protein: Number(f.protein || 0),
-      carbs: Number(f.carbohydrates || 0),
+      carbs: Number(f.carbohydrates || 0),   
       fats: Number(f.fats || 0),
+      fiber: Number(f.fiber || 0),
+      sodium: Number(f.sodium || 0)              
     }),
   });
 

@@ -220,87 +220,18 @@
   cursor: pointer;
   background: #ffb43a;
 }
-/* Message.css */
 
-.msgIconBtn {
-  border: 2px solid #1f1f1f;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-weight: 900;
-  cursor: pointer;
-  background: #fff;
+/* (yavna) placeholder style for typing indicator */
+.typing-indicator {
+  display: inline-block;
+  font-style: italic;
+  font-weight: bold;
+  color: #666;
+  animation: blink 1s infinite;
 }
 
-.msgError {
-  margin: 8px 12px 0;
-  color: #b91c1c;
-  font-weight: 800;
-  font-size: 13px;
+@keyframes blink {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
 }
-
-.msgImage {
-  width: 240px;
-  max-width: 100%;
-  border-radius: 10px;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-}
-
-.msgPreviewBar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px 14px;
-  border-top: 2px solid #1f1f1f;
-}
-
-.msgPreviewThumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 10px;
-  object-fit: cover;
-  border: 2px solid rgba(0, 0, 0, 0.15);
-}
-
-.msgSmallBtn {
-  border: 2px solid #1f1f1f;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-weight: 900;
-  cursor: pointer;
-  background: #ffb43a;
-}
-
-.msgSmallBtn.ghost {
-  background: #fff;
-}
-
-.msgCameraOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: grid;
-  place-items: center;
-  z-index: 9999;
-}
-
-.msgCameraCard {
-  width: min(520px, 92vw);
-  background: #fff;
-  border-radius: 16px;
-  border: 2px solid #1f1f1f;
-  padding: 12px;
-}
-
-.msgCameraVideo {
-  width: 100%;
-  border-radius: 12px;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-}
-
-.msgCameraActions {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
-
