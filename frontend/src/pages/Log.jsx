@@ -70,6 +70,7 @@ function TopDashboard({ userEmail, refreshKey }) {
     fluidsL: 0,
     streakDays: 0,
     weeklyAvgCalories: 0,
+    sodiumMg: 0,
   });
 
   useEffect(() => {
@@ -87,13 +88,23 @@ function TopDashboard({ userEmail, refreshKey }) {
 
     fetch(`http://localhost:8000/meals/today?user_email=${encodeURIComponent(userEmail)}`)
       .then((res) => (res.ok ? res.json() : []))
-      .then((meals) => {
-        const list = Array.isArray(meals) ? meals : [];
+      .then((data) => {
+        let list = [];
+        
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (typeof data === 'object' && data !== null) {
+          list = Object.values(data).flat();
+        }
+
         const totalCals = list.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
         const totalProt = list.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
         const totalCarbs = list.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
         const totalFats = list.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
         const totalFluids = list.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
+        
+        const totalFiber = list.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
+        const totalSodium = list.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0);
 
         setMetrics((prev) => ({
           ...prev,
@@ -101,6 +112,8 @@ function TopDashboard({ userEmail, refreshKey }) {
           protein: totalProt,
           carbs: totalCarbs,
           fats: totalFats,
+          fiber: totalFiber,
+          sodiumMg: totalSodium,
           fluidsL: totalFluids,
         }));
       })
@@ -114,6 +127,7 @@ function TopDashboard({ userEmail, refreshKey }) {
     carbs: Number(profile?.carbs_g ?? 275),
     fats: Number(profile?.fats_g ?? 90),
     fiber: Number(profile?.fiber_g ?? 25),
+    sodiumMg: 2300,
     fluidsL: 3.0,
   };
 
@@ -152,9 +166,8 @@ function TopDashboard({ userEmail, refreshKey }) {
             <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{Math.round(goals.fats)}g</div>
             <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
             <div className="tdGoalLine">
-              Sodium: {Math.round(metrics.sodiumMg)}/{goals.sodiumMg}mg
+              Sodium: {Math.round(metrics.sodiumMg || 0)}/{goals.sodiumMg || 2300}mg
             </div>
-
           </div>
 
           <div className="tdMiniCard tdHydCard">
@@ -272,41 +285,18 @@ async function searchFood(query) {
   return res.json();
 }
 
-async function logMealToBackend(mealType, foodName) {
-  const email = localStorage.getItem("currentUserEmail");
-
-  const searchRes = await fetch(
-    `http://localhost:8000/usda/search?query=${encodeURIComponent(foodName)}`
-  );
-
-  const foods = await searchRes.json();
-  if (!foods.length) return null;
-
-  const f = foods[0];
-
-  const response = await fetch("http://localhost:8000/meals/log", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_email: email,
-      meal_type: mealType,
-      food_name: f.description,
-
-      calories: Number(f.calories || 0),
-      protein: Number(f.protein || 0),
-      carbs: Number(f.carbohydrates || 0),   
-      fats: Number(f.fats || 0),
-      fiber: Number(f.fiber || 0),
-      sodium: Number(f.sodium || 0)              
-    }),
-  });
-
-  return await response.json();
-}
-
 async function logMealWithFood(mealType, food, servingMultiplier) {
   const email = localStorage.getItem("currentUserEmail");
   const mult = Number(servingMultiplier) || 1;
+  
+  const calories = food.macros?.calories ?? food.calories ?? 0;
+  const protein = food.macros?.protein ?? food.protein ?? 0;
+  const carbs = food.macros?.carbs ?? food.carbohydrates ?? 0;
+  const fats = food.macros?.fats ?? food.fat ?? 0;
+  
+  const fiber = food.extras?.fiber ?? food.fiber ?? 0;
+  const sodium = food.extras?.sodium ?? food.sodium ?? 0;
+
   const response = await fetch("http://localhost:8000/meals/log", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -314,10 +304,12 @@ async function logMealWithFood(mealType, food, servingMultiplier) {
       user_email: email,
       meal_type: mealType,
       food_name: food.description,
-      calories: Number(food.calories || 0) * mult,
-      protein: Number(food.protein || 0) * mult,
-      carbs: Number(food.carbohydrates || 0) * mult,
-      fats: Number(food.fat || 0) * mult,
+      calories: Number(calories) * mult,
+      protein: Number(protein) * mult,
+      carbs: Number(carbs) * mult,
+      fats: Number(fats) * mult,
+      fiber: Number(fiber) * mult,
+      sodium: Number(sodium) * mult,
     }),
   });
   return response.json();
@@ -354,6 +346,34 @@ export default function Log() {
     dinner: [],
     snacks: [],
   });
+
+  useEffect(() => {
+    if (!email) return;
+
+    fetch(`http://localhost:8000/meals/today?user_email=${encodeURIComponent(email)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+
+        if (Array.isArray(data)) {
+            const newMeals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
+            data.forEach(item => {
+                const type = item.meal_type ? item.meal_type.toLowerCase() : 'snacks';
+                if (newMeals[type]) newMeals[type].push(item);
+            });
+            setMeals(newMeals);
+        } else {
+            setMeals({
+                breakfast: data.breakfast || [],
+                lunch: data.lunch || [],
+                dinner: data.dinner || [],
+                snacks: data.snacks || []
+            });
+        }
+      })
+      .catch((err) => console.error("Failed to load meals:", err));
+  }, [email, refreshKey]);
+
   const [expandedSection, setExpandedSection] = useState(null);
   const [inputValues, setInputValues] = useState({
     breakfast: "",
@@ -500,15 +520,9 @@ function capturePhoto() {
   async function confirmAddFromModal() {
     if (!selectedForModal) return;
     const { food, mealKey } = selectedForModal;
-    const result = await logMealWithFood(mealKey, food, servingMultiplier);
-    if (!result || !result.ok || !result.id) return;
-
-    // (yavna) connect meal id so that it can be deleted from database
-    const newItem = { name: food.description, id: result.id };
-    setMeals((prev) => ({
-      ...prev,
-      [mealKey]: [...prev[mealKey], newItem],
-    }));
+    
+    await logMealWithFood(mealKey, food, servingMultiplier);
+    
     setSelectedForModal(null);
     setExpandedSection(null);
     setRefreshKey((k) => k + 1);
@@ -517,17 +531,18 @@ function capturePhoto() {
   async function removeItem(mealKey, index) {
     const itemToRemove = meals[mealKey][index];
 
-    setMeals((prev) => ({
-      ...prev,
-      [mealKey]: prev[mealKey].filter((_, i) => i !== index),
-    }));
+    if (!itemToRemove || !itemToRemove.id) {
+        setRefreshKey((k) => k + 1);
+        return;
+    }
 
-    // (yavna) delete from backend
-    if (itemToRemove && itemToRemove.id) {
-      await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
-        method: "DELETE",
-      });
-      setRefreshKey((k) => k + 1);
+    try {
+        await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
+            method: "DELETE",
+        });
+        setRefreshKey((k) => k + 1);
+    } catch (err) {
+        console.error("Delete failed:", err);
     }
   }
 
@@ -536,14 +551,6 @@ function capturePhoto() {
     if(!window.confirm("Are you sure you want to clear your meal log?")) return;
 
     await clearBackendMeals();
-
-    setMeals({
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snacks: [],
-    });
-
     setRefreshKey((k) => k + 1);
   }
 
@@ -556,19 +563,27 @@ function capturePhoto() {
             <div className="logModalNutrients">
               <div className="logModalNutrientRow">
                 <span>Calories</span>
-                <span>{scaledNutrient(selectedForModal.food.calories, servingMultiplier)}</span>
+                <span>{scaledNutrient(selectedForModal.food.macros?.calories ?? selectedForModal.food.calories, servingMultiplier)}</span>
               </div>
               <div className="logModalNutrientRow">
                 <span>Protein</span>
-                <span>{scaledNutrient(selectedForModal.food.protein, servingMultiplier)}g</span>
+                <span>{scaledNutrient(selectedForModal.food.macros?.protein ?? selectedForModal.food.protein, servingMultiplier)}g</span>
               </div>
               <div className="logModalNutrientRow">
                 <span>Carbs</span>
-                <span>{scaledNutrient(selectedForModal.food.carbohydrates, servingMultiplier)}g</span>
+                <span>{scaledNutrient(selectedForModal.food.macros?.carbs ?? selectedForModal.food.carbohydrates, servingMultiplier)}g</span>
               </div>
               <div className="logModalNutrientRow">
                 <span>Fat</span>
-                <span>{scaledNutrient(selectedForModal.food.fat, servingMultiplier)}g</span>
+                <span>{scaledNutrient(selectedForModal.food.macros?.fats ?? selectedForModal.food.fat, servingMultiplier)}g</span>
+              </div>
+              <div className="logModalNutrientRow">
+                <span>Fiber</span>
+                <span>{scaledNutrient(selectedForModal.food.extras?.fiber ?? selectedForModal.food.fiber, servingMultiplier)}g</span>
+              </div>
+              <div className="logModalNutrientRow">
+                <span>Sodium</span>
+                <span>{scaledNutrient(selectedForModal.food.extras?.sodium ?? selectedForModal.food.sodium, servingMultiplier)}mg</span>
               </div>
             </div>
             <div className="logModalServing">
@@ -739,7 +754,17 @@ function capturePhoto() {
                   <ul className="logItemList">
                     {items.map((item, i) => (
                       <li key={`${mealKey}-${i}`} className="logItem">
-                        <span className="logItemName">{item.name}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>
+                            <span className="logItemName" style={{ fontSize: '1rem', fontWeight: 500 }}>
+                                {item.food_name || item.name || "Unknown Food"}
+                            </span>
+                            <span className="logItemNutrients" style={{ fontSize: '0.8rem', color: '#666' }}>
+                                {Math.round(item.calories || 0)} kcal
+                                {' • '}{Math.round(item.protein || 0)}p
+                                {' • '}{Math.round(item.carbs || 0)}c
+                                {' • '}{Math.round(item.fats || 0)}f
+                            </span>
+                        </div>
                         <button
                           type="button"
                           className="logItemRemove"
