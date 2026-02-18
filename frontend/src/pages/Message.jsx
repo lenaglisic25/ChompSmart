@@ -9,6 +9,30 @@ function nowTime() {
   return `${hh}:${mm}`;
 }
 
+// (yavna) Handle  file compression
+async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = (maxWidth / width) * height;
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve(compressedDataUrl);
+    };
+    img.src = dataUrl
+  });
+}
+//
+
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
   const storageKey = useMemo(() => `chompsmart_threads_${email}`, [email]);
@@ -162,7 +186,8 @@ export default function Message() {
     e.target.value = "";
   }
 
-  function sendImageMessage(dataUrl) {
+  // (yavna) update to handle image messages to backend
+  async function sendImageMessage(dataUrl) {
     if (!activeThread || !dataUrl) return;
 
     const newMsg = {
@@ -182,22 +207,43 @@ export default function Message() {
     setPreviewImage(null);
 
     if (activeThread === "chompy") {
-      setTimeout(() => {
-        setThreads((prev) => ({
-          ...prev,
-          chompy: [
-            ...(prev.chompy || []),
-            {
-              id: `${Date.now()}_bot`,
-              from: "bot",
-              name: "Chompy",
-              avatar: "gator",
-              time: nowTime(),
-              body: "Nice! Want me to estimate calories/macros from the photo?",
-            },
-          ],
-        }));
-      }, 450);
+      setTyping(true);
+      
+      try {
+        const compressedImage = await compressImage(dataUrl);
+
+        const res = await fetch("http://localhost:8000/chat/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: compressedImage,
+            user_email: email,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data?.reply) {
+          setThreads((prev) => ({
+            ...prev,
+            chompy: [
+              ...(prev.chompy || []),
+              {
+                id: `${Date.now()}_bot`,
+                from: "bot",
+                name: "Chompy",
+                avatar: "gator",
+                time: nowTime(),
+                body: data.reply,
+              },
+            ],
+          }));
+        }
+      } catch (err) {
+        console.error("Image upload failed:", err);
+      } finally {
+        setTyping(false);
+      }
     }
   }
 
