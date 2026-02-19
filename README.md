@@ -24,3 +24,6 @@ ChompSmart's goal is to support sustainable behavior for individuals mananging c
   - Reminders to input data/document
   - Communication about grocery reminders
   - Weekly Summary and Support
+
+©Copyright 2026 University of Florida Research Foundation, Inc.
+All Rights Reserved.

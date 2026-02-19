@@ -1,3 +1,8 @@
+"""
+©Copyright 2026 University of Florida Research Foundation, Inc.
+All Rights Reserved.
+"""
+
 from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI
