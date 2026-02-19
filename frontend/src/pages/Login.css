@@ -107,3 +107,19 @@
 .loginButton:active {
   transform: translateY(1px);
 }
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.copyright {
+  margin-top: auto;
+  text-align: center;
+  font-size: 12px;
+  color: white;
+  padding: 14px 8px;
+  opacity: 0.9;
+}
+
+

@@ -47,67 +47,72 @@ export default function Login() {
   };
 
   return (
-    <div className="loginPage">
-      <div className="loginTop">
-        <div className="loginLogoFrame" aria-label="ChompSmart logo">
-          <img className="loginLogoImg" src={logo} alt="ChompSmart logo" />
+      <div className="loginPage">
+        <div className="loginTop">
+          <div className="loginLogoFrame" aria-label="ChompSmart logo">
+            <img className="loginLogoImg" src={logo} alt="ChompSmart logo"/>
+          </div>
+
+          <div className="brandWordmark" aria-label="ChompSmart">
+            <span className="chomp">Chomp</span>
+            <span className="smart">Smart</span>
+          </div>
         </div>
 
-        <div className="brandWordmark" aria-label="ChompSmart">
-          <span className="chomp">Chomp</span>
-          <span className="smart">Smart</span>
+        <div className="loginCard">
+          <h1 className="loginTitle">Login</h1>
+
+          <form className="loginForm" onSubmit={(e) => e.preventDefault()}>
+            <label className="loginLabel" htmlFor="email">
+              Email
+            </label>
+            <input
+                id="email"
+                className="loginInput"
+                type="email"
+                placeholder="you@clinic.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                required
+            />
+
+            <label className="loginLabel" htmlFor="password">
+              Password
+            </label>
+            <input
+                id="password"
+                className="loginInput"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+            />
+
+            <button
+                type="button"
+                className="loginButton"
+                onClick={() => login()}
+            >
+              Log In
+            </button>
+            <button
+                type="button"
+                className="loginButton"
+                onClick={() => navigate("/setup-profile")}
+                style={{marginTop: 10}}
+            >
+              Create Account
+            </button>
+          </form>
         </div>
+
+        <p className="copyright">
+          ©Copyright 2026 University of Florida Research Foundation, Inc. All Rights Reserved.
+        </p>
+
       </div>
-
-      <div className="loginCard">
-        <h1 className="loginTitle">Login</h1>
-
-        <form className="loginForm" onSubmit={(e) => e.preventDefault()}>
-          <label className="loginLabel" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className="loginInput"
-            type="email"
-            placeholder="you@clinic.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            required
-          />
-
-          <label className="loginLabel" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            className="loginInput"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-
-          <button
-            type="button"
-            className="loginButton"
-            onClick={() => login()}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            className="loginButton"
-            onClick={() => navigate("/setup-profile")}
-            style={{ marginTop: 10 }}
-          >
-            Create Account
-          </button>
-        </form>
-      </div>
-    </div>
   );
 }
