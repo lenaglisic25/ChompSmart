@@ -1,0 +1,44 @@
+Category,Recipe Title,Dairy-Free,Egg-Free,Gluten-Free,Keto,Low-Carb,Low-Fat,Low-Salt,Low-Sugar,No Seafood,Paleo,Soy-Free,Vegan,Vegetarian,Net Carbs (g) Per Serving,Notes
+Breakfast,Classic Banana-Oat Breakast,Yes,Yes,Yes,No,No,No,No,No,Yes,No,Yes,No,Yes,33,Gluten-free only with certified GF oats
+Breakfast,Spinach & Egg Scramble,No,No,No,No,Yes,No,No,No,Yes,No,Yes,No,Yes,12.3,Dairy-free if cooked with oil (not butter)
+Breakfast,Yogurt Berry Parfait,No,Yes,Yes,No,Yes,Yes,Yes,No,Yes,No,Yes,No,Yes,15.25,Gluten-free only with certified GF oats
+Breakfast,Apple Cinnamon Pancakes,No,No,No,No,No,No,No,No,Yes,No,No,No,Yes,48.7,Dairy-free if made with soy/non-dairy milk
+Breakfast,Mixed-Vegetable Breakfast Burrito,No,No,Yes,No,No,No,No,No,Yes,No,Yes,No,Yes,24,Assumes GF-labeled corn tortillas
+Breakfast,Peanut Butter Banana Smoothie,Yes,Yes,Yes,No,No,No,Yes,No,Yes,No,No,Yes,Yes,25.85,Gluten-free only with certified GF oats; Soy-free only if using dairy or non-soy milk alternative
+Breakfast,Veggie Egg Muffins,No,No,Yes,Yes,Yes,No,Yes,Yes,Yes,No,Yes,No,Yes,0.5,
+Breakfast,Simple Fruit & Yogurt Bowl,No,Yes,Yes,No,No,Yes,Yes,No,Yes,No,Yes,No,Yes,,
+Breakfast,Chicken & Rice Protein Bowl,Yes,Yes,Yes,No,Yes,Yes,No,No,Yes,No,Yes,No,No,17,
+Breakfast,Tomato & Cheese Breakfast Toast,No,Yes,No,No,No,No,Yes,No,Yes,No,Yes,No,Yes,39.4,
+Lunch,Chickpea Veggie Wrap,Yes,Yes,Yes,No,No,Yes,No,No,Yes,No,Yes,Yes,Yes,65.4,Assumes GF-labeled corn tortillas
+Lunch,Tuna & Sweet-Pea Rice Bowl,Yes,Yes,Yes,No,Yes,No,No,No,No,No,Yes,No,No,19.5,
+Lunch,Lentil Soup,Yes,Yes,Yes,No,Yes,Yes,No,No,Yes,No,Yes,Yes,Yes,11.6,
+Lunch,Chicken-Broccoli Stir-Fry,Yes,Yes,Yes,Yes,Yes,Yes,No,Yes,Yes,Yes,Yes,No,No,2,
+Lunch,Black-Bean Chili,Yes,Yes,Yes,No,Yes,Yes,No,Yes,Yes,No,Yes,Yes,Yes,6,
+Lunch,Egg & Spinach Sandwich,No,No,No,No,No,No,No,No,Yes,No,Yes,No,Yes,43.7,Dairy-free if cooked with oil (not butter)
+Lunch,Turkey & Rice Bowl,Yes,Yes,Yes,No,Yes,No,No,Yes,Yes,No,Yes,No,No,9.3,
+Lunch,Tofu Veggie Rice,Yes,No,Yes,No,Yes,Yes,No,No,Yes,No,Yes,No,Yes,12.5,
+Lunch,Canned Salmon Avocado Wrap,Yes,Yes,No,No,No,No,No,No,No,No,Yes,No,No,44,
+Lunch,Mexican-Style Bean Tacos,Yes,Yes,Yes,No,No,No,Yes,No,Yes,No,Yes,Yes,Yes,52,Assumes GF-labeled corn tortillas
+Lunch,Tuna & Herb Pita,Yes,Yes,No,No,No,No,Yes,No,No,No,No,No,No,24,
+Dinner,Baked Salmon & Sweet Potato,Yes,Yes,Yes,Yes,Yes,No,No,Yes,No,Yes,Yes,No,No,10,
+Dinner,Beef & Vegetable Soup,Yes,Yes,Yes,Yes,Yes,No,No,Yes,Yes,Yes,Yes,No,No,9,
+Dinner,Chicken-Rice Dumplings,Yes,Yes,No,No,Yes,No,No,No,Yes,No,No,No,No,17,
+Dinner,Chicken-Broccoli Tomato Pasta,Yes,Yes,No,No,No,No,Yes,No,Yes,No,Yes,No,No,35.4,
+Dinner,Shrimp & Collard-Green Skillet,Yes,Yes,Yes,No,Yes,No,No,No,No,Yes,Yes,No,No,12,
+Dinner,Black-Bean & Corn Catfish Soup,Yes,Yes,Yes,No,Yes,No,No,No,No,No,Yes,No,No,18,
+Dinner,Caribben-style Grilled Shrimp & Plaintain Skillet,Yes,Yes,Yes,No,No,No,No,No,Yes,Yes,Yes,Yes,Yes,28,
+Dinner,Latin-American Chicken & Black-Bean Tacos,Yes,Yes,Yes,No,No,No,No,No,Yes,No,Yes,No,No,31,Assumes GF-labeled corn tortillas
+Dinner,Greek-Inspired Beef Souvlaki with Tzatziki,No,Yes,Yes,Yes,Yes,No,No,Yes,Yes,No,Yes,No,No,5,
+Dinner,Italian Turkey Bolognese over Whole-Wheat Pasta,Yes,Yes,No,No,No,No,No,No,Yes,No,Yes,No,No,26,
+Dinner,Turkish-style Pork Kebabs with Yogurt-Cucumber Salad,No,Yes,No,No,No,No,No,No,Yes,No,Yes,No,No,20.8,
+Dinner,Simple Chicken Adobo,Yes,Yes,No,No,Yes,No,No,No,Yes,No,No,No,No,3.9,
+Dinner,Lean-Beef & Vegetable Skillet,Yes,Yes,Yes,No,Yes,No,No,No,Yes,No,Yes,No,No,13,
+Dinner,Lentil & Veggie Stuffed Bell Peppers,Yes,Yes,Yes,No,Yes,No,Yes,No,Yes,No,Yes,Yes,Yes,11,
+Dessert,Banana-Peanut-Butter Yogurt Parfait,No,Yes,Yes,No,No,No,Yes,No,Yes,No,Yes,No,Yes,21,
+Dessert,Apple-Cinnamon Oat Cookies,Yes,Yes,No,No,No,No,No,No,Yes,No,Yes,Yes,Yes,32,Gluten-free only with certified GF oats
+Dessert,Blueberry-Banana Smoothie,No,Yes,Yes,No,No,Yes,Yes,No,Yes,No,Yes,No,Yes,23,
+Dessert,Yogurt-Berry Shortcake,No,Yes,No,No,No,No,No,No,Yes,No,Yes,No,Yes,30,
+Dessert,Peach-Cinnamon Rice Cake Snack,Yes,Yes,Yes,No,Yes,No,No,No,Yes,No,Yes,Yes,Yes,14,
+Dessert,Banana-Oat Bars,Yes,Yes,No,No,Yes,No,Yes,No,Yes,No,Yes,No,Yes,19,Gluten-free only with certified GF oats
+Dessert,Mixed Fruit Salad,No,Yes,Yes,No,Yes,Yes,Yes,No,Yes,No,Yes,No,Yes,19,
+Dessert,Strawberry-Banana Frozen Cups,No,Yes,Yes,No,Yes,Yes,Yes,No,Yes,No,Yes,No,Yes,18,
