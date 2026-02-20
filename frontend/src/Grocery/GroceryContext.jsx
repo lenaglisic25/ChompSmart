@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const GroceryContext = createContext(null);
-const STORAGE_KEY = "chompsmart_grocery_v1";
+const STORAGE_KEY = "chompsmart_grocery_v2";
 
 function safeLoad() {
   try {
@@ -23,14 +23,18 @@ export function GroceryProvider({ children }) {
   }, [items]);
 
   const api = useMemo(() => {
-    function addItem(name, qty = 1) {
-      const clean = String(name || "").trim();
-      if (!clean) return;
+    function addItem(name, qty = 1, category = "Other") {
+      const cleanName = String(name || "").trim();
+      if (!cleanName) return;
+
+      const cleanCategory = String(category || "Other").trim() || "Other";
+      const cleanQty = Number(qty);
+      const finalQty = Number.isFinite(cleanQty) && cleanQty > 0 ? cleanQty : 1;
 
       const id = crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
 
       setItems((prev) => [
-        { id, name: clean, qty: Number(qty) || 1, purchased: false },
+        { id, name: cleanName, qty: finalQty, category: cleanCategory, purchased: false },
         ...prev,
       ]);
     }
@@ -45,6 +49,10 @@ export function GroceryProvider({ children }) {
       );
     }
 
+    function updateItem(id, updates) {
+      setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...updates } : x)));
+    }
+
     function clearPurchased() {
       setItems((prev) => prev.filter((x) => !x.purchased));
     }
@@ -53,7 +61,15 @@ export function GroceryProvider({ children }) {
       setItems([]);
     }
 
-    return { items, addItem, removeItem, togglePurchased, clearPurchased, clearAll };
+    return {
+      items,
+      addItem,
+      removeItem,
+      togglePurchased,
+      updateItem,
+      clearPurchased,
+      clearAll,
+    };
   }, [items]);
 
   return <GroceryContext.Provider value={api}>{children}</GroceryContext.Provider>;

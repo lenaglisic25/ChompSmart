@@ -19,12 +19,13 @@
   pointer-events: auto;
 }
 
+
 .gDrawer{
   position: absolute;
   top: 0;
   right: 0;
   height: 100%;
-  width: min(430px, 92vw);
+  width: min(460px, 92vw);
   background: var(--white);
   transform: translateX(102%);
   transition: transform 200ms ease;
@@ -95,6 +96,15 @@
   margin: 12px 0 8px;
 }
 
+.gEmpty{ opacity: .7; }
+
+.gCategoryBlock{ margin-bottom: 14px; }
+.gCategoryTitle{
+  font-size: 14px;
+  font-weight: 900;
+  margin: 10px 0 8px;
+}
+
 .gList{
   list-style: none;
   padding: 0;
@@ -110,14 +120,14 @@
   padding: 10px 12px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 .gItem.purchased{ opacity: .65; }
 
 .gItemLeft{
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   flex: 1;
 }
@@ -125,6 +135,25 @@
 .gItemText{ display: grid; gap: 2px; }
 .gName{ font-weight: 800; }
 .gMeta{ font-size: 12px; opacity: .7; }
+
+.gActions{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gSmallBtn{
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 900;
+  flex: unset;
+}
+
+.gEditGrid{
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
 
 .gDangerBtn{
   border: 2px solid var(--border);
@@ -136,15 +165,6 @@
 }
 .gDangerBtn:hover{ background: rgba(0,0,0,0.06); }
 
-.gFooter{
-  margin-top: auto;
-  display: flex;
-  gap: 10px;
-  padding: 14px 16px;
-  background: #fff;
-  border-top: 2px solid var(--border);
-}
-
 .gSecondaryBtn{
   flex: 1;
   border: 2px solid var(--border);
@@ -155,3 +175,12 @@
   cursor: pointer;
 }
 .gSecondaryBtn:hover{ background: rgba(47,111,180,0.10); }
+
+.gFooter{
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #fff;
+  border-top: 2px solid var(--border);
+}
