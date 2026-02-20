@@ -1,0 +1,157 @@
+:root{
+  --blueBar: #2b67aa;
+  --blue: #2f6fb4;
+  --border: #0f0f0f;
+  --white: #ffffff;
+}
+
+.gDrawerOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+  z-index: 9999;
+}
+.gDrawerOverlay.open{
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.gDrawer{
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(430px, 92vw);
+  background: var(--white);
+  transform: translateX(102%);
+  transition: transform 200ms ease;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid var(--border);
+}
+.gDrawer.open{ transform: translateX(0); }
+
+.gHeader{
+  background: var(--blueBar);
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--border);
+}
+.gTitle{ font-weight: 800; font-size: 18px; }
+.gSub{ font-size: 12px; opacity: .9; margin-top: 2px; }
+
+.gIconBtn{
+  background: #fff;
+  color: #0f172a;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.gIconBtn:hover{ background: rgba(255,255,255,0.85); }
+
+.gForm, .gSection { padding: 14px 16px; }
+
+.gForm{
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  margin: 14px 16px 0 16px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.gInput{
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+  background: #fff;
+}
+
+.gPrimaryBtn{
+  background: var(--blue);
+  color: #fff;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.gPrimaryBtn:hover{ background: var(--blueBar); }
+
+.gSectionTitle{
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 12px 0 8px;
+}
+
+.gList{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.gItem{
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.gItem.purchased{ opacity: .65; }
+
+.gItemLeft{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.gItemText{ display: grid; gap: 2px; }
+.gName{ font-weight: 800; }
+.gMeta{ font-size: 12px; opacity: .7; }
+
+.gDangerBtn{
+  border: 2px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.gDangerBtn:hover{ background: rgba(0,0,0,0.06); }
+
+.gFooter{
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #fff;
+  border-top: 2px solid var(--border);
+}
+
+.gSecondaryBtn{
+  flex: 1;
+  border: 2px solid var(--border);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.gSecondaryBtn:hover{ background: rgba(47,111,180,0.10); }

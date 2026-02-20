@@ -27,7 +27,7 @@ export default function Login() {
       });
 
       const raw = await res.text();
-      
+
       if (!res.ok) {
         try {
           const errorData = JSON.parse(raw);
