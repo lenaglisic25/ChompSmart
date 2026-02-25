@@ -1,29 +1,21 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const GroceryContext = createContext(null);
-const STORAGE_KEY = "chompsmart_grocery_v2";
-
-function safeLoad() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export function GroceryProvider({ children }) {
-  const [items, setItems] = useState(safeLoad);
+  const email = localStorage.getItem("currentUserEmail") || "guest";
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {}
-  }, [items]);
+    if (email === "guest") return;
+    fetch(`http://localhost:8000/grocery/${email}`)
+      .then((res) => res.json())
+      .then((data) => setItems(data))
+      .catch(() => {});
+  }, [email]);
 
   const api = useMemo(() => {
-    function addItem(name, qty = 1, category = "Other") {
+    async function addItem(name, qty = 1, category = "Other") {
       const cleanName = String(name || "").trim();
       if (!cleanName) return;
 
@@ -37,28 +29,70 @@ export function GroceryProvider({ children }) {
         { id, name: cleanName, qty: finalQty, category: cleanCategory, purchased: false },
         ...prev,
       ]);
+
+      try {
+        const res = await fetch("http://localhost:8000/grocery/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_email: email, name: cleanName, qty: finalQty, category: cleanCategory }),
+        });
+        if (!res.ok) throw new Error();
+        const dbItem = await res.json();
+        setItems((prev) => [dbItem, ...prev.filter((x) => x.id !== dbItem.id && x.id !== id)]);
+      } catch {
+        setItems((prev) => prev.filter((x) => x.id !== id));
+      }
     }
 
-    function removeItem(id) {
+    async function removeItem(id) {
       setItems((prev) => prev.filter((x) => x.id !== id));
+      try {
+        await fetch(`http://localhost:8000/grocery/${id}`, { method: "DELETE" });
+      } catch {}
     }
 
-    function togglePurchased(id) {
+    async function togglePurchased(id) {
+      const item = items.find((x) => x.id === id);
+      if (!item) return;
+
       setItems((prev) =>
         prev.map((x) => (x.id === id ? { ...x, purchased: !x.purchased } : x))
       );
+
+      try {
+        await fetch(`http://localhost:8000/grocery/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ purchased: !item.purchased }),
+        });
+      } catch {}
     }
 
-    function updateItem(id, updates) {
+    async function updateItem(id, updates) {
       setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...updates } : x)));
+      try {
+        await fetch(`http://localhost:8000/grocery/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        });
+      } catch {}
     }
 
-    function clearPurchased() {
+    async function clearPurchased() {
+      const toDelete = items.filter((x) => x.purchased);
       setItems((prev) => prev.filter((x) => !x.purchased));
+      try {
+        await Promise.all(toDelete.map((x) => fetch(`http://localhost:8000/grocery/${x.id}`, { method: "DELETE" })));
+      } catch {}
     }
 
-    function clearAll() {
+    async function clearAll() {
+      const toDelete = items;
       setItems([]);
+      try {
+        await Promise.all(toDelete.map((x) => fetch(`http://localhost:8000/grocery/${x.id}`, { method: "DELETE" })));
+      } catch {}
     }
 
     return {
@@ -70,7 +104,7 @@ export function GroceryProvider({ children }) {
       clearPurchased,
       clearAll,
     };
-  }, [items]);
+  }, [items, email]);
 
   return <GroceryContext.Provider value={api}>{children}</GroceryContext.Provider>;
 }

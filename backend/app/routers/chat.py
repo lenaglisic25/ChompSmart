@@ -105,6 +105,14 @@ You are Chompy. The user sent a food photo.
 6. End your response by asking the user if they want to log this meal and which meal slot (Breakfast, Lunch, Dinner) it belongs to.
 """
 
+ADJUST_PROMPT = """
+You are Chompy, an expert nutritionist and chef.
+The user wants to make the following recipe, but you need to adjust it to fit their specific dietary restrictions.
+1. Rewrite the ingredients list with safe substitutions.
+2. Update the instructions if the substitutions change the cooking method.
+3. Briefly explain why you made the changes to keep it healthy and compliant.
+"""
+
 model = genai.GenerativeModel(
     model_name="gemini-2.5-flash", 
     system_instruction=CHAT_PROMPT 
@@ -119,6 +127,10 @@ class ChatRequest(BaseModel):
 class ImageChatRequest(BaseModel):
     image: str
     user_email: str | None = None
+
+class RecipeAdjustRequest(BaseModel):
+    user_email: str
+    original_recipe_text: str
 
 # ROUTES
 @router.post("/message")
@@ -204,3 +216,20 @@ async def analyze_image(request: ImageChatRequest, db: Session = Depends(get_db)
     except Exception as e:
         print(f"Vision Error: {e}")
         return {"reply": "Oh snap! I couldn't quite make out that picture."}
+    
+@router.post("/adjust-recipe")
+async def adjust_recipe(request: RecipeAdjustRequest, db: Session = Depends(get_db)):
+    user = db.query(Profile).filter(Profile.user_email == request.user_email).first()
+    restrictions = user.dietary_restrictions if user else "None"
+
+    full_prompt = f"""
+    {ADJUST_PROMPT}
+    
+    USER RESTRICTIONS: {restrictions}
+    
+    ORIGINAL RECIPE:
+    {request.original_recipe_text}
+    """
+
+    response = model.generate_content(full_prompt)
+    return {"adjusted_recipe": response.text}
