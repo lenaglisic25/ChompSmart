@@ -430,3 +430,11 @@
   font-weight: 600;
   color: #222;
 }
+.learnVideoThumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.learnPlayCircle {
+  background: rgba(0, 0, 0, 0.65);
+}
