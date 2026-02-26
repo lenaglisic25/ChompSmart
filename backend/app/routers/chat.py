@@ -90,7 +90,7 @@ RESPONSIBILITIES:
 HOW TO LOG MEALS:
   1. Respond naturally confirming the action.
   2. At the very end of your message, append this exact JSON block:
-     LOG_MEAL: {"name": "Food Name", "calories": 123, "protein": 10, "carbs": 20, "fats": 5, "meal_type": "Snack"}
+     LOG_MEAL: {"name": "Food Name", "calories": 123, "protein": 10, "carbs": 20, "fats": 5,"fiber":2,"sodium":300,"sugar":4, "meal_type": "Snack"}
   3. 'meal_type' options: Breakfast, Lunch, Dinner, Snack.
 
 """
@@ -98,7 +98,7 @@ HOW TO LOG MEALS:
 VISION_PROMPT = """
 You are Chompy. The user sent a food photo.
 1. Identify the food and list all ingredients.
-2. Estimate calories/macros for the serving shown (Protein, Carbs, Fat, Fiber, Sodium).
+2. Estimate calories/macros for the serving shown (Protein, Carbs, Fat, Fiber, Sodium, Sugar).
 3. Concise responses (3-5 sentences).
 4. Be positive and encouraging.
 5. Only greet the user once per conversation.

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.profile import Profile
 from app.schemas import profile as profile_schema
 from sqlalchemy import func
 from app.models.meals import Meal
+from datetime import date
 
 #jack- added these for TDEE calculations
 from app.schemas import tdee as tdee_schema
@@ -15,7 +16,6 @@ router = APIRouter(prefix="/profile", tags=["profiles"])
 
 @router.post("/", response_model=profile_schema.Profile)
 def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session = Depends(get_db)):
-    
     email = profile.user_email
     profile_data = profile.dict(exclude_unset=True)
 
@@ -39,7 +39,14 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             and new_profile.height_text
             and new_profile.weight_text
             and new_profile.sex_at_birth
+
         ):
+            # GET TODAY'S MEALS FOR SODIUM CALCULATION
+            today = date.today()
+            today_meals = db.query(Meal).filter(
+                Meal.user_email == email,
+                func.date(Meal.created_at) == today
+            ).all()
             result = compute_tdee(
                 birthday_text=new_profile.birthday_text,
                 height_text=new_profile.height_text,
@@ -54,15 +61,10 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             new_profile.tdee_female = result.mifflin_tdee_female
             new_profile.activity_factor = result.pal
 
-            
-            # set calorie goal based on gender
-            #if new_profile.gender.lower() == "male":
-            #    new_profile.calorie_goal = round(result.mifflin_tdee_male)
-            #else:
-            #    new_profile.calorie_goal = round(result.mifflin_tdee_female)
-
+                        
             # set calorie goal based on gender - UPDATED THIS- jack
-            if new_profile.sex_at_birth.lower() == "male":
+            sex = (new_profile.sex_at_birth or "").lower()
+            if sex in ["male", "m"]:
                 new_profile.calorie_goal = round(result.mifflin_tdee_male)
                 # Save male macros
                 new_profile.carbs_g = result.macros_male.carbs_g
@@ -82,6 +84,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 new_profile.carbs_pct = result.macros_female.carbs_pct
                 new_profile.protein_pct = result.macros_female.protein_pct
                 new_profile.fats_pct = result.macros_female.fats_pct
+
 
             db.commit()
             db.refresh(new_profile)
@@ -124,6 +127,48 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
             steps_range=profile.steps_range,
             active_days_per_week=profile.active_days_per_week,
         )
+
+        # Sodium totals from TODAY'S meals (mg)
+        sodium_mg_actual = (
+            db.query(func.coalesce(func.sum(Meal.sodium), 0))
+            .filter(
+                Meal.user_email == user_email,
+                func.date(Meal.created_at, "localtime") == date.today()
+            )
+            .scalar()
+        )
+        sodium_mg_actual = float(sodium_mg_actual or 0)
+
+        # Daily max (FDA general guidance is 2300 mg/day)
+        sodium_fda_limit = 2300
+        sodium_mg_max = sodium_fda_limit
+        sodium_difference_from_fda = float(sodium_mg_max - sodium_mg_actual)
+
+        if sodium_mg_actual <= sodium_fda_limit:
+            sodium_message = f"On track, {sodium_difference_from_fda:.0f} mg remaining today."
+        else:
+            sodium_message = f"Over limit by {abs(sodium_difference_from_fda):.0f} mg today."
+
+        # Sugar totals from TODAY'S meals (grams)
+        sugar_g_actual = (
+            db.query(func.coalesce(func.sum(Meal.sugar), 0))
+            .filter(
+                Meal.user_email == user_email,
+                func.date(Meal.created_at, "localtime") == date.today()
+            )
+            .scalar()
+        )
+        sugar_g_actual = float(sugar_g_actual or 0)
+
+        # Daily sugar limit (default 50 g/day)
+        sugar_limit_g = 50.0
+        sugar_g_max = sugar_limit_g
+        sugar_difference_from_limit = float(sugar_g_max - sugar_g_actual)
+
+        if sugar_g_actual <= sugar_limit_g:
+            sugar_message = f"On track, {sugar_difference_from_limit:.1f} g remaining today."
+        else:
+            sugar_message = f"Over limit by {abs(sugar_difference_from_limit):.1f} g today."
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -132,14 +177,21 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
         "age_years": result.age_years,
         "height_cm": round(result.height_cm, 2),
         "weight_kg": round(result.weight_kg, 2),
-        # yavna - updated names to match algorithm
         "activity_factor": round(result.pal, 3),
         "bmr_male": round(result.mifflin_bmr_male),
         "bmr_female": round(result.mifflin_bmr_female),
         "tdee_male": round(result.mifflin_tdee_male),
         "tdee_female": round(result.mifflin_tdee_female),
-        #jack - added these
         "macros_male": result.macros_male,
         "macros_female": result.macros_female,
+        "sodium_mg_max": sodium_mg_max,
+        "sodium_mg_actual": sodium_mg_actual,
+        "sodium_fda_limit": sodium_fda_limit,
+        "sodium_difference_from_fda": sodium_difference_from_fda,
+        "sodium_message": sodium_message,
+        "sugar_g_max": sugar_g_max,
+        "sugar_g_actual": sugar_g_actual,
+        "sugar_limit_g": sugar_limit_g,
+        "sugar_difference_from_limit": sugar_difference_from_limit,
+        "sugar_message": sugar_message,
     }
-#all i added
