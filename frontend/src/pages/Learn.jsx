@@ -2,11 +2,15 @@ import React, { useState, useEffect } from "react";
 import "./Learn.css";
 
 import videosData from "../data/videos.json";
+import { useFavorites } from "../context/FavoritesContext";
 
 const API_BASE = "http://localhost:8000";
 
 export default function Learn() {
   const [tab, setTab] = useState("recipes");
+
+  // Favorites
+  const { isFavorite, toggleFavorite, favoritesList } = useFavorites();
 
   // Recipes state
   const [recipes, setRecipes] = useState([]);
@@ -99,11 +103,13 @@ export default function Learn() {
 
   const showVideos = tab === "videos";
   const showRecipes = tab === "recipes";
+  const showFavorites = tab === "favorites";
 
   return (
     <div className="learnPage">
       <div className="learnHeader">
         <div className="learnTitle">Discover New Recipes</div>
+
         <div className="learnTabs">
           <button
             type="button"
@@ -112,12 +118,21 @@ export default function Learn() {
           >
             Videos
           </button>
+
           <button
             type="button"
             className={`learnTab ${showRecipes ? "active" : ""}`}
             onClick={() => setTab("recipes")}
           >
             Recipes
+          </button>
+
+          <button
+            type="button"
+            className={`learnTab ${showFavorites ? "active" : ""}`}
+            onClick={() => setTab("favorites")}
+          >
+            Favorites
           </button>
         </div>
       </div>
@@ -222,6 +237,24 @@ export default function Learn() {
                   </div>
 
                   <div className="learnRecipeMeta">
+                    {/* Favorites button */}
+                    <button
+                      type="button"
+                      className={`favBtn ${isFavorite(r) ? "active" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(r);
+                      }}
+                      aria-label={
+                        isFavorite(r)
+                          ? "Remove from favorites"
+                          : "Save to favorites"
+                      }
+                      title={isFavorite(r) ? "Saved" : "Save"}
+                    >
+                      {isFavorite(r) ? "★ Saved" : "☆ Save"}
+                    </button>
+
                     <div className="learnMetaRow">
                       <span className="learnMetaIcon">⏱</span>
                       <span>{r.minutes || "—"} mins</span>
@@ -237,6 +270,85 @@ export default function Learn() {
                   </div>
                 </div>
               ))}
+          </div>
+        )}
+
+        {/* ===================== FAVORITES TAB ===================== */}
+        {showFavorites && (
+          <div className="learnRecipeList">
+            {favoritesList.length === 0 ? (
+              <div className="learnRecipesEmpty">
+                No favorites yet. Tap ☆ Save on a recipe to add it here.
+              </div>
+            ) : (
+              favoritesList.map((r) => (
+                <div
+                  key={`fav-${r.id ?? `${r.category}-${r.title}`}`}
+                  className="learnRecipeRow"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedRecipe(r)}
+                  onKeyDown={(e) => handleRecipeKeyDown(e, r)}
+                >
+                  <div className="learnRecipeImgWrap">
+                    <img
+                      className="learnRecipeImg"
+                      src={getRecipeImageUrl(r) || ""}
+                      alt={r.title}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) parent.classList.add("fallback");
+                      }}
+                    />
+                  </div>
+
+                  <div className="learnRecipeMid">
+                    <div className="learnRecipeCategory">{r.category}</div>
+                    <div className="learnRecipeTitle">{r.title}</div>
+                    <div className="learnRecipeCTA">Click for full recipe</div>
+
+                    {r.dietary_tags && r.dietary_tags.length > 0 && (
+                      <div className="learnRecipeTags">
+                        {r.dietary_tags.map((tag) => (
+                          <span key={tag} className="learnRecipeTag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="learnRecipeMeta">
+                    <button
+                      type="button"
+                      className={`favBtn ${isFavorite(r) ? "active" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(r); // removes
+                      }}
+                      aria-label="Remove from favorites"
+                      title="Remove"
+                    >
+                      ★ Saved
+                    </button>
+
+                    <div className="learnMetaRow">
+                      <span className="learnMetaIcon">⏱</span>
+                      <span>{r.minutes || "—"} mins</span>
+                    </div>
+                    <div className="learnMetaRow">
+                      <span className="learnMetaIcon">🍽</span>
+                      <span>{r.serving_size || "—"} servings</span>
+                    </div>
+                    <div className="learnMetaRow">
+                      <span className="learnMetaIcon">🔥</span>
+                      <span>{r.calories != null ? r.calories : "—"} cal</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
@@ -265,9 +377,17 @@ export default function Learn() {
                 {selectedRecipe.title}
               </h2>
 
-              <div className="learnModalCategory">
-                {selectedRecipe.category}
-              </div>
+              <div className="learnModalCategory">{selectedRecipe.category}</div>
+
+              {/* Favorites in modal */}
+              <button
+                type="button"
+                className={`favBtn ${isFavorite(selectedRecipe) ? "active" : ""}`}
+                onClick={() => toggleFavorite(selectedRecipe)}
+                style={{ marginTop: 10 }}
+              >
+                {isFavorite(selectedRecipe) ? "★ Saved" : "☆ Save"}
+              </button>
 
               {selectedRecipe.dietary_tags &&
                 selectedRecipe.dietary_tags.length > 0 && (
@@ -339,9 +459,7 @@ export default function Learn() {
                   </div>
                   <div>
                     Fat:{" "}
-                    {selectedRecipe.fat_g != null
-                      ? `${selectedRecipe.fat_g} g`
-                      : "—"}
+                    {selectedRecipe.fat_g != null ? `${selectedRecipe.fat_g} g` : "—"}
                   </div>
                   <div>
                     Fiber:{" "}

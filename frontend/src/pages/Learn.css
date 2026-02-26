@@ -438,3 +438,17 @@
 .learnPlayCircle {
   background: rgba(0, 0, 0, 0.65);
 }
+.favBtn {
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 900;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.favBtn.active {
+  background: #fffbdd;
+}
