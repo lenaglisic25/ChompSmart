@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// Learn.jsx
+import React, { useState, useEffect, useMemo } from "react";
 import "./Learn.css";
 
 import videosData from "../data/videos.json";
@@ -101,6 +102,23 @@ export default function Learn() {
     }
   }
 
+  // ---------- Group Videos by Category ----------
+  const groupedVideos = useMemo(() => {
+    return (videosData || []).reduce((map, v) => {
+      const key =
+        v.category && String(v.category).trim()
+          ? String(v.category).trim()
+          : "Other";
+      if (!map[key]) map[key] = [];
+      map[key].push(v);
+      return map;
+    }, {});
+  }, []);
+
+  const sortedCategories = useMemo(() => {
+    return Object.keys(groupedVideos).sort((a, b) => a.localeCompare(b));
+  }, [groupedVideos]);
+
   const showVideos = tab === "videos";
   const showRecipes = tab === "recipes";
   const showFavorites = tab === "favorites";
@@ -141,41 +159,50 @@ export default function Learn() {
         {/* ===================== VIDEOS TAB ===================== */}
         {showVideos && (
           <div className="learnVideoList">
-            {(videosData || []).map((v) => {
-              const thumb = getYoutubeThumbUrl(v);
-              return (
-                <div key={v.id} className="learnVideoRow">
-                  <div
-                    className="learnVideoThumb"
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Play video: ${v.title}`}
-                    onClick={() => setSelectedVideo(v)}
-                    onKeyDown={(e) => handleVideoKeyDown(e, v)}
-                    style={
-                      thumb
-                        ? {
-                            backgroundImage: `url(${thumb})`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                          }
-                        : undefined
-                    }
-                  >
-                    <div className="learnPlayCircle">▶</div>
-                  </div>
+            {sortedCategories.map((cat) => (
+              <div key={cat} className="learnVideoCategorySection">
+                <div className="learnVideoCategoryTitle">{cat}</div>
 
-                  <div className="learnVideoText">
-                    <div className="learnVideoTitle">{v.title}</div>
-                    <div className="learnVideoAuthor">
-                      {v.source}
-                      {v.category ? ` • ${v.category}` : ""}
-                      {v.program ? ` • ${v.program}` : ""}
-                    </div>
-                  </div>
+                {/* GRID WRAPPER */}
+                <div className="learnVideoGrid">
+                  {groupedVideos[cat].map((v) => {
+                    const thumb = getYoutubeThumbUrl(v);
+                    return (
+                      <div key={v.id} className="learnVideoCard">
+                        <div
+                          className="learnVideoThumb"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Play video: ${v.title}`}
+                          onClick={() => setSelectedVideo(v)}
+                          onKeyDown={(e) => handleVideoKeyDown(e, v)}
+                          style={
+                            thumb
+                              ? {
+                                  backgroundImage: `url(${thumb})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                }
+                              : undefined
+                          }
+                        >
+                          <div className="learnPlayCircle">▶</div>
+                        </div>
+
+                        <div className="learnVideoText">
+                          <div className="learnVideoTitle">{v.title}</div>
+                          <div className="learnVideoAuthor">
+                            {v.source}
+                            {v.category ? ` • ${v.category}` : ""}
+                            {v.program ? ` • ${v.program}` : ""}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -237,7 +264,6 @@ export default function Learn() {
                   </div>
 
                   <div className="learnRecipeMeta">
-                    {/* Favorites button */}
                     <button
                       type="button"
                       className={`favBtn ${isFavorite(r) ? "active" : ""}`}
@@ -325,7 +351,7 @@ export default function Learn() {
                       className={`favBtn ${isFavorite(r) ? "active" : ""}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(r); // removes
+                        toggleFavorite(r);
                       }}
                       aria-label="Remove from favorites"
                       title="Remove"
@@ -379,7 +405,6 @@ export default function Learn() {
 
               <div className="learnModalCategory">{selectedRecipe.category}</div>
 
-              {/* Favorites in modal */}
               <button
                 type="button"
                 className={`favBtn ${isFavorite(selectedRecipe) ? "active" : ""}`}
@@ -459,7 +484,9 @@ export default function Learn() {
                   </div>
                   <div>
                     Fat:{" "}
-                    {selectedRecipe.fat_g != null ? `${selectedRecipe.fat_g} g` : "—"}
+                    {selectedRecipe.fat_g != null
+                      ? `${selectedRecipe.fat_g} g`
+                      : "—"}
                   </div>
                   <div>
                     Fiber:{" "}
