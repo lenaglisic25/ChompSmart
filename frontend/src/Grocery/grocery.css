@@ -59,6 +59,12 @@
 
 .gForm, .gSection { padding: 14px 16px; }
 
+.gSection{
+  padding: 14px 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
 .gForm{
   background: var(--white);
   border: 2px solid var(--border);

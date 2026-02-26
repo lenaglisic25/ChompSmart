@@ -28,3 +28,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def _add_grocery_unit_if_missing():
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE grocery_items ADD COLUMN unit VARCHAR DEFAULT ''"))
+            conn.commit()
+    except Exception:
+        pass
+
+
+_add_grocery_unit_if_missing()

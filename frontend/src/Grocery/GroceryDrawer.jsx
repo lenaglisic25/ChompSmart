@@ -1,37 +1,25 @@
 import { useMemo, useState } from "react";
 import { useGrocery } from "./GroceryContext";
+import { CATEGORY_ORDER, normalizeCategory, parseQtyInput } from "./categories";
 import "./grocery.css";
 
-const CATEGORY_ORDER = [
-  "Produce",
-  "Meat/Seafood",
-  "Dairy",
-  "Bakery",
-  "Pantry",
-  "Frozen",
-  "Beverages",
-  "Other",
-];
-
-function normalizeCategory(cat) {
-  const c = String(cat || "").trim();
-  if (!c) return "Other";
-  return CATEGORY_ORDER.includes(c) ? c : "Other";
+function formatQty(qty, unit) {
+  const num = Number(qty);
+  const displayNum = Number.isFinite(num) ? (Number.isInteger(num) ? num : parseFloat(num.toFixed(2))) : qty;
+  return unit ? `${displayNum} ${unit}` : `${displayNum}`;
 }
 
 export default function GroceryDrawer({ open, onClose }) {
   const { items, addItem, removeItem, togglePurchased, updateItem, clearPurchased, clearAll } =
     useGrocery();
 
-
   const [name, setName] = useState("");
-  const [qty, setQty] = useState("1");
+  const [qtyStr, setQtyStr] = useState("1");
   const [category, setCategory] = useState("Produce");
-
 
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
-  const [editQty, setEditQty] = useState("");
+  const [editQtyStr, setEditQtyStr] = useState("");
   const [editCategory, setEditCategory] = useState("Other");
 
   const counts = useMemo(() => {
@@ -63,23 +51,24 @@ export default function GroceryDrawer({ open, onClose }) {
 
   function submit(e) {
     e.preventDefault();
-    addItem(name, qty, category);
+    const { qty, unit } = parseQtyInput(qtyStr);
+    addItem(name, qty, category, unit);
     setName("");
-    setQty("1");
+    setQtyStr("1");
     setCategory("Produce");
   }
 
   function startEdit(item) {
     setEditingId(item.id);
     setEditName(item.name ?? "");
-    setEditQty(String(item.qty ?? 1));
+    setEditQtyStr(formatQty(item.qty, item.unit));
     setEditCategory(normalizeCategory(item.category));
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditName("");
-    setEditQty("");
+    setEditQtyStr("");
     setEditCategory("Other");
   }
 
@@ -87,12 +76,12 @@ export default function GroceryDrawer({ open, onClose }) {
     const cleanName = String(editName || "").trim();
     if (!cleanName) return;
 
-    const q = Number(editQty);
-    const finalQty = Number.isFinite(q) && q > 0 ? q : 1;
+    const { qty, unit } = parseQtyInput(editQtyStr);
 
     updateItem(id, {
       name: cleanName,
-      qty: finalQty,
+      qty,
+      unit,
       category: normalizeCategory(editCategory),
     });
 
@@ -110,16 +99,16 @@ export default function GroceryDrawer({ open, onClose }) {
           {!isEditing ? (
             <span className="gItemText">
               <span className="gName">{item.name}</span>
-              <span className="gMeta">Qty: {item.qty}</span>
+              <span className="gMeta">Qty: {formatQty(item.qty, item.unit)}</span>
             </span>
           ) : (
             <div className="gEditGrid">
-              <input className="gInput" value={editName} onChange={(e) => setEditName(e.target.value)} />
+              <input className="gInput" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Item name" />
               <input
                 className="gInput"
-                value={editQty}
-                onChange={(e) => setEditQty(e.target.value)}
-                inputMode="decimal"
+                value={editQtyStr}
+                onChange={(e) => setEditQtyStr(e.target.value)}
+                placeholder="Qty (e.g. 1 cup)"
               />
               <select className="gInput" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
                 {CATEGORY_ORDER.map((c) => (
@@ -179,14 +168,13 @@ export default function GroceryDrawer({ open, onClose }) {
             className="gInput"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Add item (ex: eggs)"
+            placeholder="Add item (e.g. eggs)"
           />
           <input
             className="gInput"
-            value={qty}
-            onChange={(e) => setQty(e.target.value)}
-            placeholder="Qty"
-            inputMode="decimal"
+            value={qtyStr}
+            onChange={(e) => setQtyStr(e.target.value)}
+            placeholder="Qty (e.g. 1 cup, 2 tbsp, 3)"
           />
           <select className="gInput" value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORY_ORDER.map((c) => (
