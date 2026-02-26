@@ -15,7 +15,7 @@ async def search_food(query: str = Query(...)):
         r = await client.get(url, params={
             "api_key": USDA_API_KEY,
             "query": query,
-            "pageSize": 5,
+            "pageSize": 20,
             "dataType": ["Branded", "Survey (FNDDS)"]
         })
 
@@ -51,4 +51,12 @@ async def search_food(query: str = Query(...)):
             }
         })
 
-    return foods
+    seen = set()
+    unique_foods = []
+    for food in foods:
+        key = food["description"].lower()
+        if key not in seen:
+            seen.add(key)
+            unique_foods.append(food)
+
+    return unique_foods[:7]

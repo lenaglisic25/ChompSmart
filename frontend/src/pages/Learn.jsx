@@ -4,8 +4,50 @@ import "./Learn.css";
 
 import videosData from "../data/videos.json";
 import { useFavorites } from "../context/FavoritesContext";
+import { useGrocery } from "../Grocery/GroceryContext";
+import { guessCategoryFromName, INGREDIENT_UNITS } from "../Grocery/categories";
 
 const API_BASE = "http://localhost:8000";
+
+function parseIngredientLabel(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return { name: "", qty: 1, unit: "" };
+
+  const match = text.match(/^([\d\s/.]+)\s+(.+)$/);
+  if (!match) return { name: text, qty: 1, unit: "" };
+
+  const qtyPart = match[1].trim();
+  const rest = match[2].trim();
+
+  const pieces = qtyPart.split(/\s+/);
+  let total = 0;
+
+  for (const piece of pieces) {
+    if (!piece) continue;
+    if (piece.includes("/")) {
+      const [num, den] = piece.split("/").map((v) => Number(v));
+      if (Number.isFinite(num) && Number.isFinite(den) && den > 0) {
+        total += num / den;
+      }
+    } else {
+      const value = Number(piece);
+      if (Number.isFinite(value)) {
+        total += value;
+      }
+    }
+  }
+
+  const qty = total > 0 ? total : 1;
+
+  const words = rest.split(/\s+/);
+  const firstWord = words[0].toLowerCase().replace(/[.,]$/, "");
+  if (INGREDIENT_UNITS.has(firstWord)) {
+    const name = words.slice(1).join(" ").trim() || rest;
+    return { name, qty, unit: firstWord };
+  }
+
+  return { name: rest, qty, unit: "" };
+}
 
 export default function Learn() {
   const [tab, setTab] = useState("recipes");
@@ -21,6 +63,8 @@ export default function Learn() {
 
   // Video modal state
   const [selectedVideo, setSelectedVideo] = useState(null);
+
+  const { items, addItem, removeItem } = useGrocery();
 
   let userEmail = null;
   try {
@@ -58,6 +102,74 @@ export default function Learn() {
   }, [tab, userEmail]);
 
   // ---------- Helpers (Recipes) ----------
+
+  function ingredientInList(parsedName, category) {
+    return items.some(
+      (x) =>
+        String(x.name || "").trim().toLowerCase() === parsedName.toLowerCase() &&
+        String(x.category || "Other") === category &&
+        !x.purchased
+    );
+  }
+
+  function handleIngredientToggle(rawLabel) {
+    const label = String(rawLabel || "").trim();
+    if (!label) return;
+
+    const parsed = parseIngredientLabel(label);
+    const category = guessCategoryFromName(parsed.name);
+
+    const match = items.find(
+      (x) =>
+        String(x.name || "").trim().toLowerCase() === parsed.name.toLowerCase() &&
+        String(x.category || "Other") === category &&
+        !x.purchased
+    );
+
+    if (match) {
+      removeItem(match.id);
+    } else {
+      addItem(parsed.name, parsed.qty, category, parsed.unit);
+    }
+  }
+
+  function handleToggleAllIngredients(rawIngredients) {
+    const ingredients = rawIngredients
+      .map((x) => String(x || "").trim())
+      .filter(Boolean);
+
+    if (ingredients.length === 0) return;
+
+    const allSelected = ingredients.every((label) => {
+      const parsed = parseIngredientLabel(label);
+      const category = guessCategoryFromName(parsed.name);
+      return ingredientInList(parsed.name, category);
+    });
+
+    if (allSelected) {
+      ingredients.forEach((label) => {
+        const parsed = parseIngredientLabel(label);
+        const category = guessCategoryFromName(parsed.name);
+        const match = items.find(
+          (x) =>
+            String(x.name || "").trim().toLowerCase() ===
+              parsed.name.toLowerCase() &&
+            String(x.category || "Other") === category &&
+            !x.purchased
+        );
+        if (match) removeItem(match.id);
+      });
+    } else {
+      ingredients.forEach((label) => {
+        const parsed = parseIngredientLabel(label);
+        const category = guessCategoryFromName(parsed.name);
+      if (!ingredientInList(parsed.name, category)) {
+        addItem(parsed.name, parsed.qty, category, parsed.unit);
+      }
+      });
+    }
+  }
+
   function getRecipeImageUrl(recipe) {
     if (!recipe || !recipe.image_filename) return null;
     const encoded = encodeURIComponent(recipe.image_filename);
@@ -74,8 +186,28 @@ export default function Learn() {
   function renderIngredients(recipe) {
     const raw = recipe?.ingredients;
     if (!raw) return "—";
-    const parts = raw.split(";");
-    return parts.map((item, i) => <div key={i}>{item.trim()}</div>);
+    const parts = raw
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    return parts.map((item, i) => {
+      const parsed = parseIngredientLabel(item);
+      const category = guessCategoryFromName(parsed.name);
+      const isChecked = ingredientInList(parsed.name, category);
+
+      return (
+        <label key={i} className="learnIngredientRow">
+          <input
+            type="checkbox"
+            className="learnIngredientCheckbox"
+            checked={isChecked}
+            onChange={() => handleIngredientToggle(item)}
+          />
+          <span className="learnIngredientLabel">{item}</span>
+        </label>
+      );
+    });
   }
 
   function renderSteps(recipe) {
@@ -122,6 +254,21 @@ export default function Learn() {
   const showVideos = tab === "videos";
   const showRecipes = tab === "recipes";
   const showFavorites = tab === "favorites";
+
+  const ingredientParts = selectedRecipe?.ingredients
+    ? String(selectedRecipe.ingredients)
+        .split(";")
+        .map((x) => x.trim())
+        .filter(Boolean)
+    : [];
+
+  const allIngredientsSelected =
+    ingredientParts.length > 0 &&
+    ingredientParts.every((label) => {
+      const parsed = parseIngredientLabel(label);
+      const category = guessCategoryFromName(parsed.name);
+      return ingredientInList(parsed.name, category);
+    });
 
   return (
     <div className="learnPage">
@@ -220,7 +367,7 @@ export default function Learn() {
             {!recipesLoading && !recipesError && recipes.length === 0 && (
               <div className="learnRecipesEmpty">
                 No recipes to show. Add dietary preferences in your Account to
-                see filtered recipes, or we’ll show all when available.
+                see filtered recipes, or we'll show all when available.
               </div>
             )}
 
@@ -448,7 +595,18 @@ export default function Learn() {
               )}
 
               <section className="learnModalSection">
-                <h3>Ingredients</h3>
+                <div className="learnIngredientsHeader">
+                  <h3>Ingredients</h3>
+                  {ingredientParts.length > 0 && (
+                    <button
+                      type="button"
+                      className="learnAddAllBtn"
+                      onClick={() => handleToggleAllIngredients(ingredientParts)}
+                    >
+                      {allIngredientsSelected ? "Deselect all" : "Add all to list"}
+                    </button>
+                  )}
+                </div>
                 <div className="learnModalText learnModalIngredients">
                   {renderIngredients(selectedRecipe)}
                 </div>

@@ -406,6 +406,44 @@
   margin-bottom: 4px;
 }
 
+.learnIngredientsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.learnAddAllBtn {
+  border: 1px solid #1f1f1f;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f3f4ff;
+  color: #111827;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.learnAddAllBtn:hover {
+  background: #e0e7ff;
+}
+
+.learnIngredientRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.learnIngredientCheckbox {
+  margin-top: 2px;
+}
+
+.learnIngredientLabel {
+  flex: 1;
+}
+
 .learnModalSteps {
   display: flex;
   flex-direction: column;
