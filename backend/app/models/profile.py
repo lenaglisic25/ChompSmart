@@ -56,3 +56,17 @@ class Profile(Base):
     carbs_pct = Column(Float, nullable=True)
     protein_pct = Column(Float, nullable=True)
     fats_pct = Column(Float, nullable=True)
+    
+    # added these for sodium tracking - jack
+    sodium_mg_max = Column(Integer, nullable=True)
+    sodium_mg_actual = Column(Float, nullable=True)
+    sodium_fda_limit = Column(Integer, nullable=True)
+    sodium_difference_from_fda = Column(Float, nullable=True)
+    sodium_message = Column(String, nullable=True)
+
+    # added these for sugar tracking - jack
+    sugar_g_max = Column(Float, nullable=True)
+    sugar_g_actual = Column(Float, nullable=True)
+    sugar_limit_g = Column(Float, nullable=True)
+    sugar_difference_from_limit = Column(Float, nullable=True)
+    sugar_message = Column(String, nullable=True)

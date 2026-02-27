@@ -14,7 +14,9 @@ class Meal(Base):
     protein = Column(Float)
     carbs = Column(Float)
     fats = Column(Float)
-    fiber = Column(Float)
-    sodium = Column(Float)
+    fiber = Column(Float, nullable=True)
+
+    sodium = Column(Float, nullable=True)
+    sugar = Column(Float, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

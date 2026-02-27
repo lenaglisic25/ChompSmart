@@ -47,7 +47,8 @@ async def search_food(query: str = Query(...)):
             },
             "extras": {
                 "fiber": n_map.get(1079, 0),
-                "sodium": n_map.get(1093, 0)
+                "sodium": n_map.get(1093, 0),
+                "sugar": n_map.get(2000, 0),
             }
         })
 

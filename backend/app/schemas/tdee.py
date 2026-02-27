@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+
+
 class MacroResult(BaseModel):
     calories: float
     carbs_g: float
@@ -8,8 +10,10 @@ class MacroResult(BaseModel):
     carbs_pct: float
     protein_pct: float
     fats_pct: float
+
     class Config:
-        from_attributes = True #jack - changed from orm_mode = True
+        from_attributes = True
+
 
 class TdeeOut(BaseModel):
     user_email: EmailStr
@@ -23,3 +27,20 @@ class TdeeOut(BaseModel):
     tdee_female: float
     macros_male: MacroResult
     macros_female: MacroResult
+
+    # Sodium tracking (mg)
+    sodium_mg_max: float
+    sodium_mg_actual: float
+    sodium_fda_limit: float
+    sodium_difference_from_fda: float
+    sodium_message: str
+
+    # Sugar tracking (grams)
+    sugar_g_max: float
+    sugar_g_actual: float
+    sugar_limit_g: float
+    sugar_difference_from_limit: float
+    sugar_message: str
+
+    class Config:
+        from_attributes = True
