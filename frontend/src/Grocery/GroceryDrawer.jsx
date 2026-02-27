@@ -1,38 +1,105 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useGrocery } from "./GroceryContext";
+import { CATEGORY_ORDER, normalizeCategory, parseQtyInput, guessCategoryFromName } from "./categories";
 import "./grocery.css";
 
-const CATEGORY_ORDER = [
-  "Produce",
-  "Meat/Seafood",
-  "Dairy",
-  "Bakery",
-  "Pantry",
-  "Frozen",
-  "Beverages",
-  "Other",
-];
+const API_BASE = "http://localhost:8000";
 
-function normalizeCategory(cat) {
-  const c = String(cat || "").trim();
-  if (!c) return "Other";
-  return CATEGORY_ORDER.includes(c) ? c : "Other";
+function formatQty(qty, unit) {
+  const num = Number(qty);
+  const displayNum = Number.isFinite(num)
+    ? Number.isInteger(num) ? num : parseFloat(num.toFixed(2))
+    : qty;
+  return unit ? `${displayNum} ${unit}` : `${displayNum}`;
 }
 
 export default function GroceryDrawer({ open, onClose }) {
   const { items, addItem, removeItem, togglePurchased, updateItem, clearPurchased, clearAll } =
     useGrocery();
 
-
   const [name, setName] = useState("");
-  const [qty, setQty] = useState("1");
+  const [qtyStr, setQtyStr] = useState("1");
   const [category, setCategory] = useState("Produce");
 
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchIdRef = useRef(0);
 
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
-  const [editQty, setEditQty] = useState("");
+  const [editQtyStr, setEditQtyStr] = useState("");
   const [editCategory, setEditCategory] = useState("Other");
+
+  function runSearch(query) {
+    const id = ++searchIdRef.current;
+    setSearchLoading(true);
+
+    fetch(`${API_BASE}/usda/search?query=${encodeURIComponent(query)}`)
+      .then((res) => res.ok ? res.json() : [])
+      .then((data) => {
+        if (searchIdRef.current !== id) return;
+        setSearchResults(Array.isArray(data) ? data : []);
+        setDropdownOpen(true);
+        setSearchLoading(false);
+      })
+      .catch(() => {
+        if (searchIdRef.current === id) {
+          setSearchResults([]);
+          setSearchLoading(false);
+        }
+      });
+  }
+
+  function handleNameChange(e) {
+    const val = e.target.value;
+    setName(val);
+    const query = val.trim();
+    if (query) {
+      runSearch(query);
+    } else {
+      searchIdRef.current++;
+      setSearchResults([]);
+      setDropdownOpen(false);
+      setSearchLoading(false);
+    }
+  }
+
+  function handleNameKeyDown(e) {
+    if (e.key === "Escape") {
+      setDropdownOpen(false);
+      setSearchResults([]);
+    }
+    if (e.key === "Enter" && searchResults.length > 0) {
+      e.preventDefault();
+      selectSuggestion(searchResults[0]);
+    }
+  }
+
+  function selectSuggestion(food) {
+    const foodName = String(food.description || "").trim();
+    searchIdRef.current++;
+    setName(foodName);
+    setCategory(guessCategoryFromName(foodName));
+    setSearchResults([]);
+    setDropdownOpen(false);
+    setSearchLoading(false);
+  }
+
+  function submit(e) {
+    e.preventDefault();
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    const { qty, unit } = parseQtyInput(qtyStr);
+    addItem(cleanName, qty, category, unit);
+    searchIdRef.current++;
+    setName("");
+    setQtyStr("1");
+    setCategory("Produce");
+    setSearchResults([]);
+    setDropdownOpen(false);
+    setSearchLoading(false);
+  }
 
   const counts = useMemo(() => {
     const active = items.filter((x) => !x.purchased).length;
@@ -49,7 +116,7 @@ export default function GroceryDrawer({ open, onClose }) {
       map.get(c).push(item);
     }
 
-    for (const [c, arr] of map.entries()) {
+    for (const [, arr] of map.entries()) {
       arr.sort((a, b) => {
         const ap = a.purchased ? 1 : 0;
         const bp = b.purchased ? 1 : 0;
@@ -61,41 +128,25 @@ export default function GroceryDrawer({ open, onClose }) {
     return map;
   }, [items]);
 
-  function submit(e) {
-    e.preventDefault();
-    addItem(name, qty, category);
-    setName("");
-    setQty("1");
-    setCategory("Produce");
-  }
-
   function startEdit(item) {
     setEditingId(item.id);
     setEditName(item.name ?? "");
-    setEditQty(String(item.qty ?? 1));
+    setEditQtyStr(formatQty(item.qty, item.unit));
     setEditCategory(normalizeCategory(item.category));
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditName("");
-    setEditQty("");
+    setEditQtyStr("");
     setEditCategory("Other");
   }
 
   function saveEdit(id) {
     const cleanName = String(editName || "").trim();
     if (!cleanName) return;
-
-    const q = Number(editQty);
-    const finalQty = Number.isFinite(q) && q > 0 ? q : 1;
-
-    updateItem(id, {
-      name: cleanName,
-      qty: finalQty,
-      category: normalizeCategory(editCategory),
-    });
-
+    const { qty, unit } = parseQtyInput(editQtyStr);
+    updateItem(id, { name: cleanName, qty, unit, category: normalizeCategory(editCategory) });
     cancelEdit();
   }
 
@@ -105,27 +156,38 @@ export default function GroceryDrawer({ open, onClose }) {
     return (
       <li key={item.id} className={`gItem ${item.purchased ? "purchased" : ""}`}>
         <div className="gItemLeft">
-          <input type="checkbox" checked={!!item.purchased} onChange={() => togglePurchased(item.id)} />
+          <input
+            type="checkbox"
+            checked={!!item.purchased}
+            onChange={() => togglePurchased(item.id)}
+          />
 
           {!isEditing ? (
             <span className="gItemText">
               <span className="gName">{item.name}</span>
-              <span className="gMeta">Qty: {item.qty}</span>
+              <span className="gMeta">Qty: {formatQty(item.qty, item.unit)}</span>
             </span>
           ) : (
             <div className="gEditGrid">
-              <input className="gInput" value={editName} onChange={(e) => setEditName(e.target.value)} />
               <input
                 className="gInput"
-                value={editQty}
-                onChange={(e) => setEditQty(e.target.value)}
-                inputMode="decimal"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Item name"
               />
-              <select className="gInput" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
+              <input
+                className="gInput"
+                value={editQtyStr}
+                onChange={(e) => setEditQtyStr(e.target.value)}
+                placeholder="Qty (e.g. 1 cup)"
+              />
+              <select
+                className="gInput"
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+              >
                 {CATEGORY_ORDER.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
@@ -134,11 +196,7 @@ export default function GroceryDrawer({ open, onClose }) {
 
         {!isEditing ? (
           <div className="gActions">
-            <button
-              className="gSecondaryBtn gSmallBtn"
-              type="button"
-              onClick={() => startEdit(item)}
-            >
+            <button className="gSecondaryBtn gSmallBtn" type="button" onClick={() => startEdit(item)}>
               Edit
             </button>
             <button className="gDangerBtn" type="button" onClick={() => removeItem(item.id)}>
@@ -160,52 +218,77 @@ export default function GroceryDrawer({ open, onClose }) {
   }
 
   return (
-    <div className={`gDrawerOverlay ${open ? "open" : ""}`} onMouseDown={() => (editingId ? null : onClose())}>
-      <aside className={`gDrawer ${open ? "open" : ""}`} onMouseDown={(e) => e.stopPropagation()}>
+    <div
+      className={`gDrawerOverlay ${open ? "open" : ""}`}
+      onMouseDown={() => (editingId ? null : onClose())}
+    >
+      <aside
+        className={`gDrawer ${open ? "open" : ""}`}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="gHeader">
           <div>
             <div className="gTitle">Grocery List</div>
-            <div className="gSub">
-              {counts.active} to buy • {counts.done} purchased
-            </div>
+            <div className="gSub">{counts.active} to buy • {counts.done} purchased</div>
           </div>
-          <button className="gIconBtn" onClick={onClose} type="button">
-            ✕
-          </button>
+          <button className="gIconBtn" onClick={onClose} type="button">✕</button>
         </div>
 
         <form className="gForm" onSubmit={submit}>
+          <div className="gSearchWrap">
+            <input
+              className="gInput"
+              value={name}
+              onChange={handleNameChange}
+              onKeyDown={handleNameKeyDown}
+              onFocus={() => searchResults.length > 0 && setDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+              placeholder="Search or type an item…"
+              autoComplete="off"
+            />
+            {searchLoading && <div className="gSearchStatus">Searching…</div>}
+            {!searchLoading && dropdownOpen && searchResults.length > 0 && (
+              <ul className="gSearchDropdown">
+                {searchResults.map((food, i) => (
+                  <li
+                    key={i}
+                    className="gSearchItem"
+                    onMouseDown={() => selectSuggestion(food)}
+                  >
+                    <span className="gSearchItemName">{food.description}</span>
+                    <span className="gSearchItemCat">
+                      {guessCategoryFromName(food.description)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <input
             className="gInput"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Add item (ex: eggs)"
+            value={qtyStr}
+            onChange={(e) => setQtyStr(e.target.value)}
+            placeholder="Qty (e.g. 1 cup, 2 tbsp, 3)"
           />
-          <input
+
+          <select
             className="gInput"
-            value={qty}
-            onChange={(e) => setQty(e.target.value)}
-            placeholder="Qty"
-            inputMode="decimal"
-          />
-          <select className="gInput" value={category} onChange={(e) => setCategory(e.target.value)}>
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
             {CATEGORY_ORDER.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
 
-          <button className="gPrimaryBtn" type="submit">
-            Add
-          </button>
+          <button className="gPrimaryBtn" type="submit">Add</button>
         </form>
 
         <div className="gSection">
           {CATEGORY_ORDER.map((cat) => {
             const list = grouped.get(cat) || [];
             if (list.length === 0) return null;
-
             return (
               <div key={cat} className="gCategoryBlock">
                 <div className="gCategoryTitle">{cat}</div>
@@ -214,7 +297,7 @@ export default function GroceryDrawer({ open, onClose }) {
             );
           })}
 
-          {items.length === 0 ? <div className="gEmpty">No items yet.</div> : null}
+          {items.length === 0 && <div className="gEmpty">No items yet.</div>}
         </div>
 
         <div className="gFooter">

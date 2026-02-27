@@ -406,6 +406,44 @@
   margin-bottom: 4px;
 }
 
+.learnIngredientsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.learnAddAllBtn {
+  border: 1px solid #1f1f1f;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f3f4ff;
+  color: #111827;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.learnAddAllBtn:hover {
+  background: #e0e7ff;
+}
+
+.learnIngredientRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.learnIngredientCheckbox {
+  margin-top: 2px;
+}
+
+.learnIngredientLabel {
+  flex: 1;
+}
+
 .learnModalSteps {
   display: flex;
   flex-direction: column;
@@ -429,4 +467,115 @@
   font-size: 13px;
   font-weight: 600;
   color: #222;
+}
+.learnVideoThumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.learnPlayCircle {
+  background: rgba(0, 0, 0, 0.65);
+}
+.favBtn {
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 900;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.favBtn.active {
+  background: #fffbdd;
+}
+.learnVideoCategoryTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 14px 0 8px;
+}
+
+.learnVideoCategorySection {
+  margin-bottom: 10px;
+}
+/* ===================== VIDEOS GRID ===================== */
+
+.learnVideoList {
+  display: flex;
+  flex-direction: column;
+}
+
+.learnVideoCategorySection {
+  margin-bottom: 40px; /* space between categories */
+}
+
+.learnVideoCategoryTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 6px 0 16px;
+  padding-left: 4px;
+}
+
+.learnVideoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px; /* space between video cards */
+}
+
+/* Video card */
+.learnVideoCard {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.learnVideoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.learnVideoThumb {
+  height: 160px;
+  position: relative;
+  cursor: pointer;
+}
+
+.learnPlayCircle {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+}
+
+.learnVideoText {
+  padding: 12px 14px 14px;
+}
+
+.learnVideoTitle {
+  font-weight: 650;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.learnVideoAuthor {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Small screens */
+@media (max-width: 520px) {
+  .learnVideoGrid {
+    grid-template-columns: 1fr;
+  }
 }
