@@ -21,9 +21,19 @@ def upgrade() -> None:
     op.add_column('profiles', sa.Column('sugar_limit_g', sa.Float(), nullable=True))
     op.add_column('profiles', sa.Column('sugar_difference_from_limit', sa.Float(), nullable=True))
     op.add_column('profiles', sa.Column('sugar_message', sa.String(), nullable=True))
+    op.add_column('profiles', sa.Column('sodium_mg_max', sa.Integer(), nullable=True))
+    op.add_column('profiles', sa.Column('sodium_mg_actual', sa.Float(), nullable=True))
+    op.add_column('profiles', sa.Column('sodium_fda_limit', sa.Integer(), nullable=True))
+    op.add_column('profiles', sa.Column('sodium_difference_from_fda', sa.Float(), nullable=True))
+    op.add_column('profiles', sa.Column('sodium_message', sa.String(), nullable=True))
 
 
 def downgrade() -> None:
+    op.drop_column('profiles', 'sodium_message')
+    op.drop_column('profiles', 'sodium_difference_from_fda')
+    op.drop_column('profiles', 'sodium_fda_limit')
+    op.drop_column('profiles', 'sodium_mg_actual')
+    op.drop_column('profiles', 'sodium_mg_max')
     op.drop_column('profiles', 'sugar_message')
     op.drop_column('profiles', 'sugar_difference_from_limit')
     op.drop_column('profiles', 'sugar_limit_g')
