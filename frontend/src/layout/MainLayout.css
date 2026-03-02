@@ -147,3 +147,20 @@
   font-weight: 900;
   cursor: pointer;
 }
+.bottomTabs {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+}
+.topLeftActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.accountBtn[title="Grocery list"] .accountIcon {
+  font-size: 30px;
+}
