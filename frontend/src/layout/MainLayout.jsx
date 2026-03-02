@@ -11,14 +11,16 @@ export default function MainLayout() {
   const isLearn = location.pathname.startsWith("/app/learn");
   const isLog = location.pathname.startsWith("/app/log");
   const isMessage = location.pathname.startsWith("/app/message");
+  const isResources = location.pathname.startsWith("/app/resources");
 
   const [gOpen, setGOpen] = useState(false);
 
   return (
     <div className="shell">
+      {/* TOP BAR */}
       <header className="topBar">
         {/* LEFT: Account + Grocery */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="topLeftActions">
           <button
             className="accountBtn"
             type="button"
@@ -35,8 +37,16 @@ export default function MainLayout() {
             <span className="accountLabel">account</span>
           </button>
 
-          <button className="accountBtn" type="button" onClick={() => setGOpen(true)}>
-            <span className="accountIcon" aria-hidden="true">🛒</span>
+          <button
+            className="accountBtn"
+            type="button"
+            onClick={() => setGOpen(true)}
+            aria-label="Open grocery list"
+            title="Grocery list"
+          >
+            <span className="accountIcon" aria-hidden="true">
+              🛒
+            </span>
             <span className="accountLabel">grocery</span>
           </button>
         </div>
@@ -47,7 +57,11 @@ export default function MainLayout() {
         </div>
 
         {/* RIGHT: Logout */}
-        <button className="logoutBtn" type="button" onClick={() => navigate("/")}>
+        <button
+          className="logoutBtn"
+          type="button"
+          onClick={() => navigate("/")}
+        >
           Logout
         </button>
       </header>
@@ -69,6 +83,13 @@ export default function MainLayout() {
 
         <NavLink to="/app/message" className={isMessage ? "tab active" : "tab"}>
           <span className="tabLabel">message</span>
+        </NavLink>
+
+        <NavLink
+          to="/app/resources"
+          className={isResources ? "tab active" : "tab"}
+        >
+          <span className="tabLabel">resources</span>
         </NavLink>
       </nav>
 
