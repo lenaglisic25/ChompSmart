@@ -1,23 +1,29 @@
 import base64
 import io
+import json
+import os
+from datetime import date
+from pathlib import Path
+
 from PIL import Image
 from fastapi import APIRouter, HTTPException, Depends
-from requests import request
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from pydantic import BaseModel
-import os
+
 import google.generativeai as genai
 from dotenv import load_dotenv
-import json
-import re
-import time
+
 from app.database import get_db
 from app.models.profile import Profile
 from app.models.meals import Meal
-from datetime import date
+from app.services.usda_service import usda_search_foods, build_usda_context
 
-load_dotenv()
+
+# Always load backend/.env no matter where server is started from
+env_path = Path(__file__).resolve().parents[2] / ".env"  # backend/.env
+load_dotenv(env_path)
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -25,14 +31,26 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# helper function to get user profile
+
+def _as_float(v, default=0.0) -> float:
+    try:
+        if v is None:
+            return float(default)
+        return float(v)
+    except (TypeError, ValueError):
+        return float(default)
+
+
 def get_user_context(db: Session, user_email: str) -> str:
-    if not user_email: return ""
+    if not user_email:
+        return ""
 
     user = db.query(Profile).filter(Profile.user_email == user_email).first()
-    if not user: return ""
+    if not user:
+        return ""
 
-    def val(v): return v if v is not None else "N/A"
+    def val(v):
+        return v if v is not None else "N/A"
 
     profile_text = f"""
     [CURRENT USER PROFILE DATA]
@@ -41,7 +59,7 @@ def get_user_context(db: Session, user_email: str) -> str:
     Daily Calorie Goal: {val(user.calorie_goal)}
     Macros (Target): {val(user.protein_g)}g Protein, {val(user.carbs_g)}g Carbs, {val(user.fats_g)}g Fat
     Health Conditions: {val(user.health_conditions)} ({val(user.health_conditions_other_text)})
-    
+
     Cooking Methods: {val(user.cooking_methods)}
     Cooking Skill: {val(user.cooking_skill)}
     Kitchen Equipment: {val(user.kitchen_equipment)}
@@ -55,9 +73,10 @@ def get_user_context(db: Session, user_email: str) -> str:
 
     user_goal = user.calorie_goal if user.calorie_goal else 2000
     today = date.today()
+
     todays_meals = db.query(Meal).filter(
         Meal.user_email == user_email,
-        func.date(Meal.created_at) == today
+        func.date(Meal.created_at, "localtime") == today,
     ).all()
 
     log_text = "[DAILY LOG: No meals logged today]"
@@ -72,7 +91,7 @@ def get_user_context(db: Session, user_email: str) -> str:
 
     return f"{profile_text}\n{log_text}"
 
-# PROMPTS
+
 CHAT_PROMPT = """
 You are Chompy, a helpful and friendly Gator mascot for 'ChompSmart', a nutrition app.
 Your job is to provide personalized food recommendations.
@@ -85,14 +104,14 @@ GUIDELINES:
 RESPONSIBILITIES:
 1. Answer questions about diet, health, and food.
 2. Use the User Profile and Daily Log to give specific advice.
-3. You have the special ability to log meals for the user, but ONLY if they explicitly ask or confirm.
+3. If USDA matches are present, prefer those numbers and mention which match you used.
+4. You have the special ability to log meals for the user, but ONLY if they explicitly ask or confirm.
 
 HOW TO LOG MEALS:
   1. Respond naturally confirming the action.
   2. At the very end of your message, append this exact JSON block:
-     LOG_MEAL: {"name": "Food Name", "calories": 123, "protein": 10, "carbs": 20, "fats": 5,"fiber":2,"sodium":300,"sugar":4, "meal_type": "Snack"}
+     LOG_MEAL: {"name":"Food Name","calories":123,"protein":10,"carbs":20,"fats":5,"fiber":2,"sodium":300,"sugar":4,"meal_type":"Snack"}
   3. 'meal_type' options: Breakfast, Lunch, Dinner, Snack.
-
 """
 
 VISION_PROMPT = """
@@ -114,25 +133,27 @@ The user wants to make the following recipe, but you need to adjust it to fit th
 """
 
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash", 
-    system_instruction=CHAT_PROMPT 
+    model_name="gemini-2.5-flash",
+    system_instruction=CHAT_PROMPT
 )
 
-# MODELS
+
 class ChatRequest(BaseModel):
     message: str
-    history: list = []
+    history: list = Field(default_factory=list)
     user_email: str | None = None
+
 
 class ImageChatRequest(BaseModel):
     image: str
     user_email: str | None = None
 
+
 class RecipeAdjustRequest(BaseModel):
     user_email: str
     original_recipe_text: str
 
-# ROUTES
+
 @router.post("/message")
 async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     if not GEMINI_API_KEY:
@@ -143,17 +164,19 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     history_str = ""
     if request.history:
         for msg in request.history:
-            role = "User" if msg.get('from') == "me" else "Model"
-            content = msg.get('body', '[Image Sent]')
+            role = "User" if msg.get("from") == "me" else "Model"
+            content = msg.get("body", "[Image Sent]")
             history_str += f"\n{role}: {content}"
 
-    full_prompt = f"{user_context}\n{history_str}\nUser: {request.message}\nModel:"
-    
+    foods = await usda_search_foods(request.message, limit=7)
+    food_context = build_usda_context(foods)
+
+    full_prompt = f"{user_context}\n{food_context}\n{history_str}\nUser: {request.message}\nModel:"
+
     try:
         response = model.generate_content(full_prompt)
-        reply_text = response.text
+        reply_text = response.text or ""
 
-        # handle meal logging
         if "LOG_MEAL:" in reply_text:
             parts = reply_text.split("LOG_MEAL:", 1)
             conversation_part = parts[0].strip()
@@ -164,31 +187,33 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
                 meal_data = json.loads(json_part)
 
                 if request.user_email:
+                    sodium_val = meal_data.get("sodium", meal_data.get("sodium_mg"))
+                    fiber_val = meal_data.get("fiber", meal_data.get("fiber_g"))
+                    sugar_val = meal_data.get("sugar", meal_data.get("sugars", meal_data.get("sugars_g")))
+
                     new_meal = Meal(
                         user_email=request.user_email,
                         food_name=meal_data.get("name", "Unknown Food"),
-                        calories=meal_data.get("calories", 0),
-                        protein=meal_data.get("protein", 0),
-                        carbs=meal_data.get("carbs", 0),
-                        fats=meal_data.get("fats", 0),
-                        sodium=meal_data.get("sodium", 0),
-                        fiber=meal_data.get("fiber", 0),
+                        calories=_as_float(meal_data.get("calories", 0)),
+                        protein=_as_float(meal_data.get("protein", 0)),
+                        carbs=_as_float(meal_data.get("carbs", 0)),
+                        fats=_as_float(meal_data.get("fats", 0)),
+                        fiber=_as_float(fiber_val, 0),
+                        sodium=_as_float(sodium_val, 0),
+                        sugar=_as_float(sugar_val, 0),
                         meal_type=meal_data.get("meal_type", "Snack"),
                     )
                     db.add(new_meal)
                     db.commit()
-                    print(f"AUTO-LOGGED: {new_meal.food_name}")
 
                 return {"reply": conversation_part}
 
-            except Exception as e:
-                print(f"Auto-Log Error: {e}")
+            except Exception:
                 return {"reply": conversation_part + " (I tried to log that, but hit a glitch!)"}
-        
+
         return {"reply": reply_text}
 
-    except Exception as e:
-        print(f"Gemini Error: {e}")
+    except Exception:
         return {"reply": "Chompy is taking a nap. Try again!"}
 
 
@@ -196,40 +221,39 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
 async def analyze_image(request: ImageChatRequest, db: Session = Depends(get_db)):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="Gemini API key not configured.")
-    
+
     user_context = get_user_context(db, request.user_email)
 
     try:
         if "," in request.image:
-            header, encoded = request.image.split(",", 1)
+            _, encoded = request.image.split(",", 1)
         else:
             encoded = request.image
-        
+
         bytes_data = base64.b64decode(encoded)
         img = Image.open(io.BytesIO(bytes_data))
 
         final_prompt = f"{VISION_PROMPT}\n\nCONTEXT:\n{user_context}"
-        
         response = model.generate_content([final_prompt, img])
         return {"reply": response.text}
-    
-    except Exception as e:
-        print(f"Vision Error: {e}")
+
+    except Exception:
         return {"reply": "Oh snap! I couldn't quite make out that picture."}
-    
+
+
 @router.post("/adjust-recipe")
 async def adjust_recipe(request: RecipeAdjustRequest, db: Session = Depends(get_db)):
     user = db.query(Profile).filter(Profile.user_email == request.user_email).first()
     restrictions = user.dietary_restrictions if user else "None"
 
     full_prompt = f"""
-    {ADJUST_PROMPT}
-    
-    USER RESTRICTIONS: {restrictions}
-    
-    ORIGINAL RECIPE:
-    {request.original_recipe_text}
-    """
+{ADJUST_PROMPT}
+
+USER RESTRICTIONS: {restrictions}
+
+ORIGINAL RECIPE:
+{request.original_recipe_text}
+"""
 
     response = model.generate_content(full_prompt)
     return {"adjusted_recipe": response.text}
