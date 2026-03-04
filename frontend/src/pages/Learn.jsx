@@ -170,6 +170,11 @@ export default function Learn() {
     }
   }
 
+  // TODO: Chompy actions (make healthier, log meal, substitutions etc)
+  function handleAskChompy(recipe) {
+    // stuff
+  }
+
   function getRecipeImageUrl(recipe) {
     if (!recipe || !recipe.image_filename) return null;
     const encoded = encodeURIComponent(recipe.image_filename);
@@ -552,14 +557,22 @@ export default function Learn() {
 
               <div className="learnModalCategory">{selectedRecipe.category}</div>
 
-              <button
-                type="button"
-                className={`favBtn ${isFavorite(selectedRecipe) ? "active" : ""}`}
-                onClick={() => toggleFavorite(selectedRecipe)}
-                style={{ marginTop: 10 }}
-              >
-                {isFavorite(selectedRecipe) ? "★ Saved" : "☆ Save"}
-              </button>
+              <div className="learnModalTopActions">
+                <button
+                  type="button"
+                  className={`favBtn ${isFavorite(selectedRecipe) ? "active" : ""}`}
+                  onClick={() => toggleFavorite(selectedRecipe)}
+                >
+                  {isFavorite(selectedRecipe) ? "★ Saved" : "☆ Save"}
+                </button>
+                <button
+                  type="button"
+                  className="chompyBtn"
+                  onClick={() => handleAskChompy(selectedRecipe)}
+                >
+                  🤖 Ask Chompy
+                </button>
+              </div>
 
               {selectedRecipe.dietary_tags &&
                 selectedRecipe.dietary_tags.length > 0 && (
@@ -660,6 +673,7 @@ export default function Learn() {
                   </div>
                 </div>
               </section>
+
             </div>
           </div>
         </div>
