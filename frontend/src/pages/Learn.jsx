@@ -1,5 +1,6 @@
 // Learn.jsx
 import React, { useState, useEffect, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
 import "./Learn.css";
 
 import videosData from "../data/videos.json";
@@ -60,6 +61,8 @@ export default function Learn() {
   const [recipesLoading, setRecipesLoading] = useState(false);
   const [recipesError, setRecipesError] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [chompyLoading, setChompyLoading] = useState(false);
+  const [chompyResponse, setChompyResponse] = useState(null);
 
   // Video modal state
   const [selectedVideo, setSelectedVideo] = useState(null);
@@ -171,8 +174,26 @@ export default function Learn() {
   }
 
   // TODO: Chompy actions (make healthier, log meal, substitutions etc)
-  function handleAskChompy(recipe) {
-    // stuff
+  async function handleAskChompy(recipe) {
+    if (!recipe || !userEmail) return;
+    setChompyLoading(true);
+    setChompyResponse(null);
+    try {
+      const res = await fetch(`${API_BASE}/chat/adjust-recipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_email: userEmail,
+          original_recipe_text: `Title: ${recipe.title}\nIngredients: ${recipe.ingredients}\nSteps: ${recipe.steps}`
+        })
+      });
+      const data = await res.json();
+      setChompyResponse(data.adjusted_recipe);
+    } catch (err) {
+      setChompyResponse("Error contacting Chompy.");
+    } finally {
+      setChompyLoading(false);
+    }
   }
 
   function getRecipeImageUrl(recipe) {
@@ -535,7 +556,7 @@ export default function Learn() {
       {selectedRecipe && (
         <div
           className="learnModalOverlay"
-          onClick={() => setSelectedRecipe(null)}
+          onClick={() => { setSelectedRecipe(null); setChompyResponse(null); }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="learnModalTitle"
@@ -544,7 +565,7 @@ export default function Learn() {
             <button
               type="button"
               className="learnModalClose"
-              onClick={() => setSelectedRecipe(null)}
+              onClick={() => { setSelectedRecipe(null); setChompyResponse(null); }}
               aria-label="Close"
             >
               ×
@@ -569,10 +590,18 @@ export default function Learn() {
                   type="button"
                   className="chompyBtn"
                   onClick={() => handleAskChompy(selectedRecipe)}
+                  disabled={chompyLoading}
                 >
-                  🤖 Ask Chompy
+                  {chompyLoading ? "🤖 Thinking..." : "🤖 Ask Chompy"}
                 </button>
               </div>
+
+              {chompyLoading && <div className="learnChompyResponse">Chompy is thinking...</div>}
+              {chompyResponse && (
+                <div className="learnChompyResponse">
+                  <ReactMarkdown>{chompyResponse}</ReactMarkdown>
+                </div>
+              )}
 
               {selectedRecipe.dietary_tags &&
                 selectedRecipe.dietary_tags.length > 0 && (

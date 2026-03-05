@@ -1,5 +1,6 @@
 // Message.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import "./Message.css";
 
 function nowTime() {
@@ -417,7 +418,7 @@ export default function Message() {
                 {m.type === "image" ? (
                   <img className="msgImage" src={m.imageUrl} alt="upload" />
                 ) : (
-                  m.body
+                  <ReactMarkdown>{m.body}</ReactMarkdown>
                 )}
               </div>
             </div>
