@@ -15,7 +15,7 @@ export default function App() {
       <Route path="/setup-profile" element={<Profile />} />
 
       <Route path="/app" element={<MainLayout />}>
-        <Route index element={<Navigate to="learn" replace />} />
+        <Route index element={<Navigate to="log" replace />} />
         <Route path="learn" element={<Learn />} />
         <Route path="log" element={<Log />} />
         <Route path="message" element={<Message />} />

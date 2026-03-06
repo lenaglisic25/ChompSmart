@@ -39,7 +39,7 @@ export default function Login() {
 
       const data = JSON.parse(raw);
       localStorage.setItem("currentUserEmail", data.email);
-      navigate("/app/learn");
+      navigate("/app");
     } catch (err) {
       console.error(err);
       alert(`Error logging in: ${err.message}`);

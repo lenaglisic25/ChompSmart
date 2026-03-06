@@ -1,13 +1,17 @@
-:root{
+:root {
   --blue: #2f6fb4;
   --blueBar: #2b67aa;
   --white: #ffffff;
   --border: #0f0f0f;
   --tabIcon: #f39a2f;
+
+  --lightText: #dfeeff;
+  --activeText: #1b3554;
 }
 
-/* Full app shell */
-.shell{
+/* App shell */
+
+.shell {
   min-height: 100vh;
   background: var(--blue);
   display: flex;
@@ -15,30 +19,62 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* TOP BAR */
-.topBar{
+/* Top bar */
+
+.topBar {
   height: 92px;
   background: var(--blueBar);
   border-bottom: 2px solid var(--border);
   display: grid;
-  grid-template-columns: 140px 1fr 140px;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 18px;
+  gap: 12px;
 }
 
-.accountBtn{
+.topLeftActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topRightActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Icon buttons */
+
+.accountBtn {
   border: none;
   background: transparent;
-  color: #dfeeff;
+  color: var(--lightText);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   user-select: none;
+  padding: 6px 8px;
+  text-decoration: none;
+  border-radius: 10px;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.accountIcon{
+.accountBtn:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+}
+
+/* Icon container */
+
+.accountIcon {
   width: 44px;
   height: 44px;
   display: grid;
@@ -46,41 +82,52 @@
   color: var(--tabIcon);
 }
 
-.accountIcon svg{
-  width: 44px;
-  height: 44px;
+.accountIcon svg {
+  width: 40px;
+  height: 40px;
 }
 
-.accountLabel{
+/* Label under icons */
+
+.accountLabel {
   font-size: 16px;
   text-transform: lowercase;
+  color: var(--lightText);
+  font-weight: 500;
 }
 
+/* Active top icon */
 
-.topLogoWrap{
+.activeTopLink {
+  background: rgba(255,255,255,0.18);
+}
+
+/* Logo */
+
+.topLogoWrap {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.topLogoImg{
+.topLogoImg {
   height: 84px;
   width: auto;
   object-fit: contain;
 }
 
-.topRightSpacer{}
+/* Content */
 
-/* CONTENT */
-.content{
+.content {
   flex: 1;
   background: #ffffff;
   padding: 18px 16px 110px;
   overflow: auto;
 }
 
-/* BOTTOM TABS */
-.bottomTabs{
+/* Bottom navigation */
+
+.bottomTabs {
   position: fixed;
   left: 0;
   right: 0;
@@ -92,75 +139,69 @@
   grid-template-columns: 1fr 1fr 1fr;
 }
 
-.tab{
+.tab {
   text-decoration: none;
-  color: #dfeeff;
+  color: var(--lightText);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border-right: 1px solid rgba(255,255,255,0.35);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.tab:last-child{
+.tab:last-child {
   border-right: none;
 }
 
-.tabIcon{
-  width: 44px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  color: var(--tabIcon);
-}
-
-.tabIcon svg{
-  width: 34px;
-  height: 34px;
-}
-
-.tabLabel{
+.tabLabel {
   font-size: 18px;
   font-weight: 900;
   text-transform: lowercase;
 }
 
-.tab.active{
+.tab.active {
   background: #ffffff;
-  color: #1b3554;
+  color: var(--activeText);
 }
 
-.tab.active .tabIcon{
-  color: var(--tabIcon);
-}
+/* Logout button */
 
 .logoutBtn {
-  justify-self: end;
   height: 44px;
   padding: 0 16px;
   border: 2px solid var(--border);
   border-radius: 10px;
   background: #ffffff;
-  color: #1b3554;
+  color: var(--activeText);
   font-size: 16px;
   font-weight: 900;
   cursor: pointer;
 }
-.bottomTabs {
-  display: flex;
-  justify-content: space-between;
-}
 
-.tab {
-  flex: 1;
-  text-align: center;
-}
-.topLeftActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.accountBtn[title="Grocery list"] .accountIcon {
-  font-size: 30px;
+/* Mobile adjustments */
+
+@media (max-width: 900px) {
+
+  .topBar {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 12px;
+  }
+
+  .topLeftActions,
+  .topRightActions,
+  .topLogoWrap {
+    justify-content: center;
+  }
+
+  .topLeftActions {
+    flex-wrap: wrap;
+  }
+
+  .topLogoImg {
+    height: 72px;
+  }
+
 }
