@@ -8,13 +8,14 @@
   border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: 18px;
   padding: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .tdTopRow {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
@@ -32,6 +33,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: right;
 }
 
 .tdCarouselInner {
@@ -50,11 +52,12 @@
   height: 10px;
   border-radius: 999px;
   border: none;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0, 0, 0, 0.18);
   cursor: pointer;
 }
+
 .tdDot.active {
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 /* Rings row */
@@ -73,7 +76,7 @@
 
 .tdRingTrack {
   fill: none;
-  stroke: rgba(0,0,0,0.12);
+  stroke: rgba(0, 0, 0, 0.12);
 }
 
 .tdRingFill {
@@ -97,6 +100,7 @@
   margin-top: 2px;
   font-size: 11px;
   opacity: 0.85;
+  color: #1b3554;
 }
 
 /* Bars */
@@ -113,6 +117,7 @@
 .tdBarTop {
   display: flex;
   justify-content: space-between;
+  gap: 10px;
   font-size: 12px;
   font-weight: 800;
   color: #1b3554;
@@ -120,7 +125,7 @@
 
 .tdBarTrack {
   height: 10px;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -131,15 +136,29 @@
 }
 
 /* status colors */
-.tdRingFill.good, .tdBarFill.good { stroke: #19a35c; background: #19a35c; }
-.tdRingFill.warn, .tdBarFill.warn { stroke: #f2b01e; background: #f2b01e; }
-.tdRingFill.bad,  .tdBarFill.bad  { stroke: #e34b4b; background: #e34b4b; }
+.tdRingFill.good,
+.tdBarFill.good {
+  stroke: #19a35c;
+  background: #19a35c;
+}
+
+.tdRingFill.warn,
+.tdBarFill.warn {
+  stroke: #f2b01e;
+  background: #f2b01e;
+}
+
+.tdRingFill.bad,
+.tdBarFill.bad {
+  stroke: #e34b4b;
+  background: #e34b4b;
+}
 
 /* Alerts */
 .tdAlerts {
   margin-top: 10px;
   background: #fff;
-  border: 2px solid rgba(0,0,0,0.08);
+  border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   padding: 10px;
 }
@@ -148,6 +167,7 @@
   font-weight: 900;
   color: #1b3554;
   margin-bottom: 8px;
+  font-size: 14px;
 }
 
 .tdAlertItem {
@@ -156,19 +176,165 @@
   font-weight: 800;
   font-size: 12px;
   margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.tdAlertItem:last-child {
+  margin-bottom: 0;
 }
 
 .tdAlertItem.good {
-  background: rgba(25,163,92,0.12);
+  background: rgba(25, 163, 92, 0.12);
   color: #0c6b3a;
 }
 
 .tdAlertItem.warn {
-  background: rgba(242,176,30,0.16);
+  background: rgba(242, 176, 30, 0.16);
   color: #7a5300;
 }
 
 .tdAlertItem.bad {
-  background: rgba(227,75,75,0.14);
+  background: rgba(227, 75, 75, 0.14);
   color: #8f1c1c;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .tdSlideGrid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .tdCarouselInner {
+    min-height: 0;
+  }
+
+  .tdRingTitle {
+    font-size: 16px;
+  }
+
+  .tdRingSub {
+    font-size: 12px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .tdCarousel {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .tdTopRow {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .tdTopTitle {
+    font-size: 13px;
+  }
+
+  .tdTopMeta {
+    font-size: 10px;
+    max-width: 55%;
+  }
+
+  .tdSlideGrid {
+    gap: 12px;
+  }
+
+  .tdRingText {
+    width: 72px;
+  }
+
+  .tdRingTitle {
+    font-size: 15px;
+  }
+
+  .tdRingSub {
+    font-size: 11px;
+  }
+
+  .tdBars {
+    gap: 8px;
+  }
+
+  .tdBarRow {
+    gap: 5px;
+  }
+
+  .tdBarTop {
+    font-size: 11px;
+  }
+
+  .tdBarTrack {
+    height: 8px;
+  }
+
+  .tdAlerts {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .tdAlertsTitle {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .tdAlertItem {
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+
+  .tdDots {
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .tdDot {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 420px) {
+  .tdCarousel {
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .tdTopRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .tdTopMeta {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .tdRingText {
+    width: 68px;
+  }
+
+  .tdRingTitle {
+    font-size: 14px;
+  }
+
+  .tdRingSub {
+    font-size: 10px;
+  }
+
+  .tdBarTop {
+    font-size: 10px;
+  }
+
+  .tdAlertItem {
+    font-size: 10px;
+  }
 }

@@ -82,3 +82,34 @@
   background: #fff;
   color: #1b3554;
 }
+@media (max-width: 600px) {
+  .psPage {
+    padding: 10px 0 8px;
+  }
+
+  .psTitle {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .psSection {
+    padding: 12px 10px 8px;
+    margin-bottom: 10px;
+  }
+
+  .psSectionTitle {
+    font-size: 16px;
+  }
+
+  .psInput,
+  .psSelect,
+  .psTextarea {
+    font-size: 15px;
+    padding: 9px 10px;
+  }
+
+  .psSaveBtn {
+    height: 48px;
+    font-size: 16px;
+  }
+}

@@ -1,4 +1,3 @@
-
 .msgInboxPage {
   height: 100%;
   background: #ffffff;
@@ -47,6 +46,7 @@
 
 .msgInboxText {
   min-width: 0;
+  flex: 1;
 }
 
 .msgInboxName {
@@ -65,8 +65,6 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
-
-
 
 .msgPage {
   height: 100%;
@@ -112,6 +110,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Message list */
@@ -164,6 +163,8 @@
   border-radius: 12px;
   padding: 10px 12px;
   background: #ffffff;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .msgRow.me .msgBubble {
@@ -186,6 +187,7 @@
 .msgTime {
   font-size: 12px;
   opacity: 0.75;
+  flex-shrink: 0;
 }
 
 .msgBody {
@@ -194,22 +196,49 @@
   color: #1f1f1f;
 }
 
+.msgBody p {
+  margin: 0 0 8px;
+}
+
+.msgBody p:last-child {
+  margin-bottom: 0;
+}
+
+.msgImage {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  border-radius: 10px;
+  border: 2px solid #1f1f1f;
+}
+
+/* Composer */
 .msgComposer {
   display: flex;
   gap: 10px;
-  padding: 12px;
+  padding: 12px 12px 18px;
   border-top: 2px solid #1f1f1f;
   background: #ffffff;
-  padding-bottom: 18px;
 }
 
 .msgInput {
   flex: 1;
+  min-width: 0;
   border: 2px solid #1f1f1f;
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
   outline: none;
+}
+
+.msgIconBtn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .msgSendBtn {
@@ -219,9 +248,84 @@
   font-weight: 900;
   cursor: pointer;
   background: #ffb43a;
+  color: #111;
+  flex: 0 0 auto;
 }
 
-/* (yavna) placeholder style for typing indicator */
+/* Errors / preview / camera */
+.msgError {
+  margin: 6px 12px 0;
+  color: #b91c1c;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.msgPreviewBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 0;
+  background: #fff;
+  flex-wrap: wrap;
+}
+
+.msgPreviewThumb {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #1f1f1f;
+}
+
+.msgSmallBtn {
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #ffb43a;
+  cursor: pointer;
+  font-weight: 900;
+  color: #111;
+}
+
+.msgSmallBtn.ghost {
+  background: #fff;
+}
+
+.msgCameraOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.msgCameraCard {
+  width: min(720px, 95vw);
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+.msgCameraVideo {
+  width: 100%;
+  border-radius: 14px;
+  background: #000;
+  display: block;
+}
+
+.msgCameraActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Typing indicator */
 .typing-indicator {
   display: inline-block;
   font-style: italic;
@@ -234,4 +338,188 @@
   0% { opacity: 0.3; }
   50% { opacity: 1; }
   100% { opacity: 0.3; }
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .msgBubble {
+    max-width: 78%;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .msgInboxPage {
+    padding: 12px 8px;
+  }
+
+  .msgInboxContainer {
+    gap: 12px;
+  }
+
+  .msgInboxCard {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+
+  .msgInboxAvatar {
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+  }
+
+  .msgInboxName {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .msgInboxPreview {
+    font-size: 13px;
+  }
+
+  .msgHeader {
+    grid-template-columns: 40px 1fr auto;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .msgHeaderTitle {
+    font-size: 15px;
+  }
+
+  .msgBackBtn {
+    width: 36px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .msgClearBtn {
+    padding: 5px 8px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+
+  .msgList {
+    padding: 10px 8px;
+  }
+
+  .msgRow {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .msgAvatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .msgBubble {
+    max-width: 82%;
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  .msgTopLine {
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  .msgName {
+    font-size: 13px;
+  }
+
+  .msgTime {
+    font-size: 11px;
+  }
+
+  .msgBody {
+    font-size: 13px;
+    line-height: 1.2rem;
+  }
+
+  .msgImage {
+    max-width: 200px;
+  }
+
+  .msgComposer {
+    gap: 6px;
+    padding: 10px 8px 16px;
+  }
+
+  .msgInput {
+    font-size: 13px;
+    padding: 9px 10px;
+  }
+
+  .msgSendBtn,
+  .msgIconBtn {
+    height: 40px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .msgPreviewBar {
+    padding: 8px 8px 0;
+    gap: 8px;
+  }
+
+  .msgPreviewThumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+  }
+
+  .msgSmallBtn {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .msgCameraOverlay {
+    padding: 10px;
+  }
+
+  .msgCameraCard {
+    padding: 10px;
+    border-radius: 12px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 420px) {
+  .msgHeader {
+    grid-template-columns: 36px 1fr auto;
+    padding: 8px 6px;
+  }
+
+  .msgHeaderTitle {
+    font-size: 14px;
+  }
+
+  .msgClearBtn {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .msgBubble {
+    max-width: 86%;
+  }
+
+  .msgComposer {
+    gap: 5px;
+    padding: 8px 6px 14px;
+  }
+
+  .msgSendBtn,
+  .msgIconBtn {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .msgInput {
+    padding: 8px 9px;
+    font-size: 12px;
+  }
 }

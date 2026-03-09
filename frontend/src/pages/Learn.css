@@ -51,7 +51,7 @@
 
 /* ===== HEADER TITLE + TABS ===== */
 .learnHeader {
-  padding: 10px 14px 6px 14px;
+  padding: 10px 14px 6px;
   border-bottom: 1px solid #ddd;
 }
 
@@ -93,62 +93,91 @@
 .learnBody {
   flex: 1;
   overflow: auto;
-  padding: 12px 12px 18px 12px;
+  padding: 12px 12px 18px;
 }
 
-/* ===== VIDEOS TAB ===== */
+/* ===== VIDEO CATEGORIES ===== */
 .learnVideoList {
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
 
-.learnVideoRow {
+.learnVideoCategorySection {
+  margin-bottom: 40px;
+}
+
+.learnVideoCategoryTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 6px 0 16px;
+  padding-left: 4px;
+}
+
+/* ===== VIDEOS GRID ===== */
+.learnVideoGrid {
   display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+.learnVideoCard {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.learnVideoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
 }
 
 .learnVideoThumb {
-  height: 74px;
-  border-radius: 6px;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
   background: #2b2b2b;
-  border: 2px solid #1f1f1f;
+  border-bottom: 2px solid #1f1f1f;
   display: grid;
   place-items: center;
-  cursor: pointer;
 }
 
 .learnPlayCircle {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #111;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
   border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 14px;
+  font-size: 16px;
   padding-left: 2px;
 }
 
 .learnVideoText {
+  padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .learnVideoTitle {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
-  line-height: 1.15rem;
+  line-height: 1.2;
   color: #111;
 }
 
 .learnVideoAuthor {
-  font-size: 12px;
-  color: #444;
+  font-size: 13px;
+  color: #666;
 }
 
 /* ===== RECIPES TAB ===== */
@@ -167,6 +196,7 @@
   gap: 10px;
   align-items: start;
   cursor: pointer;
+  background: #fff;
 }
 
 .learnRecipeRow:hover {
@@ -206,6 +236,21 @@
   text-transform: uppercase;
 }
 
+.learnRecipeTitle {
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1.15rem;
+  color: #111;
+}
+
+.learnRecipeCTA {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1d4ed8;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .learnRecipeTags {
   display: flex;
   flex-wrap: wrap;
@@ -220,33 +265,6 @@
   border-radius: 4px;
   background: #e8f0fe;
   color: #1d4ed8;
-}
-
-.learnRecipesLoading,
-.learnRecipesError,
-.learnRecipesEmpty {
-  text-align: center;
-  padding: 24px;
-  font-weight: 600;
-  color: #444;
-}
-
-.learnRecipesError {
-  color: #b91c1c;
-}
-
-.learnRecipeTitle {
-  font-weight: 900;
-  font-size: 14px;
-  line-height: 1.15rem;
-}
-
-.learnRecipeCTA {
-  font-size: 12px;
-  font-weight: 800;
-  color: #1d4ed8;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .learnRecipeNote {
@@ -275,6 +293,63 @@
 .learnMetaIcon {
   width: 18px;
   display: inline-block;
+}
+
+.learnRecipesLoading,
+.learnRecipesError,
+.learnRecipesEmpty {
+  text-align: center;
+  padding: 24px;
+  font-weight: 600;
+  color: #444;
+}
+
+.learnRecipesError {
+  color: #b91c1c;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.favBtn {
+  border: 2px solid #1f1f1f;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 900;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.favBtn.active {
+  background: #fffbdd;
+}
+
+.learnModalTopActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.learnModalTopActions .favBtn {
+  margin-bottom: 0;
+}
+
+.chompyBtn {
+  padding: 6px 12px;
+  background: #2f69a8;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chompyBtn:hover {
+  background: #1f508a;
 }
 
 /* ===== RECIPE MODAL ===== */
@@ -402,10 +477,6 @@
   color: #333;
 }
 
-.learnModalIngredients > div {
-  margin-bottom: 4px;
-}
-
 .learnIngredientsHeader {
   display: flex;
   justify-content: space-between;
@@ -427,6 +498,10 @@
 
 .learnAddAllBtn:hover {
   background: #e0e7ff;
+}
+
+.learnModalIngredients > div {
+  margin-bottom: 4px;
 }
 
 .learnIngredientRow {
@@ -468,142 +543,186 @@
   font-weight: 600;
   color: #222;
 }
-.learnVideoThumb {
-  position: relative;
-  overflow: hidden;
-}
 
-.learnPlayCircle {
-  background: rgba(0, 0, 0, 0.65);
-}
-.favBtn {
-  border: 2px solid #1f1f1f;
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-weight: 900;
-  background: #fff;
-  cursor: pointer;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
-.favBtn.active {
-  background: #fffbdd;
-}
-.learnVideoCategoryTitle {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 14px 0 8px;
-}
-
-.learnVideoCategorySection {
-  margin-bottom: 10px;
-}
-/* ===================== VIDEOS GRID ===================== */
-
-.learnVideoList {
-  display: flex;
-  flex-direction: column;
-}
-
-.learnVideoCategorySection {
-  margin-bottom: 40px; /* space between categories */
-}
-
-.learnVideoCategoryTitle {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 6px 0 16px;
-  padding-left: 4px;
-}
-
-.learnVideoGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 22px; /* space between video cards */
-}
-
-/* Video card */
-.learnVideoCard {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.learnVideoCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
-}
-
-.learnVideoThumb {
-  height: 160px;
-  position: relative;
-  cursor: pointer;
-}
-
-.learnPlayCircle {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 16px;
-}
-
-.learnVideoText {
-  padding: 12px 14px 14px;
-}
-
-.learnVideoTitle {
-  font-weight: 650;
-  margin-bottom: 6px;
-  line-height: 1.2;
-}
-
-.learnVideoAuthor {
-  font-size: 13px;
-  color: #666;
-}
-
-/* Small screens */
-@media (max-width: 520px) {
+/* ===== TABLET ===== */
+@media (max-width: 900px) {
   .learnVideoGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
   }
 }
 
-.learnModalTopActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
+/* ===== RECIPES MOBILE LAYOUT ===== */
+@media (max-width: 700px) {
+  .learnRecipeRow {
+    grid-template-columns: 84px 1fr;
+    grid-template-areas:
+      "img mid"
+      "meta meta";
+    gap: 10px;
+  }
+
+  .learnRecipeImgWrap {
+    grid-area: img;
+    width: 84px;
+    height: 84px;
+  }
+
+  .learnRecipeMid {
+    grid-area: mid;
+  }
+
+  .learnRecipeMeta {
+    grid-area: meta;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 4px;
+  }
 }
 
-.learnModalTopActions .favBtn {
-  margin-bottom: 0;
+/* ===== MOBILE ===== */
+@media (max-width: 600px) {
+  .learnHeader {
+    padding: 8px 10px 4px;
+  }
+
+  .learnTitle {
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+
+  .learnTabs {
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .learnTab {
+    padding: 6px 6px;
+  }
+
+  .learnBody {
+    padding: 10px 8px 16px;
+  }
+
+  .learnRecipeRow,
+  .learnVideoCard,
+  .learnModal {
+    border-radius: 12px;
+  }
+
+  .learnRecipeRow {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .learnRecipeTitle {
+    font-size: 13px;
+    line-height: 1.1rem;
+  }
+
+  .learnRecipeCTA {
+    font-size: 11px;
+  }
+
+  .learnRecipeTag {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+
+  .learnMetaRow {
+    font-size: 11px;
+  }
+
+  .learnVideoCategoryTitle {
+    font-size: 16px;
+    margin: 4px 0 12px;
+  }
+
+  .learnVideoGrid {
+    gap: 14px;
+    grid-template-columns: 1fr;
+  }
+
+  .learnVideoThumb {
+    height: 150px;
+  }
+
+  .learnVideoText {
+    padding: 10px 12px 12px;
+  }
+
+  .learnVideoTitle {
+    font-size: 14px;
+  }
+
+  .learnVideoAuthor {
+    font-size: 12px;
+  }
+
+  .learnModalOverlay {
+    padding: 10px;
+  }
+
+  .learnModal {
+    max-height: 92vh;
+    border-radius: 10px;
+  }
+
+  .learnModalContent {
+    padding: 16px 14px 18px;
+  }
+
+  .learnModalTitle {
+    font-size: 18px;
+  }
+
+  .learnModalMeta {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .learnModalNutrition {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .learnAddAllBtn,
+  .favBtn,
+  .chompyBtn {
+    font-size: 11px;
+  }
 }
 
-.chompyBtn {
-  padding: 6px 12px;
-  background: #2f69a8;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
+/* ===== VERY SMALL PHONES ===== */
+@media (max-width: 420px) {
+  .learnTabs {
+    gap: 8px;
+  }
 
-.chompyBtn:hover {
-  background: #1f508a;
+  .learnTab {
+    font-size: 12px;
+    padding: 6px 4px;
+  }
+
+  .learnRecipeRow {
+    grid-template-columns: 76px 1fr;
+  }
+
+  .learnRecipeImgWrap {
+    width: 76px;
+    height: 76px;
+  }
+
+  .learnRecipeTags {
+    gap: 4px;
+  }
+
+  .learnModalContent {
+    padding: 14px 12px 16px;
+  }
+
+  .learnModalTitle {
+    font-size: 17px;
+  }
 }

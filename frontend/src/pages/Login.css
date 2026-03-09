@@ -1,5 +1,3 @@
-
-
 .loginPage {
   min-height: 100vh;
   background: var(--brand-600);
@@ -10,7 +8,6 @@
   padding: 26px 16px 40px;
   gap: 22px;
 }
-
 
 .loginTop {
   width: min(520px, 92%);
@@ -23,6 +20,7 @@
 
 .loginLogoFrame {
   width: 520px;
+  max-width: 100%;
   height: 184px;
   display: flex;
   align-items: center;
@@ -36,12 +34,12 @@
   display: block;
 }
 
-
 .brandWordmark {
   font-weight: 1000;
   font-size: 34px;
   letter-spacing: 0.3px;
   line-height: 1;
+  text-align: center;
 }
 
 .brandWordmark .chomp {
@@ -52,13 +50,13 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
-
 .loginCard {
   width: min(520px, 92%);
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 26px 22px;
+  box-sizing: border-box;
 }
 
 .loginTitle {
@@ -90,6 +88,7 @@
   padding: 10px 14px;
   font-size: 18px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .loginButton {
@@ -107,11 +106,6 @@
 .loginButton:active {
   transform: translateY(1px);
 }
-.loginPage {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 
 .copyright {
   margin-top: auto;
@@ -120,5 +114,113 @@
   color: white;
   padding: 14px 8px;
   opacity: 0.9;
+  max-width: 760px;
 }
 
+/* Tablet */
+@media (max-width: 900px) {
+  .loginLogoFrame {
+    width: 100%;
+    height: 150px;
+  }
+
+  .brandWordmark {
+    font-size: 30px;
+  }
+
+  .loginCard {
+    padding: 22px 18px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .loginPage {
+    padding: 18px 10px 28px;
+    gap: 16px;
+  }
+
+  .loginTop,
+  .loginCard {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .loginLogoFrame {
+    width: 100%;
+    height: 110px;
+  }
+
+  .brandWordmark {
+    font-size: 24px;
+  }
+
+  .loginCard {
+    padding: 18px 14px;
+  }
+
+  .loginTitle {
+    font-size: 22px;
+  }
+
+  .loginLabel {
+    font-size: 15px;
+  }
+
+  .loginInput,
+  .loginButton {
+    height: 48px;
+    font-size: 16px;
+  }
+
+  .copyright {
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 420px) {
+  .loginPage {
+    padding: 14px 8px 24px;
+    gap: 14px;
+  }
+
+  .loginTop {
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .loginLogoFrame {
+    height: 90px;
+  }
+
+  .brandWordmark {
+    font-size: 22px;
+  }
+
+  .loginCard {
+    padding: 14px 12px;
+  }
+
+  .loginTitle {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .loginLabel {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .loginInput,
+  .loginButton {
+    height: 44px;
+    font-size: 15px;
+  }
+
+  .copyright {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+}
