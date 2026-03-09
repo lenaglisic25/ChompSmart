@@ -36,6 +36,7 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  min-width: 0;
 }
 
 .topRightActions {
@@ -46,7 +47,8 @@
 
 /* Icon buttons */
 
-.accountBtn {
+.accountBtn,
+.topIconLink {
   border: none;
   background: transparent;
   color: var(--lightText);
@@ -59,17 +61,17 @@
   padding: 6px 8px;
   text-decoration: none;
   border-radius: 10px;
-
   transition:
     transform 0.18s ease,
     background 0.18s ease,
     box-shadow 0.18s ease;
 }
 
-.accountBtn:hover {
-  background: rgba(255,255,255,0.12);
+.accountBtn:hover,
+.topIconLink:hover {
+  background: rgba(255, 255, 255, 0.12);
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
 /* Icon container */
@@ -99,7 +101,7 @@
 /* Active top icon */
 
 .activeTopLink {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* Logo */
@@ -137,6 +139,7 @@
   border-top: 2px solid var(--border);
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  z-index: 50;
 }
 
 .tab {
@@ -147,7 +150,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-right: 1px solid rgba(255,255,255,0.35);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -180,28 +183,491 @@
   cursor: pointer;
 }
 
-/* Mobile adjustments */
+/* Tablet */
 
 @media (max-width: 900px) {
-
   .topBar {
-    grid-template-columns: 1fr;
     height: auto;
-    padding: 12px;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "logo logout"
+      "actions actions";
+    align-items: center;
+    padding: 10px 12px;
+    gap: 10px 12px;
   }
 
-  .topLeftActions,
-  .topRightActions,
   .topLogoWrap {
-    justify-content: center;
+    grid-area: logo;
+    justify-content: flex-start;
+  }
+
+  .topRightActions {
+    grid-area: logout;
+    justify-content: flex-end;
   }
 
   .topLeftActions {
-    flex-wrap: wrap;
+    grid-area: actions;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
   }
 
   .topLogoImg {
+    height: 58px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    padding: 6px 10px;
+    gap: 4px;
+    border-radius: 10px;
+    min-width: 78px;
+  }
+
+  .accountIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .accountIcon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .accountLabel {
+    font-size: 13px;
+  }
+
+  .logoutBtn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 15px;
+  }
+
+  .content {
+    padding: 16px 14px 105px;
+  }
+
+  .bottomTabs {
+    height: 84px;
+  }
+
+  .tabLabel {
+    font-size: 17px;
+  }
+}
+
+/* Phone: compact top section */
+
+@media (max-width: 600px) {
+  .topBar {
+    padding: 8px 10px;
+    gap: 8px 10px;
+  }
+
+  .topLeftActions {
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    flex: 1;
+    min-width: 0;
+    max-width: 110px;
+    padding: 6px 6px;
+    gap: 3px;
+    border-radius: 10px;
+  }
+
+  .accountBtn:hover,
+  .topIconLink:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .accountIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .accountIcon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .accountLabel {
+    font-size: 11px;
+  }
+
+  .topLogoImg {
+    height: 42px;
+  }
+
+  .logoutBtn {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .content {
+    padding: 12px 10px 92px;
+  }
+
+  .bottomTabs {
     height: 72px;
   }
 
+  .tabLabel {
+    font-size: 14px;
+  }
+}
+
+/* Very small phones */
+
+@media (max-width: 400px) {
+  .topBar {
+    padding: 8px 8px;
+  }
+
+  .topLeftActions {
+    gap: 4px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    padding: 5px 4px;
+  }
+
+  .accountLabel {
+    font-size: 10px;
+  }
+
+  .topLogoImg {
+    height: 38px;
+  }
+
+  .logoutBtn {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .topBar {
+    padding: 6px 8px;
+    gap: 6px 8px;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "logo logout"
+      "actions actions";
+  }
+
+  .topLogoWrap {
+    grid-area: logo;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .topRightActions {
+    grid-area: logout;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .topLeftActions {
+    grid-area: actions;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    margin-top: -2px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    padding: 4px 4px;
+    gap: 2px;
+    border-radius: 8px;
+  }
+
+  .accountBtn:hover,
+  .topIconLink:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .accountIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .accountIcon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .accountLabel {
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .topLogoImg {
+    height: 28px;
+  }
+
+  .logoutBtn {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .content {
+    padding: 10px 8px 92px;
+  }
+
+  .bottomTabs {
+    height: 68px;
+  }
+
+  .tabLabel {
+    font-size: 13px;
+  }
+}
+@media (max-width: 900px) {
+  .topBar {
+    height: auto;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "logo logout"
+      "actions actions";
+    align-items: center;
+    padding: 8px 10px;
+    gap: 8px 10px;
+  }
+
+  .topLogoWrap {
+    grid-area: logo;
+    justify-content: flex-start;
+  }
+
+  .topRightActions {
+    grid-area: logout;
+    justify-content: flex-end;
+  }
+
+  .topLeftActions {
+    grid-area: actions;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .topLogoImg {
+    height: 42px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    padding: 5px 8px;
+    gap: 3px;
+    border-radius: 9px;
+    min-width: 70px;
+  }
+
+  .accountIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .accountIcon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .accountLabel {
+    font-size: 11px;
+  }
+
+  .logoutBtn {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 12px 10px 96px;
+  }
+
+  .bottomTabs {
+    height: 72px;
+  }
+
+  .tabLabel {
+    font-size: 14px;
+  }
+}
+@media (max-width: 420px) {
+  .accountLabel {
+    display: none;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    padding: 6px 4px;
+  }
+}
+@media (max-width: 900px) {
+  .topBar {
+    height: auto;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "logo logout"
+      "actions actions";
+    align-items: center;
+    padding: 6px 10px 8px;
+    gap: 6px 10px;
+  }
+
+  .topLogoWrap {
+    grid-area: logo;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .topRightActions {
+    grid-area: logout;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .topLeftActions {
+    grid-area: actions;
+    justify-content: space-around;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+    margin-top: -2px;
+  }
+
+  .topLogoImg {
+    height: 34px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    padding: 4px 6px;
+    gap: 2px;
+    border-radius: 8px;
+    min-width: 64px;
+  }
+
+  .accountIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .accountIcon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .accountLabel {
+    font-size: 10px;
+  }
+
+  .logoutBtn {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .content {
+    padding: 10px 10px 96px;
+  }
+
+  .bottomTabs {
+    height: 72px;
+  }
+
+  .tabLabel {
+    font-size: 14px;
+  }
+}
+@media (max-width: 600px) {
+  .topBar {
+    padding: 6px 8px 7px;
+    gap: 5px 8px;
+  }
+
+  .topLeftActions {
+    justify-content: space-around;
+    gap: 4px;
+    margin-top: -3px;
+  }
+
+  .accountBtn,
+  .topIconLink {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    padding: 3px 4px;
+    gap: 2px;
+    border-radius: 8px;
+  }
+
+  .accountBtn:hover,
+  .topIconLink:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .accountIcon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .accountIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .accountLabel {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .topLogoImg {
+    height: 32px;
+  }
+
+  .logoutBtn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+    border-radius: 7px;
+  }
+
+  .content {
+    padding: 10px 8px 90px;
+  }
+
+  .bottomTabs {
+    height: 68px;
+  }
+
+  .tabLabel {
+    font-size: 13px;
+  }
 }
