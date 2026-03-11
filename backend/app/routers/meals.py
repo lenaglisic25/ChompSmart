@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date
+from datetime import date, datetime
 from app.database import get_db
 from app.models.meals import Meal
 
@@ -36,6 +36,10 @@ def log_meal(meal: dict, db: Session = Depends(get_db)):
         sugar_val = 0
     meal["sugar"] = float(sugar_val)
 
+    created_at_str = meal.get("created_at")
+    if created_at_str:
+        meal["created_at"] = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")
+
     m = Meal(**meal)
     db.add(m)
     db.commit()
@@ -58,11 +62,14 @@ def get_today_meals(user_email: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/reset")
-def reset_daily_log(user_email: str, db: Session = Depends(get_db)):
-    db.query(Meal).filter(Meal.user_email == user_email).delete()
+def reset_daily_log(user_email: str, target_date: str, db: Session = Depends(get_db)):
+    db.query(Meal).filter(
+        Meal.user_email == user_email,
+        func.date(Meal.created_at) == target_date
+    ).delete(synchronize_session=False)
+    
     db.commit()
     return {"ok": True}
-
 
 @router.delete("/{meal_id}")
 def delete_meal(meal_id: int, db: Session = Depends(get_db)):
@@ -73,3 +80,11 @@ def delete_meal(meal_id: int, db: Session = Depends(get_db)):
     db.delete(meal)
     db.commit()
     return {"ok": True}
+
+@router.get("/daily/{user_email}")
+def get_daily_log(user_email: str, target_date: str, db: Session = Depends(get_db)):
+    meals = db.query(Meal).filter(
+        Meal.user_email == user_email,
+        func.date(Meal.created_at, "localtime") == target_date
+    ).all()
+    return meals
