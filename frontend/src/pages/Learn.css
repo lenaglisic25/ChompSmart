@@ -267,6 +267,11 @@
   color: #1d4ed8;
 }
 
+.learnCuisineTag {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .learnRecipeNote {
   font-size: 11px;
   color: #333;
@@ -432,6 +437,11 @@
   border-radius: 6px;
   background: #e8f0fe;
   color: #1d4ed8;
+}
+
+.learnModalTag.learnCuisineTag {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .learnModalMeta {

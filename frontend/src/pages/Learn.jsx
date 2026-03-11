@@ -425,6 +425,15 @@ export default function Learn() {
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
 
+                    {r.cuisine && (
+                      <div className="learnRecipeTags">
+                        <span className="learnRecipeTag learnCuisineTag">{r.cuisine}</span>
+                        {r.cuisine_also_tagged && (
+                          <span className="learnRecipeTag learnCuisineTag">{r.cuisine_also_tagged}</span>
+                        )}
+                      </div>
+                    )}
+
                     {r.dietary_tags && r.dietary_tags.length > 0 && (
                       <div className="learnRecipeTags">
                         {r.dietary_tags.map((tag) => (
@@ -507,6 +516,15 @@ export default function Learn() {
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
 
+                    {r.cuisine && (
+                      <div className="learnRecipeTags">
+                        <span className="learnRecipeTag learnCuisineTag">{r.cuisine}</span>
+                        {r.cuisine_also_tagged && (
+                          <span className="learnRecipeTag learnCuisineTag">{r.cuisine_also_tagged}</span>
+                        )}
+                      </div>
+                    )}
+
                     {r.dietary_tags && r.dietary_tags.length > 0 && (
                       <div className="learnRecipeTags">
                         {r.dietary_tags.map((tag) => (
@@ -577,6 +595,15 @@ export default function Learn() {
               </h2>
 
               <div className="learnModalCategory">{selectedRecipe.category}</div>
+
+              {selectedRecipe.cuisine && (
+                <div className="learnModalTags" style={{ marginBottom: "4px" }}>
+                  <span className="learnModalTag learnCuisineTag">{selectedRecipe.cuisine}</span>
+                  {selectedRecipe.cuisine_also_tagged && (
+                    <span className="learnModalTag learnCuisineTag">{selectedRecipe.cuisine_also_tagged}</span>
+                  )}
+                </div>
+              )}
 
               <div className="learnModalTopActions">
                 <button
@@ -698,6 +725,12 @@ export default function Learn() {
                     Sodium:{" "}
                     {selectedRecipe.sodium_mg != null
                       ? `${selectedRecipe.sodium_mg} mg`
+                      : "—"}
+                  </div>
+                  <div>
+                    Sugar:{" "}
+                    {selectedRecipe.sugar_g != null
+                      ? `${selectedRecipe.sugar_g} g`
                       : "—"}
                   </div>
                 </div>
