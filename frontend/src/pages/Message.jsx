@@ -325,7 +325,9 @@ export default function Message() {
         }));
 
         const favoriteTitles = Array.isArray(favoritesList) ? favoritesList.map(recipe => recipe.title) : [];
-        const currentGroceries = Array.isArray(items) ? items.filter(i => !i.purchased).map(i => i.name) : [];
+        const currentGroceries = Array.isArray(items) 
+            ? items.map(i => ({ name: i.name, purchased: i.purchased })) 
+            : [];
 
         const res = await fetch("http://localhost:8000/chat/message", {
           method: "POST",
