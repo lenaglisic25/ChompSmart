@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from app.database import get_db
 from app.models.profile import Profile
 from app.models.meals import Meal
+from app.models.grocery import GroceryItem
 from app.services.usda_service import usda_search_foods, build_usda_context
 
 
@@ -41,7 +42,7 @@ def _as_float(v, default=0.0) -> float:
         return float(default)
 
 
-def get_user_context(db: Session, user_email: str) -> str:
+def get_user_context(db: Session, user_email: str, favorite_recipes: list = None, grocery_list: list = None) -> str:
     if not user_email:
         return ""
 
@@ -89,7 +90,17 @@ def get_user_context(db: Session, user_email: str) -> str:
         Calories So Far: {int(total_cals)} / {user_goal}
         """
 
-    return f"{profile_text}\n{log_text}"
+    grocery_text = "[GROCERY LIST: Empty]"
+    if grocery_list:
+        g_list = ", ".join(grocery_list)
+        grocery_text = f"[GROCERY LIST]\nItems currently have: {g_list}"
+
+    fav_text = "[FAVORITE RECIPES: None saved]"
+    if favorite_recipes:
+        f_list = ", ".join(favorite_recipes)
+        fav_text = f"[FAVORITE RECIPES]\nSaved recipes: {f_list}"
+
+    return f"{profile_text}\n{log_text}\n{grocery_text}\n{fav_text}"
 
 
 CHAT_PROMPT = """
@@ -110,12 +121,18 @@ RESPONSIBILITIES:
 2. Use the User Profile and Daily Log to give specific advice.
 3. If USDA matches are present, prefer those numbers and mention which match you used.
 4. You have the special ability to log meals for the user, but ONLY if they explicitly ask or confirm.
+5. You can add ingredients to the grocery list if the user asks.
 
 HOW TO LOG MEALS:
   1. Respond naturally confirming the action.
   2. At the very end of your message, append this exact JSON block:
      LOG_MEAL: {"name":"Food Name","calories":123,"protein":10,"carbs":20,"fats":5,"fiber":2,"sodium":300,"sugar":4,"meal_type":"Snack"}
   3. 'meal_type' options: Breakfast, Lunch, Dinner, Snack.
+
+HOW TO ADD GROCERIES:
+  1. Respond naturally confirming the action.
+  2. At the very end of your message, append this exact JSON array:
+     ADD_GROCERIES: ["Chicken breast", "Broccoli", "Soy sauce"]
 """
 
 VISION_PROMPT = """
@@ -158,6 +175,8 @@ class ChatRequest(BaseModel):
     message: str
     history: list = Field(default_factory=list)
     user_email: str | None = None
+    favorites: list = Field(default_factory=list)
+    groceries: list = Field(default_factory=list)
 
 
 class ImageChatRequest(BaseModel):
@@ -175,7 +194,7 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="Gemini API key not configured.")
 
-    user_context = get_user_context(db, request.user_email)
+    user_context = get_user_context(db, request.user_email, request.favorites, request.groceries)
 
     history_str = ""
     if request.history:
@@ -192,12 +211,25 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     try:
         response = model.generate_content(full_prompt)
         reply_text = response.text or ""
+        conversation_part = reply_text
+        added_groceries = []
+
+        if "ADD_GROCERIES:" in reply_text:
+            parts = reply_text.split("ADD_GROCERIES:", 1)
+            conversation_part = parts[0].strip()
+            json_part = parts[1].split("LOG_MEAL:")[0].strip()
+            try:
+                json_part = json_part.replace("```json", "").replace("```", "").strip()
+                added_groceries = json.loads(json_part)
+            except Exception:
+                pass
 
         if "LOG_MEAL:" in reply_text:
             parts = reply_text.split("LOG_MEAL:", 1)
-            conversation_part = parts[0].strip()
-            json_part = parts[1].strip()
-
+            if "LOG_MEAL:" in conversation_part:
+                conversation_part = parts[0].strip()
+            
+            json_part = parts[1].split("ADD_GROCERIES:")[0].strip()
             try:
                 json_part = json_part.replace("```json", "").replace("```", "").strip()
                 meal_data = json.loads(json_part)
@@ -221,13 +253,10 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
                     )
                     db.add(new_meal)
                     db.commit()
-
-                return {"reply": conversation_part}
-
             except Exception:
-                return {"reply": conversation_part + " (I tried to log that, but hit a glitch!)"}
+                conversation_part += " (I tried to log that, but hit a glitch!)"
 
-        return {"reply": reply_text}
+        return {"reply": conversation_part, "added_groceries": added_groceries}
 
     except Exception:
         return {"reply": "Chompy is taking a nap. Try again!"}

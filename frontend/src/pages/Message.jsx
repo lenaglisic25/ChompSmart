@@ -1,6 +1,8 @@
 // Message.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { useFavorites } from "../context/FavoritesContext";
+import { useGrocery } from "../Grocery/GroceryContext";
 import "./Message.css";
 
 const chompyGreetings = [
@@ -46,13 +48,15 @@ async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
       const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
       resolve(compressedDataUrl);
     };
-    img.src = dataUrl
+    img.src = dataUrl;
   });
 }
 //
 
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
+  const { favoritesList } = useFavorites() || {};
+  const { items, addItem } = useGrocery() || {};
   const storageKey = useMemo(() => `chompsmart_threads_${email}`, [email]);
 
   const starterThreads = useMemo(
@@ -320,6 +324,9 @@ export default function Message() {
             body: m.body 
         }));
 
+        const favoriteTitles = Array.isArray(favoritesList) ? favoritesList.map(recipe => recipe.title) : [];
+        const currentGroceries = Array.isArray(items) ? items.filter(i => !i.purchased).map(i => i.name) : [];
+
         const res = await fetch("http://localhost:8000/chat/message", {
           method: "POST",
           headers: {
@@ -328,11 +335,20 @@ export default function Message() {
           body: JSON.stringify({
             message: trimmed,
             history: history,
-            user_email: email
+            user_email: email,
+            favorites: favoriteTitles,
+            groceries: currentGroceries
           }),
         });
 
         const data = await res.json();
+        
+        if (data?.added_groceries && Array.isArray(data.added_groceries)) {
+          data.added_groceries.forEach(itemName => {
+            if (addItem) addItem(itemName, 1, "Other", "");
+          });
+        }
+        
         if (data?.reply) {
           setThreads((prev) => ({
             ...prev,
