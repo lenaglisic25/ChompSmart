@@ -10,6 +10,74 @@ import { guessCategoryFromName, INGREDIENT_UNITS } from "../Grocery/categories";
 
 const API_BASE = "http://localhost:8000";
 
+function recipeMatchesSearch(r, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    r.title.toLowerCase().includes(q) ||
+    r.category.toLowerCase().includes(q) ||
+    (r.cuisine || "").toLowerCase().includes(q) ||
+    (r.dietary_tags || []).some((t) => t.toLowerCase().includes(q)) ||
+    (r.ingredients || "").toLowerCase().includes(q)
+  );
+}
+
+function videoMatchesSearch(v, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    (v.title || "").toLowerCase().includes(q) ||
+    (v.source || "").toLowerCase().includes(q) ||
+    (v.category || "").toLowerCase().includes(q) ||
+    (v.program || "").toLowerCase().includes(q)
+  );
+}
+
+function recipeMatchesFilters(r, activeFilters) {
+  if (activeFilters.length === 0) return true;
+  for (const f of activeFilters) {
+    const colon = f.indexOf(":");
+    const type = f.slice(0, colon);
+    const value = f.slice(colon + 1);
+    if (type === "d") {
+      const tags = (r.dietary_tags || []).map((t) => t.toLowerCase());
+      if (!tags.includes(value.toLowerCase())) return false;
+    } else if (type === "m") {
+      if (r.category !== value) return false;
+    } else if (type === "c") {
+      if ((r.cuisine || "") !== value) return false;
+    } else if (type === "t") {
+      const mins = parseFloat(r.minutes);
+      if (isNaN(mins) || mins > parseFloat(value)) return false;
+    }
+  }
+  return true;
+}
+
+const DIETARY_OPTIONS = [
+  "Dairy-free", "Egg-free", "Gluten-free", "Keto", "Low-carb",
+  "Low-fat", "Low-salt", "Low-sugar", "No seafood", "Nut-free",
+  "Paleo", "Soy-free", "Vegan", "Vegetarian",
+];
+
+const TIME_FILTERS = [
+  { id: "t:20", label: "Under 20 min" },
+  { id: "t:30", label: "Under 30 min" },
+  { id: "t:45", label: "Under 45 min" },
+];
+
+function shortCuisineLabel(cuisine) {
+  return cuisine.replace(/ \(.*\)$/, "").replace(" & barbecue", "").trim();
+}
+
+function getFilterLabel(id) {
+  const colon = id.indexOf(":");
+  const type = id.slice(0, colon);
+  const value = id.slice(colon + 1);
+  if (type === "t") return `Under ${value} min`;
+  return value;
+}
+
 function parseIngredientLabel(raw) {
   const text = String(raw || "").trim();
   if (!text) return { name: "", qty: 1, unit: "" };
@@ -52,6 +120,21 @@ function parseIngredientLabel(raw) {
 
 export default function Learn() {
   const [tab, setTab] = useState("recipes");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  function switchTab(newTab) {
+    setTab(newTab);
+    setSearchQuery("");
+    setShowFilters(false);
+  }
+
+  function toggleFilter(id) {
+    setActiveFilters((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  }
 
   // Favorites
   const { isFavorite, toggleFavorite, favoritesList } = useFavorites();
@@ -74,6 +157,20 @@ export default function Learn() {
     userEmail = localStorage.getItem("currentUserEmail");
   } catch (_) {}
 
+  // Set default filters from user's dietary profile on load
+  useEffect(() => {
+    if (!userEmail) return;
+    fetch(`${API_BASE}/profile/${encodeURIComponent(userEmail)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const restrictions = data?.dietary_restrictions;
+        if (Array.isArray(restrictions) && restrictions.length > 0) {
+          setActiveFilters(restrictions.map((r) => `d:${r}`));
+        }
+      })
+      .catch(() => {});
+  }, [userEmail]);
+
   // Fetch recipes when Recipes tab is active
   useEffect(() => {
     if (tab !== "recipes") return;
@@ -81,10 +178,7 @@ export default function Learn() {
     setRecipesLoading(true);
     setRecipesError(null);
 
-    let url = `${API_BASE}/recipes`;
-    if (userEmail) {
-      url = `${API_BASE}/recipes?user_email=${encodeURIComponent(userEmail)}`;
-    }
+    const url = `${API_BASE}/recipes`;
 
     fetch(url)
       .then((res) => {
@@ -102,7 +196,7 @@ export default function Learn() {
       .finally(() => {
         setRecipesLoading(false);
       });
-  }, [tab, userEmail]);
+  }, [tab]);
 
   // ---------- Helpers (Recipes) ----------
 
@@ -260,22 +354,46 @@ export default function Learn() {
     }
   }
 
-  // ---------- Group Videos by Category ----------
-  const groupedVideos = useMemo(() => {
-    return (videosData || []).reduce((map, v) => {
-      const key =
-        v.category && String(v.category).trim()
-          ? String(v.category).trim()
-          : "Other";
-      if (!map[key]) map[key] = [];
-      map[key].push(v);
-      return map;
-    }, {});
-  }, []);
+  // ---------- Filter + Search ----------
 
-  const sortedCategories = useMemo(() => {
-    return Object.keys(groupedVideos).sort((a, b) => a.localeCompare(b));
-  }, [groupedVideos]);
+  const availableCuisines = [...new Set(
+    recipes.filter((r) => r.cuisine).map((r) => r.cuisine)
+  )].sort();
+
+  const visibleRecipes = useMemo(
+    () =>
+      recipes
+        .filter((r) => recipeMatchesFilters(r, activeFilters))
+        .filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [recipes, activeFilters, searchQuery]
+  );
+
+  const visibleFavorites = useMemo(
+    () =>
+      favoritesList
+        .filter((r) => recipeMatchesFilters(r, activeFilters))
+        .filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [favoritesList, activeFilters, searchQuery]
+  );
+
+  // ---------- Group Videos by Category ----------
+  const groupedVideos = useMemo(
+    () =>
+      (videosData || [])
+        .filter((v) => videoMatchesSearch(v, searchQuery.trim()))
+        .reduce((map, v) => {
+          const key = (v.category || "").trim() || "Other";
+          if (!map[key]) map[key] = [];
+          map[key].push(v);
+          return map;
+        }, {}),
+    [searchQuery]
+  );
+
+  const sortedCategories = useMemo(
+    () => Object.keys(groupedVideos).sort((a, b) => a.localeCompare(b)),
+    [groupedVideos]
+  );
 
   const showVideos = tab === "videos";
   const showRecipes = tab === "recipes";
@@ -305,7 +423,7 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showVideos ? "active" : ""}`}
-            onClick={() => setTab("videos")}
+            onClick={() => switchTab("videos")}
           >
             Videos
           </button>
@@ -313,7 +431,7 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showRecipes ? "active" : ""}`}
-            onClick={() => setTab("recipes")}
+            onClick={() => switchTab("recipes")}
           >
             Recipes
           </button>
@@ -321,17 +439,144 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showFavorites ? "active" : ""}`}
-            onClick={() => setTab("favorites")}
+            onClick={() => switchTab("favorites")}
           >
             Favorites
           </button>
         </div>
+
+        <div className="learnSearchBar">
+          <input
+            type="search"
+            className="learnSearchInput"
+            placeholder={
+              showRecipes
+                ? "Search recipes…"
+                : showFavorites
+                ? "Search favorites…"
+                : "Search videos…"
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {(showRecipes || showFavorites) && (
+          <div className="learnFilterBar">
+            <button
+              type="button"
+              className={`learnFilterToggle ${showFilters ? "open" : ""} ${activeFilters.length > 0 ? "hasFilters" : ""}`}
+              onClick={() => setShowFilters((prev) => !prev)}
+            >
+              Filter {activeFilters.length > 0 ? `(${activeFilters.length})` : ""}
+              <span className="learnFilterArrow">{showFilters ? "▴" : "▾"}</span>
+            </button>
+
+            {activeFilters.map((f) => (
+              <span key={f} className="learnActiveChip">
+                {getFilterLabel(f)}
+                <button
+                  type="button"
+                  onClick={() => toggleFilter(f)}
+                  aria-label={`Remove ${getFilterLabel(f)}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+
+            {activeFilters.length > 0 && (
+              <button
+                type="button"
+                className="learnClearFilters"
+                onClick={() => setActiveFilters([])}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {showFilters && (showRecipes || showFavorites) && (
+        <div className="learnFilterPanel">
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Meal Type</div>
+            <div className="learnFilterOptions">
+              {["Breakfast", "Lunch", "Dinner", "Dessert"].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(`m:${m}`) ? "active" : ""}`}
+                  onClick={() => toggleFilter(`m:${m}`)}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {availableCuisines.length > 0 && (
+            <div className="learnFilterGroup">
+              <div className="learnFilterGroupLabel">Cuisine</div>
+              <div className="learnFilterOptions">
+                {availableCuisines.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`learnFilterOption ${activeFilters.includes(`c:${c}`) ? "active" : ""}`}
+                    onClick={() => toggleFilter(`c:${c}`)}
+                  >
+                    {shortCuisineLabel(c)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Prep Time</div>
+            <div className="learnFilterOptions">
+              {TIME_FILTERS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(id) ? "active" : ""}`}
+                  onClick={() => toggleFilter(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Dietary</div>
+            <div className="learnFilterOptions">
+              {DIETARY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(`d:${d}`) ? "active" : ""}`}
+                  onClick={() => toggleFilter(`d:${d}`)}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="learnBody">
         {/* ===================== VIDEOS TAB ===================== */}
         {showVideos && (
           <div className="learnVideoList">
+            {sortedCategories.length === 0 && (
+              <div className="learnRecipesEmpty">
+                No videos match &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
             {sortedCategories.map((cat) => (
               <div key={cat} className="learnVideoCategorySection">
                 <div className="learnVideoCategoryTitle">{cat}</div>
@@ -397,8 +642,14 @@ export default function Learn() {
               </div>
             )}
 
+            {!recipesLoading && recipes.length > 0 && visibleRecipes.length === 0 && (
+              <div className="learnRecipesEmpty">
+                No recipes match &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
+
             {!recipesLoading &&
-              recipes.map((r) => (
+              visibleRecipes.map((r) => (
                 <div
                   key={`${r.category}-${r.title}`}
                   className="learnRecipeRow"
@@ -424,6 +675,15 @@ export default function Learn() {
                     <div className="learnRecipeCategory">{r.category}</div>
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
+
+                    {r.cuisine && (
+                      <div className="learnRecipeTags">
+                        <span className="learnRecipeTag learnCuisineTag">{r.cuisine}</span>
+                        {r.cuisine_also_tagged && (
+                          <span className="learnRecipeTag learnCuisineTag">{r.cuisine_also_tagged}</span>
+                        )}
+                      </div>
+                    )}
 
                     {r.dietary_tags && r.dietary_tags.length > 0 && (
                       <div className="learnRecipeTags">
@@ -479,8 +739,12 @@ export default function Learn() {
               <div className="learnRecipesEmpty">
                 No favorites yet. Tap ☆ Save on a recipe to add it here.
               </div>
+            ) : visibleFavorites.length === 0 ? (
+              <div className="learnRecipesEmpty">
+                No favorites match &ldquo;{searchQuery}&rdquo;.
+              </div>
             ) : (
-              favoritesList.map((r) => (
+              visibleFavorites.map((r) => (
                 <div
                   key={`fav-${r.id ?? `${r.category}-${r.title}`}`}
                   className="learnRecipeRow"
@@ -506,6 +770,15 @@ export default function Learn() {
                     <div className="learnRecipeCategory">{r.category}</div>
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
+
+                    {r.cuisine && (
+                      <div className="learnRecipeTags">
+                        <span className="learnRecipeTag learnCuisineTag">{r.cuisine}</span>
+                        {r.cuisine_also_tagged && (
+                          <span className="learnRecipeTag learnCuisineTag">{r.cuisine_also_tagged}</span>
+                        )}
+                      </div>
+                    )}
 
                     {r.dietary_tags && r.dietary_tags.length > 0 && (
                       <div className="learnRecipeTags">
@@ -577,6 +850,15 @@ export default function Learn() {
               </h2>
 
               <div className="learnModalCategory">{selectedRecipe.category}</div>
+
+              {selectedRecipe.cuisine && (
+                <div className="learnModalTags" style={{ marginBottom: "4px" }}>
+                  <span className="learnModalTag learnCuisineTag">{selectedRecipe.cuisine}</span>
+                  {selectedRecipe.cuisine_also_tagged && (
+                    <span className="learnModalTag learnCuisineTag">{selectedRecipe.cuisine_also_tagged}</span>
+                  )}
+                </div>
+              )}
 
               <div className="learnModalTopActions">
                 <button
@@ -698,6 +980,12 @@ export default function Learn() {
                     Sodium:{" "}
                     {selectedRecipe.sodium_mg != null
                       ? `${selectedRecipe.sodium_mg} mg`
+                      : "—"}
+                  </div>
+                  <div>
+                    Sugar:{" "}
+                    {selectedRecipe.sugar_g != null
+                      ? `${selectedRecipe.sugar_g} g`
                       : "—"}
                   </div>
                 </div>

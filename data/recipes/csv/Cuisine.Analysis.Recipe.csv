@@ -1,0 +1,44 @@
+Title,Meal,Primary Cuisine,Also Tagged,Categories
+Apple Cinnamon Pancakes,Breakfast Recipes,American,,['American']
+Classic Banana-Oat Breakast Bowl,Breakfast Recipes,American,,['American']
+Egg & Spinach Sandwich,Breakfast Recipes,American,,['American']
+Mixed-Vegetable Breakfast Burrito,Breakfast Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
+Peanut Butter Banana Smoothie,Breakfast Recipes,American,,['American']
+Simple Fruit & Yogurt Bowl,Breakfast Recipes,American,,['American']
+Spinach & Egg Scramble,Breakfast Recipes,American,,['American']
+Tomato & Cheese Breakfast Toast,Breakfast Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Veggie Egg Muffins,Breakfast Recipes,American,,['American']
+Yogurt Berry Parfait,Breakfast Recipes,American,,['American']
+Black-Bean Chili,Lunch Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
+Chicken-Broccoli Stir-Fry,Lunch Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
+Creamy Chickpea Veggie Wrap,Lunch Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Lentil Soup,Lunch Recipes,Middle Eastern,,['Middle Eastern']
+Mexican-Style Bean Tacos,Lunch Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
+Salmon Avocado Wrap,Lunch Recipes,"Mediterranean (Greek, Italian, Turkish)",Seafood,"['Mediterranean (Greek, Italian, Turkish)', 'Seafood']"
+Thai-Style Tofu Veggie Rice Bowl,Lunch Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
+Tuna & Herb Pita,Lunch Recipes,"Mediterranean (Greek, Italian, Turkish)",Seafood,"['Mediterranean (Greek, Italian, Turkish)', 'Seafood']"
+Tuna & Sweet-Pea Rice Bowl,Lunch Recipes,American,,['American']
+Turkey & Rice Bowl,Lunch Recipes,American,,['American']
+Beef & Vegetable Skillet,Dinner Recipes,American,,['American']
+Caribbean Grilled Shrimp & Plantain Skillet,Dinner Recipes,"Caribbean (Jamaican, Puerto Rican, etc.)",Seafood,"['Caribbean (Jamaican, Puerto Rican, etc.)', 'Seafood']"
+Egg Roll in a Bowl,Dinner Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
+Greek Beef Souvlaki with Tzatziki,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Hearty Turkey & Cabbage Stew,Dinner Recipes,American,,['American']
+Italian Turkey Bolognese over Whole-Wheat Pasta,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Latin-American Chicken & Black-Bean Tacos,Dinner Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
+Lean Beef Burgers,Dinner Recipes,American,,['American']
+Lentil & Veggie Stuffed Bell Peppers,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Meatloaf,Dinner Recipes,American,,['American']
+One-Pot Chicken Parmesan Pasta,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Shrimp & Collard-Green Skillet,Dinner Recipes,Southern & barbecue,Seafood,"['Southern & barbecue', 'Seafood']"
+Spicy Southwest Baked Salmon with Sweet Potato and Grains,Dinner Recipes,Mexican & Tex-Mex,Seafood,"['Mexican & Tex-Mex', 'Seafood']"
+Turkish Pork Kebabs with Yogurt-Cucumber Salad,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Vegetarian Egg Roll in a Bowl,Dinner Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
+Apple-Cinnamon Oat Cookies,Dessert Recipes,American,,['American']
+Banana-Oat Bars,Dessert Recipes,American,,['American']
+Banana-Peanut-Butter Yogurt Parfait,Dessert Recipes,American,,['American']
+Blueberry-Banana Smoothie,Dessert Recipes,American,,['American']
+Mixed Fruit Salad,Dessert Recipes,American,,['American']
+Peach-Cinnamon Rice Cake,Dessert Recipes,American,,['American']
+Strawberry-Banana Frozen Cups,Dessert Recipes,American,,['American']
+Yogurt-Berry Shortcake,Dessert Recipes,American,,['American']
