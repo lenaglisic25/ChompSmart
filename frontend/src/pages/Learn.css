@@ -89,6 +89,30 @@
   background: #1f1f1f;
 }
 
+/* ===== SEARCH BAR ===== */
+.learnSearchBar {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.learnSearchInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 13px;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.learnSearchInput:focus {
+  border-color: #2f69a8;
+  box-shadow: 0 0 0 3px rgba(47, 105, 168, 0.12);
+  background: #fff;
+}
+
 /* ===== BODY ===== */
 .learnBody {
   flex: 1;

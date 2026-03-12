@@ -10,6 +10,29 @@ import { guessCategoryFromName, INGREDIENT_UNITS } from "../Grocery/categories";
 
 const API_BASE = "http://localhost:8000";
 
+function recipeMatchesSearch(r, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    r.title.toLowerCase().includes(q) ||
+    r.category.toLowerCase().includes(q) ||
+    (r.cuisine || "").toLowerCase().includes(q) ||
+    (r.dietary_tags || []).some((t) => t.toLowerCase().includes(q)) ||
+    (r.ingredients || "").toLowerCase().includes(q)
+  );
+}
+
+function videoMatchesSearch(v, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    (v.title || "").toLowerCase().includes(q) ||
+    (v.source || "").toLowerCase().includes(q) ||
+    (v.category || "").toLowerCase().includes(q) ||
+    (v.program || "").toLowerCase().includes(q)
+  );
+}
+
 function parseIngredientLabel(raw) {
   const text = String(raw || "").trim();
   if (!text) return { name: "", qty: 1, unit: "" };
@@ -52,6 +75,12 @@ function parseIngredientLabel(raw) {
 
 export default function Learn() {
   const [tab, setTab] = useState("recipes");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  function switchTab(newTab) {
+    setTab(newTab);
+    setSearchQuery("");
+  }
 
   // Favorites
   const { isFavorite, toggleFavorite, favoritesList } = useFavorites();
@@ -81,10 +110,7 @@ export default function Learn() {
     setRecipesLoading(true);
     setRecipesError(null);
 
-    let url = `${API_BASE}/recipes`;
-    if (userEmail) {
-      url = `${API_BASE}/recipes?user_email=${encodeURIComponent(userEmail)}`;
-    }
+    const url = `${API_BASE}/recipes`;
 
     fetch(url)
       .then((res) => {
@@ -102,7 +128,7 @@ export default function Learn() {
       .finally(() => {
         setRecipesLoading(false);
       });
-  }, [tab, userEmail]);
+  }, [tab]);
 
   // ---------- Helpers (Recipes) ----------
 
@@ -260,22 +286,36 @@ export default function Learn() {
     }
   }
 
-  // ---------- Group Videos by Category ----------
-  const groupedVideos = useMemo(() => {
-    return (videosData || []).reduce((map, v) => {
-      const key =
-        v.category && String(v.category).trim()
-          ? String(v.category).trim()
-          : "Other";
-      if (!map[key]) map[key] = [];
-      map[key].push(v);
-      return map;
-    }, {});
-  }, []);
+  // ---------- Search ----------
 
-  const sortedCategories = useMemo(() => {
-    return Object.keys(groupedVideos).sort((a, b) => a.localeCompare(b));
-  }, [groupedVideos]);
+  const visibleRecipes = useMemo(
+    () => recipes.filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [recipes, searchQuery]
+  );
+
+  const visibleFavorites = useMemo(
+    () => favoritesList.filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [favoritesList, searchQuery]
+  );
+
+  // ---------- Group Videos by Category ----------
+  const groupedVideos = useMemo(
+    () =>
+      (videosData || [])
+        .filter((v) => videoMatchesSearch(v, searchQuery.trim()))
+        .reduce((map, v) => {
+          const key = (v.category || "").trim() || "Other";
+          if (!map[key]) map[key] = [];
+          map[key].push(v);
+          return map;
+        }, {}),
+    [searchQuery]
+  );
+
+  const sortedCategories = useMemo(
+    () => Object.keys(groupedVideos).sort((a, b) => a.localeCompare(b)),
+    [groupedVideos]
+  );
 
   const showVideos = tab === "videos";
   const showRecipes = tab === "recipes";
@@ -305,7 +345,7 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showVideos ? "active" : ""}`}
-            onClick={() => setTab("videos")}
+            onClick={() => switchTab("videos")}
           >
             Videos
           </button>
@@ -313,7 +353,7 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showRecipes ? "active" : ""}`}
-            onClick={() => setTab("recipes")}
+            onClick={() => switchTab("recipes")}
           >
             Recipes
           </button>
@@ -321,10 +361,26 @@ export default function Learn() {
           <button
             type="button"
             className={`learnTab ${showFavorites ? "active" : ""}`}
-            onClick={() => setTab("favorites")}
+            onClick={() => switchTab("favorites")}
           >
             Favorites
           </button>
+        </div>
+
+        <div className="learnSearchBar">
+          <input
+            type="search"
+            className="learnSearchInput"
+            placeholder={
+              showRecipes
+                ? "Search recipes…"
+                : showFavorites
+                ? "Search favorites…"
+                : "Search videos…"
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -332,6 +388,11 @@ export default function Learn() {
         {/* ===================== VIDEOS TAB ===================== */}
         {showVideos && (
           <div className="learnVideoList">
+            {sortedCategories.length === 0 && (
+              <div className="learnRecipesEmpty">
+                No videos match &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
             {sortedCategories.map((cat) => (
               <div key={cat} className="learnVideoCategorySection">
                 <div className="learnVideoCategoryTitle">{cat}</div>
@@ -397,8 +458,14 @@ export default function Learn() {
               </div>
             )}
 
+            {!recipesLoading && recipes.length > 0 && visibleRecipes.length === 0 && (
+              <div className="learnRecipesEmpty">
+                No recipes match &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
+
             {!recipesLoading &&
-              recipes.map((r) => (
+              visibleRecipes.map((r) => (
                 <div
                   key={`${r.category}-${r.title}`}
                   className="learnRecipeRow"
@@ -488,8 +555,12 @@ export default function Learn() {
               <div className="learnRecipesEmpty">
                 No favorites yet. Tap ☆ Save on a recipe to add it here.
               </div>
+            ) : visibleFavorites.length === 0 ? (
+              <div className="learnRecipesEmpty">
+                No favorites match &ldquo;{searchQuery}&rdquo;.
+              </div>
             ) : (
-              favoritesList.map((r) => (
+              visibleFavorites.map((r) => (
                 <div
                   key={`fav-${r.id ?? `${r.category}-${r.title}`}`}
                   className="learnRecipeRow"
