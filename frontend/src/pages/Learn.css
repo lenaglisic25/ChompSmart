@@ -113,6 +113,131 @@
   background: #fff;
 }
 
+/* ===== FILTER BAR ===== */
+.learnFilterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.learnFilterToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid #d1d5db;
+  background: #f3f4f6;
+  color: #374151;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.learnFilterToggle.open,
+.learnFilterToggle.hasFilters {
+  border-color: #2f69a8;
+  background: #eff6ff;
+  color: #2f69a8;
+}
+
+.learnFilterArrow {
+  font-size: 9px;
+}
+
+.learnActiveChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #2f69a8;
+  color: #fff;
+}
+
+.learnActiveChip button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.learnActiveChip button:hover {
+  color: #fff;
+}
+
+.learnClearFilters {
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+/* ===== FILTER PANEL ===== */
+.learnFilterPanel {
+  padding: 10px 14px 6px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.learnFilterGroup {
+  margin-bottom: 10px;
+}
+
+.learnFilterGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.learnFilterOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.learnFilterOption {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  transition: border-color 0.1s, background 0.1s, color 0.1s;
+}
+
+.learnFilterOption:hover {
+  border-color: #2f69a8;
+  color: #2f69a8;
+}
+
+.learnFilterOption.active {
+  background: #2f69a8;
+  color: #fff;
+  border-color: #2f69a8;
+}
+
 /* ===== BODY ===== */
 .learnBody {
   flex: 1;

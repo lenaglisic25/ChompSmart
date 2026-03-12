@@ -33,6 +33,51 @@ function videoMatchesSearch(v, query) {
   );
 }
 
+function recipeMatchesFilters(r, activeFilters) {
+  if (activeFilters.length === 0) return true;
+  for (const f of activeFilters) {
+    const colon = f.indexOf(":");
+    const type = f.slice(0, colon);
+    const value = f.slice(colon + 1);
+    if (type === "d") {
+      const tags = (r.dietary_tags || []).map((t) => t.toLowerCase());
+      if (!tags.includes(value.toLowerCase())) return false;
+    } else if (type === "m") {
+      if (r.category !== value) return false;
+    } else if (type === "c") {
+      if ((r.cuisine || "") !== value) return false;
+    } else if (type === "t") {
+      const mins = parseFloat(r.minutes);
+      if (isNaN(mins) || mins > parseFloat(value)) return false;
+    }
+  }
+  return true;
+}
+
+const DIETARY_OPTIONS = [
+  "Dairy-free", "Egg-free", "Gluten-free", "Keto", "Low-carb",
+  "Low-fat", "Low-salt", "Low-sugar", "No seafood", "Nut-free",
+  "Paleo", "Soy-free", "Vegan", "Vegetarian",
+];
+
+const TIME_FILTERS = [
+  { id: "t:20", label: "Under 20 min" },
+  { id: "t:30", label: "Under 30 min" },
+  { id: "t:45", label: "Under 45 min" },
+];
+
+function shortCuisineLabel(cuisine) {
+  return cuisine.replace(/ \(.*\)$/, "").replace(" & barbecue", "").trim();
+}
+
+function getFilterLabel(id) {
+  const colon = id.indexOf(":");
+  const type = id.slice(0, colon);
+  const value = id.slice(colon + 1);
+  if (type === "t") return `Under ${value} min`;
+  return value;
+}
+
 function parseIngredientLabel(raw) {
   const text = String(raw || "").trim();
   if (!text) return { name: "", qty: 1, unit: "" };
@@ -76,10 +121,19 @@ function parseIngredientLabel(raw) {
 export default function Learn() {
   const [tab, setTab] = useState("recipes");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   function switchTab(newTab) {
     setTab(newTab);
     setSearchQuery("");
+    setShowFilters(false);
+  }
+
+  function toggleFilter(id) {
+    setActiveFilters((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
   }
 
   // Favorites
@@ -102,6 +156,20 @@ export default function Learn() {
   try {
     userEmail = localStorage.getItem("currentUserEmail");
   } catch (_) {}
+
+  // Set default filters from user's dietary profile on load
+  useEffect(() => {
+    if (!userEmail) return;
+    fetch(`${API_BASE}/profile/${encodeURIComponent(userEmail)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const restrictions = data?.dietary_restrictions;
+        if (Array.isArray(restrictions) && restrictions.length > 0) {
+          setActiveFilters(restrictions.map((r) => `d:${r}`));
+        }
+      })
+      .catch(() => {});
+  }, [userEmail]);
 
   // Fetch recipes when Recipes tab is active
   useEffect(() => {
@@ -286,16 +354,26 @@ export default function Learn() {
     }
   }
 
-  // ---------- Search ----------
+  // ---------- Filter + Search ----------
+
+  const availableCuisines = [...new Set(
+    recipes.filter((r) => r.cuisine).map((r) => r.cuisine)
+  )].sort();
 
   const visibleRecipes = useMemo(
-    () => recipes.filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
-    [recipes, searchQuery]
+    () =>
+      recipes
+        .filter((r) => recipeMatchesFilters(r, activeFilters))
+        .filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [recipes, activeFilters, searchQuery]
   );
 
   const visibleFavorites = useMemo(
-    () => favoritesList.filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
-    [favoritesList, searchQuery]
+    () =>
+      favoritesList
+        .filter((r) => recipeMatchesFilters(r, activeFilters))
+        .filter((r) => recipeMatchesSearch(r, searchQuery.trim())),
+    [favoritesList, activeFilters, searchQuery]
   );
 
   // ---------- Group Videos by Category ----------
@@ -382,7 +460,113 @@ export default function Learn() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
+        {(showRecipes || showFavorites) && (
+          <div className="learnFilterBar">
+            <button
+              type="button"
+              className={`learnFilterToggle ${showFilters ? "open" : ""} ${activeFilters.length > 0 ? "hasFilters" : ""}`}
+              onClick={() => setShowFilters((prev) => !prev)}
+            >
+              Filter {activeFilters.length > 0 ? `(${activeFilters.length})` : ""}
+              <span className="learnFilterArrow">{showFilters ? "▴" : "▾"}</span>
+            </button>
+
+            {activeFilters.map((f) => (
+              <span key={f} className="learnActiveChip">
+                {getFilterLabel(f)}
+                <button
+                  type="button"
+                  onClick={() => toggleFilter(f)}
+                  aria-label={`Remove ${getFilterLabel(f)}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+
+            {activeFilters.length > 0 && (
+              <button
+                type="button"
+                className="learnClearFilters"
+                onClick={() => setActiveFilters([])}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {showFilters && (showRecipes || showFavorites) && (
+        <div className="learnFilterPanel">
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Meal Type</div>
+            <div className="learnFilterOptions">
+              {["Breakfast", "Lunch", "Dinner", "Dessert"].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(`m:${m}`) ? "active" : ""}`}
+                  onClick={() => toggleFilter(`m:${m}`)}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {availableCuisines.length > 0 && (
+            <div className="learnFilterGroup">
+              <div className="learnFilterGroupLabel">Cuisine</div>
+              <div className="learnFilterOptions">
+                {availableCuisines.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`learnFilterOption ${activeFilters.includes(`c:${c}`) ? "active" : ""}`}
+                    onClick={() => toggleFilter(`c:${c}`)}
+                  >
+                    {shortCuisineLabel(c)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Prep Time</div>
+            <div className="learnFilterOptions">
+              {TIME_FILTERS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(id) ? "active" : ""}`}
+                  onClick={() => toggleFilter(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="learnFilterGroup">
+            <div className="learnFilterGroupLabel">Dietary</div>
+            <div className="learnFilterOptions">
+              {DIETARY_OPTIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  className={`learnFilterOption ${activeFilters.includes(`d:${d}`) ? "active" : ""}`}
+                  onClick={() => toggleFilter(`d:${d}`)}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="learnBody">
         {/* ===================== VIDEOS TAB ===================== */}
