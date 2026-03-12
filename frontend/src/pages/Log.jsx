@@ -58,7 +58,7 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
 }
 
 // (yavna) Update dashboard to fetch data
-function TopDashboard({ userEmail, refreshKey }) {
+function TopDashboard({ userEmail, refreshKey, formattedDate }) {
   const [profile, setProfile] = useState(null);
 
   const [metrics, setMetrics] = useState({
@@ -84,9 +84,9 @@ function TopDashboard({ userEmail, refreshKey }) {
   }, [userEmail]);
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!userEmail || !formattedDate) return;
 
-    fetch(`http://localhost:8000/meals/today?user_email=${encodeURIComponent(userEmail)}`)
+    fetch(`http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         let list = [];
@@ -118,7 +118,7 @@ function TopDashboard({ userEmail, refreshKey }) {
         }));
       })
       .catch((err) => console.error("Metrics fetch failed:", err));
-  }, [userEmail, refreshKey]);
+  }, [userEmail, refreshKey, formattedDate]);
 
   // goals from profile (TDEE/macros when set), with fallbacks
   const goals = {
@@ -285,7 +285,7 @@ async function searchFood(query) {
   return res.json();
 }
 
-async function logMealWithFood(mealType, food, servingMultiplier) {
+async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
   const email = localStorage.getItem("currentUserEmail");
   const mult = Number(servingMultiplier) || 1;
   
@@ -310,15 +310,16 @@ async function logMealWithFood(mealType, food, servingMultiplier) {
       fats: Number(fats) * mult,
       fiber: Number(fiber) * mult,
       sodium: Number(sodium) * mult,
+      created_at: `${targetDate} 12:00:00`,
     }),
   });
   return response.json();
 }
 
 // (yavna) added clear backend meals function for testing
-async function clearBackendMeals() {
+async function clearBackendMeals(targetDate) {
   const email = localStorage.getItem("currentUserEmail");
-  await fetch(`http://localhost:8000/meals/reset?user_email=${email}`, {
+  await fetch(`http://localhost:8000/meals/reset?user_email=${email}&target_date=${targetDate}`, {
     method: "DELETE",
   });
 }
@@ -340,6 +341,16 @@ function scaledNutrient(value, servingMult) {
 export default function Log() {
   const email = localStorage.getItem("currentUserEmail");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const formattedDate = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, [currentDate]);
+
   const [meals, setMeals] = useState({
     breakfast: [],
     lunch: [],
@@ -348,9 +359,9 @@ export default function Log() {
   });
 
   useEffect(() => {
-    if (!email) return;
+    if (!email || !formattedDate) return;
 
-    fetch(`http://localhost:8000/meals/today?user_email=${encodeURIComponent(email)}`)
+    fetch(`http://localhost:8000/meals/daily/${encodeURIComponent(email)}?target_date=${formattedDate}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
@@ -372,7 +383,29 @@ export default function Log() {
         }
       })
       .catch((err) => console.error("Failed to load meals:", err));
-  }, [email, refreshKey]);
+  }, [email, refreshKey, formattedDate]);
+
+  function goToPrevDay() {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() - 1);
+      return newDate;
+    });
+  }
+
+  function goToNextDay() {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() + 1);
+      return newDate;
+    });
+  }
+
+  function goToToday() {
+    setCurrentDate(new Date());
+  }
+
+  const isToday = formattedDate === new Date().toLocaleDateString('en-CA');
 
   const [expandedSection, setExpandedSection] = useState(null);
   const [inputValues, setInputValues] = useState({
@@ -521,8 +554,8 @@ function capturePhoto() {
     if (!selectedForModal) return;
     const { food, mealKey } = selectedForModal;
     
-    await logMealWithFood(mealKey, food, servingMultiplier);
-    
+    await logMealWithFood(mealKey, food, servingMultiplier, formattedDate);
+
     setSelectedForModal(null);
     setExpandedSection(null);
     setRefreshKey((k) => k + 1);
@@ -548,9 +581,9 @@ function capturePhoto() {
 
   // (yavna) clear log
   async function handleClearAll() {
-    if(!window.confirm("Are you sure you want to clear your meal log?")) return;
-
-    await clearBackendMeals();
+    if(!window.confirm(`Are you sure you want to clear your meal log for ${currentDate.toLocaleDateString()}?`)) return;
+    
+    await clearBackendMeals(formattedDate);
     setRefreshKey((k) => k + 1);
   }
 
@@ -612,8 +645,28 @@ function capturePhoto() {
         </div>
       )}
       <div className="logContent">
+        
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", background: "#fff", padding: "10px 15px", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+          <button onClick={goToPrevDay} style={{ border: "none", background: "#f0f0f0", padding: "8px 12px", borderRadius: "6px", cursor: "pointer" }}>
+            &larr; Prev
+          </button>
+          <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
+            {isToday ? "Today" : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </h2>
+          <div>
+              {!isToday && (
+                <button onClick={goToToday} style={{ border: "none", background: "transparent", color: "#0066cc", fontWeight: "bold", marginRight: "10px", cursor: "pointer" }}>
+                  Today
+                </button>
+              )}
+              <button onClick={goToNextDay} style={{ border: "none", background: "#f0f0f0", padding: "8px 12px", borderRadius: "6px", cursor: "pointer" }}>
+                Next &rarr;
+              </button>
+          </div>
+        </div>
+
         <div className="logWidgetPlaceholder">
-          <TopDashboard userEmail={email} refreshKey={refreshKey} />
+          <TopDashboard userEmail={email} refreshKey={refreshKey} formattedDate={formattedDate} />
         </div>
         {/* RESET BUTTON * (yavna) (change this to match style)*/ }
         <div style={{ textAlign: 'right', marginBottom: '10px' }}>
@@ -637,7 +690,7 @@ function capturePhoto() {
             const label = MEAL_LABELS[mealKey];
             const items = meals[mealKey] || [];
             const isExpanded = expandedSection === mealKey;
-            const showSuggestion = suggestionSection === mealKey;
+            const showSuggestion = suggestionSection === mealKey && isToday;
             const mealLabelLower = label.toLowerCase();
 
             return (
@@ -796,4 +849,3 @@ function capturePhoto() {
     </div>
   );
 }
-

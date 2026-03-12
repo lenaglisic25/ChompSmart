@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from app.database import get_db
 from app.models.profile import Profile
 from app.models.meals import Meal
+from app.models.grocery import GroceryItem
 from app.services.usda_service import usda_search_foods, build_usda_context
 
 
@@ -41,7 +42,7 @@ def _as_float(v, default=0.0) -> float:
         return float(default)
 
 
-def get_user_context(db: Session, user_email: str) -> str:
+def get_user_context(db: Session, user_email: str, favorite_recipes: list = None, grocery_list: list = None) -> str:
     if not user_email:
         return ""
 
@@ -89,46 +90,77 @@ def get_user_context(db: Session, user_email: str) -> str:
         Calories So Far: {int(total_cals)} / {user_goal}
         """
 
-    return f"{profile_text}\n{log_text}"
+    grocery_text = "[GROCERY LIST: Empty]"
+    if grocery_list:
+        to_buy = [i['name'] for i in grocery_list if not i['purchased']]
+        already_have = [i['name'] for i in grocery_list if i['purchased']]
+        
+        grocery_text = "[GROCERY LIST]\n"
+        if to_buy:
+            grocery_text += f"Items user still needs to buy: {', '.join(to_buy)}\n"
+        if already_have:
+            grocery_text += f"Items user already has/purchased: {', '.join(already_have)}"
+
+    fav_text = "[FAVORITE RECIPES: None saved]"
+    if favorite_recipes:
+        f_list = ", ".join(favorite_recipes)
+        fav_text = f"[FAVORITE RECIPES]\nSaved recipes: {f_list}"
+
+    return f"{profile_text}\n{log_text}\n{grocery_text}\n{fav_text}"
 
 
 CHAT_PROMPT = """
 You are Chompy, a helpful and friendly Gator mascot for 'ChompSmart', a nutrition app.
-Your job is to provide personalized food recommendations.
 
-GUIDELINES:
-1. Concise responses (3-5 sentences).
-2. Be positive and encouraging.
-3. Only greet the user once per conversation.
+CRITICAL TONE & READING LEVEL:
+1. Speak at a 5th-grade reading level using short, simple sentences.
+2. Keep a positive, friendly Gator persona.
+3. If the user asks for a grocery list or ingredients, you MUST use a bulleted list format.
+
+GROCERY LIST RULES:
+1. ONLY comment on grocery items when the user explicitly asks about their list or ingredients for a meal.
+2. Do not mention unrelated items on their list (e.g., if they ask about a stir-fry, do not mention the rice on their list unless they ask).
+3. Clearly state what they already have and what they still need to buy based on the provided context.
 
 RESPONSIBILITIES:
-1. Answer questions about diet, health, and food.
+1. Answer questions about diet, health, and food simply.
 2. Use the User Profile and Daily Log to give specific advice.
-3. If USDA matches are present, prefer those numbers and mention which match you used.
-4. You have the special ability to log meals for the user, but ONLY if they explicitly ask or confirm.
+3. You can log meals or add groceries only if the user confirms.
 
 HOW TO LOG MEALS:
-  1. Respond naturally confirming the action.
-  2. At the very end of your message, append this exact JSON block:
-     LOG_MEAL: {"name":"Food Name","calories":123,"protein":10,"carbs":20,"fats":5,"fiber":2,"sodium":300,"sugar":4,"meal_type":"Snack"}
-  3. 'meal_type' options: Breakfast, Lunch, Dinner, Snack.
+  Append: LOG_MEAL: {"name":"Food Name","calories":123,"protein":10,"carbs":20,"fats":5,"fiber":2,"sodium":300,"sugar":4,"meal_type":"Snack"}
+
+HOW TO ADD GROCERIES:
+  Append: ADD_GROCERIES: ["Item 1", "Item 2"]
 """
 
 VISION_PROMPT = """
 You are Chompy. The user sent a food photo.
+
+CRITICAL TONE & READING LEVEL:
+1. Speak at a 5th-grade reading level. 
+2. Use short, simple sentences.
+3. Keep a positive, encouraging Gator persona.
+
+RESPONSIBILITIES:
 1. Identify the food and list all ingredients.
 2. Estimate calories/macros for the serving shown (Protein, Carbs, Fat, Fiber, Sodium, Sugar).
-3. Concise responses (3-5 sentences).
-4. Be positive and encouraging.
-5. Only greet the user once per conversation.
-6. End your response by asking the user if they want to log this meal and which meal slot (Breakfast, Lunch, Dinner) it belongs to.
+3. Concise responses (3-5 sentences maximum).
+4. Only greet the user once per conversation.
+5. End your response by asking the user if they want to log this meal and which meal slot (Breakfast, Lunch, Dinner) it belongs to.
 """
 
 ADJUST_PROMPT = """
-You are Chompy, an expert nutritionist and chef.
+You are Chompy, a friendly Gator nutritionist and chef.
 The user wants to make the following recipe, but you need to adjust it to fit their specific dietary restrictions.
+
+CRITICAL TONE & READING LEVEL:
+1. Speak at a 5th-grade reading level. 
+2. Use short, simple sentences.
+
+RESPONSIBILITIES:
 1. Rewrite the ingredients list with safe substitutions.
-2. Update the instructions if the substitutions change the cooking method.
+2. Update the instructions if the substitutions change the cooking method. Keep steps short and clear.
 3. Briefly explain why you made the changes to keep it healthy and compliant.
 """
 
@@ -142,6 +174,8 @@ class ChatRequest(BaseModel):
     message: str
     history: list = Field(default_factory=list)
     user_email: str | None = None
+    favorites: list = Field(default_factory=list)
+    groceries: list = Field(default_factory=list)
 
 
 class ImageChatRequest(BaseModel):
@@ -159,7 +193,7 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="Gemini API key not configured.")
 
-    user_context = get_user_context(db, request.user_email)
+    user_context = get_user_context(db, request.user_email, request.favorites, request.groceries)
 
     history_str = ""
     if request.history:
@@ -176,12 +210,25 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
     try:
         response = model.generate_content(full_prompt)
         reply_text = response.text or ""
+        conversation_part = reply_text
+        added_groceries = []
+
+        if "ADD_GROCERIES:" in reply_text:
+            parts = reply_text.split("ADD_GROCERIES:", 1)
+            conversation_part = parts[0].strip()
+            json_part = parts[1].split("LOG_MEAL:")[0].strip()
+            try:
+                json_part = json_part.replace("```json", "").replace("```", "").strip()
+                added_groceries = json.loads(json_part)
+            except Exception:
+                pass
 
         if "LOG_MEAL:" in reply_text:
             parts = reply_text.split("LOG_MEAL:", 1)
-            conversation_part = parts[0].strip()
-            json_part = parts[1].strip()
-
+            if "LOG_MEAL:" in conversation_part:
+                conversation_part = parts[0].strip()
+            
+            json_part = parts[1].split("ADD_GROCERIES:")[0].strip()
             try:
                 json_part = json_part.replace("```json", "").replace("```", "").strip()
                 meal_data = json.loads(json_part)
@@ -205,13 +252,10 @@ async def chat_response(request: ChatRequest, db: Session = Depends(get_db)):
                     )
                     db.add(new_meal)
                     db.commit()
-
-                return {"reply": conversation_part}
-
             except Exception:
-                return {"reply": conversation_part + " (I tried to log that, but hit a glitch!)"}
+                conversation_part += " (I tried to log that, but hit a glitch!)"
 
-        return {"reply": reply_text}
+        return {"reply": conversation_part, "added_groceries": added_groceries}
 
     except Exception:
         return {"reply": "Chompy is taking a nap. Try again!"}

@@ -1,7 +1,26 @@
 // Message.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { useFavorites } from "../context/FavoritesContext";
+import { useGrocery } from "../Grocery/GroceryContext";
 import "./Message.css";
+
+const chompyGreetings = [
+  "Hi! I'm Chompy. I can log your meals, check your food photos, or fix your recipes to fit your goals. What should we do first?",
+  "Chomp chomp! I'm Chompy. Tell me what you ate or send me a picture of your plate. I can also help you change a recipe to follow your plan!",
+  "Hey there! I'm Chompy, and I am here to help you log food and reach your daily targets. You can even ask me to adjust a recipe just for you!",
+  "Hello! I am Chompy. I can track your calories, identify food in photos, and give you new recipe ideas. How can I help you today?",
+  "Snap snap! I'm Chompy. Let's hit your targets by logging your meals or scanning a food photo. I can also help you with your favorite recipes!",
+  "Hi! I am Chompy, your nutrition gator. I can log your snacks, read your food labels in photos, and adjust any recipe for you. What is on your mind?",
+  "Chomp chomp! I'm Chompy, and I am ready to track your breakfast, lunch, or dinner. You can also ask me for tips on how to make a recipe fit your specific rules!",
+  "Hey! I'm Chompy. It is a great day to reach your goals. I can log your food, check your macros from a photo, or help you find a substitution for a recipe!",
+  "Hi! I am Chompy. I can help you track your nutrition, log your meals, or find the right ingredients for your recipes. What are we working on?",
+  "Snap snap! I'm Chompy. I can track your food goals, identify ingredients in your photos, and help you swap out items in your recipes. What's up?"
+];
+
+function getRandomGreeting() {
+  return chompyGreetings[Math.floor(Math.random() * chompyGreetings.length)];
+}
 
 function nowTime() {
   const d = new Date();
@@ -29,13 +48,15 @@ async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
       const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
       resolve(compressedDataUrl);
     };
-    img.src = dataUrl
+    img.src = dataUrl;
   });
 }
 //
 
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
+  const { favoritesList } = useFavorites() || {};
+  const { items, addItem } = useGrocery() || {};
   const storageKey = useMemo(() => `chompsmart_threads_${email}`, [email]);
 
   const starterThreads = useMemo(
@@ -47,7 +68,7 @@ export default function Message() {
           name: "Chompy",
           avatar: "gator",
           time: nowTime(),
-          body: "Yeah! That food combo works best! I like the way you are thinking, keep it up.",
+          body: getRandomGreeting(),
         },
       ],
       doctor: [
@@ -303,6 +324,11 @@ export default function Message() {
             body: m.body 
         }));
 
+        const favoriteTitles = Array.isArray(favoritesList) ? favoritesList.map(recipe => recipe.title) : [];
+        const currentGroceries = Array.isArray(items) 
+            ? items.map(i => ({ name: i.name, purchased: i.purchased })) 
+            : [];
+
         const res = await fetch("http://localhost:8000/chat/message", {
           method: "POST",
           headers: {
@@ -311,11 +337,20 @@ export default function Message() {
           body: JSON.stringify({
             message: trimmed,
             history: history,
-            user_email: email
+            user_email: email,
+            favorites: favoriteTitles,
+            groceries: currentGroceries
           }),
         });
 
         const data = await res.json();
+        
+        if (data?.added_groceries && Array.isArray(data.added_groceries)) {
+          data.added_groceries.forEach(itemName => {
+            if (addItem) addItem(itemName, 1, "Other", "");
+          });
+        }
+        
         if (data?.reply) {
           setThreads((prev) => ({
             ...prev,
@@ -343,10 +378,26 @@ export default function Message() {
   function clearActiveChat() {
     if (!activeThread) return;
     if (!window.confirm("Clear this chat?")) return;
-    setThreads((prev) => ({
-      ...prev,
-      [activeThread]: starterThreads[activeThread],
-    }));
+    
+    setThreads((prev) => {
+      let defaultThread = starterThreads[activeThread];
+      if (activeThread === "chompy") {
+        defaultThread = [
+          {
+            id: `c_${Date.now()}`,
+            from: "bot",
+            name: "Chompy",
+            avatar: "gator",
+            time: nowTime(),
+            body: getRandomGreeting(),
+          },
+        ];
+      }
+      return {
+        ...prev,
+        [activeThread]: defaultThread,
+      };
+    });
   }
 
   function previewOf(threadKey) {
