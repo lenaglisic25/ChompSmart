@@ -42,8 +42,8 @@ export default function MainLayout() {
             className={gOpen ? "accountBtn activeTopLink" : "accountBtn"}
             type="button"
             onClick={() => setGOpen(true)}
-            aria-label="Open grocery list"
-            title="Grocery list"
+            aria-label="Open Grocery List"
+            title="Grocery List"
           >
             <span className="accountIcon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -53,7 +53,7 @@ export default function MainLayout() {
                 />
               </svg>
             </span>
-            <span className="accountLabel">grocery</span>
+            <span className="accountLabel">Grocery</span>
           </button>
 
           <NavLink

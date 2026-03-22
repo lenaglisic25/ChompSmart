@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useFavorites } from "../context/FavoritesContext";
-import { useGrocery } from "../Grocery/GroceryContext";
+import { useGrocery } from "../grocery/GroceryContext";
 import "./Message.css";
 
 const chompyGreetings = [

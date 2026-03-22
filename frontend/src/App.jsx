@@ -7,6 +7,11 @@ import Message from "./pages/Message.jsx";
 import Profile from "./pages/Profile.jsx";
 import Resources from "./pages/Resources.jsx";
 
+import ProviderLayout from "./provider/ProviderLayout.jsx";
+import ProviderDashboard from "./provider/ProviderDashboard.jsx";
+import ProviderUsers from "./provider/ProviderUsers.jsx";
+import ProviderMessages from "./provider/ProviderMessages.jsx";
+
 export default function App() {
   return (
     <Routes>
@@ -21,6 +26,13 @@ export default function App() {
         <Route path="message" element={<Message />} />
         <Route path="resources" element={<Resources />} />
         <Route path="profile" element={<Profile />} />
+      </Route>
+
+      <Route path="/provider" element={<ProviderLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<ProviderDashboard />} />
+        <Route path="users" element={<ProviderUsers />} />
+        <Route path="messages" element={<ProviderMessages />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

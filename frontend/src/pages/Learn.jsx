@@ -5,8 +5,8 @@ import "./Learn.css";
 
 import videosData from "../data/videos.json";
 import { useFavorites } from "../context/FavoritesContext";
-import { useGrocery } from "../Grocery/GroceryContext";
-import { guessCategoryFromName, INGREDIENT_UNITS } from "../Grocery/categories";
+import { useGrocery } from "../grocery/GroceryContext";
+import { guessCategoryFromName, INGREDIENT_UNITS } from "../grocery/categories";
 
 const API_BASE = "http://localhost:8000";
 

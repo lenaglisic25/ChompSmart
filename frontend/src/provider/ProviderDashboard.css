@@ -1,0 +1,700 @@
+.providerDashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.providerSnapshotBar {
+  background: #fff;
+  border: 2px solid #d9e3ee;
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.providerSnapshotMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.providerPatientName {
+  font-size: 28px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerPatientConditions {
+  color: #5e6d80;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.providerSnapshotGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.providerSnapshotItem {
+  background: #f5f8fc;
+  border: 2px solid #e0e8f1;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.providerSnapshotLabel {
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #5f7287;
+  margin-bottom: 6px;
+}
+
+.providerSnapshotValue {
+  font-size: 16px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerQuickActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.providerQuickBtn {
+  border: 2px solid #1b3554;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  background: #fff;
+  color: #1b3554;
+}
+
+.providerQuickBtn.primary {
+  background: #2f69a8;
+  border-color: #2f69a8;
+  color: #fff;
+}
+
+.providerQuickBtn.analytics {
+  background: #ffb43a;
+  border-color: #c78a23;
+  color: #111;
+}
+
+.providerTopGrid,
+.providerMiddleGrid,
+.providerBottomGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.providerTopGrid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.providerMiddleGrid {
+  grid-template-columns: 1.35fr 1fr 1fr;
+}
+
+.providerBottomGrid {
+  grid-template-columns: 1.1fr 1fr 1fr;
+}
+
+.providerCard {
+  background: #fff;
+  border: 2px solid #d9e3ee;
+  border-radius: 18px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.providerWideCard {
+  min-width: 0;
+}
+
+.providerCardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.providerCardTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerCardBody {
+  min-width: 0;
+}
+
+.providerMetricBig {
+  font-size: 34px;
+  font-weight: 1000;
+  color: #2f69a8;
+  line-height: 1;
+}
+
+.providerMetricCaption {
+  font-size: 13px;
+  color: #617386;
+  font-weight: 700;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.providerMetricList {
+  display: grid;
+  gap: 8px;
+  color: #1b3554;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.providerProgressArea {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.providerRingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.providerRing {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.providerRingInner {
+  width: 74px;
+  height: 74px;
+  background: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid #d9e3ee;
+}
+
+.providerRingValue {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerRingLabel {
+  font-size: 13px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerAlertsCompact {
+  display: grid;
+  gap: 10px;
+}
+
+.providerCompactAlertRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #f8fafc;
+  border: 2px solid #e5edf6;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.providerCompactAlertText {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1b3554;
+}
+
+.providerAlertBadge {
+  display: inline-block;
+  min-width: 62px;
+  text-align: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+  font-weight: 1000;
+}
+
+.providerAlertBadge.high {
+  background: #fee2e2;
+  color: #9f1d1d;
+}
+
+.providerAlertBadge.medium {
+  background: #fff2cc;
+  color: #8a6400;
+}
+
+.providerAlertBadge.low {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.providerTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.providerTag {
+  background: #eaf2fb;
+  color: #1b3554;
+  border: 2px solid #d6e4f3;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.providerSegmented {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.providerSegmented button {
+  border: 2px solid #cfe0f0;
+  border-radius: 10px;
+  background: #f6faff;
+  color: #1b3554;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.providerSegmented button.active {
+  background: #2f69a8;
+  border-color: #2f69a8;
+  color: #fff;
+}
+
+.providerDataGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.providerDataBox {
+  background: #f7fafe;
+  border: 2px solid #e1eaf4;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.providerDataLabel {
+  font-size: 12px;
+  font-weight: 1000;
+  color: #617386;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.providerDataValue {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerNutrientList {
+  display: grid;
+  gap: 12px;
+}
+
+.providerNutrientRow {
+  display: grid;
+  gap: 6px;
+}
+
+.providerNutrientTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerNutrientTrack {
+  height: 10px;
+  background: #e7eef6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.providerNutrientFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.providerNutrientFill.high {
+  background: #e55353;
+}
+
+.providerNutrientFill.low {
+  background: #3b82f6;
+}
+
+.providerNutrientFill.ok {
+  background: #22a06b;
+}
+
+.providerInlineAlerts {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.providerInlineAlert {
+  background: #fff7e8;
+  border: 2px solid #f1d18a;
+  color: #7a5500;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.providerPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.providerPhotoCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 2px solid #dce6f0;
+  min-height: 120px;
+}
+
+.providerPhotoImg {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+}
+
+.providerPhotoBadge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  background: rgba(27, 53, 84, 0.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.providerPatternList,
+.providerFollowUpList {
+  display: grid;
+  gap: 12px;
+}
+
+.providerPatternCard,
+.providerFollowUpItem {
+  background: #f7fafe;
+  border: 2px solid #dfe8f1;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.providerPatternTitle {
+  font-size: 14px;
+  font-weight: 1000;
+  color: #1b3554;
+  margin-bottom: 6px;
+}
+
+.providerPatternEvidence {
+  font-size: 13px;
+  color: #617386;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.providerPatternFollowup {
+  font-size: 13px;
+  color: #2f69a8;
+  font-weight: 900;
+}
+
+.providerFollowUpText {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1b3554;
+  margin-bottom: 10px;
+}
+
+.providerFollowUpActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.providerFollowUpActions button {
+  border: 2px solid #1b3554;
+  background: #fff;
+  color: #1b3554;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.providerNotesBox {
+  background: #f8fbff;
+  border: 2px solid #dce7f3;
+  border-radius: 14px;
+  padding: 14px;
+  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b3554;
+}
+
+.providerResourceBox {
+  margin-top: 14px;
+  background: #fdfdfd;
+  border: 2px solid #e6edf4;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.providerResourceTitle {
+  font-size: 14px;
+  font-weight: 1000;
+  color: #1b3554;
+  margin-bottom: 10px;
+}
+
+.providerBulletList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: #1b3554;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.providerBulletList.compact {
+  margin-top: 10px;
+}
+
+.providerDrawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 9999;
+}
+
+.providerDrawer {
+  width: min(420px, 92vw);
+  height: 100vh;
+  background: #fff;
+  border-left: 2px solid #d9e3ee;
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+
+.providerDrawerHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.providerDrawerHeader h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerDrawerClose {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid #d9e3ee;
+  background: #fff;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.providerDrawerSection {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebf0f5;
+}
+
+.providerDrawerSection h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerDrawerMetric {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerRiskGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.providerRiskCard {
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.providerRiskCard.high {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.providerRiskCard.medium {
+  background: #fff4d8;
+  border-color: #f4d28b;
+}
+
+.providerRiskCard.low {
+  background: #dcfce7;
+  border-color: #b7ebc8;
+}
+
+.providerRiskValue {
+  font-size: 26px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.providerRiskLabel {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerBarrierList {
+  display: grid;
+  gap: 10px;
+}
+
+.providerBarrierRow {
+  display: grid;
+  gap: 6px;
+}
+
+.providerBarrierTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.providerBarrierTrack {
+  height: 10px;
+  background: #e7eef6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.providerBarrierFill {
+  height: 100%;
+  background: #2f69a8;
+  border-radius: 999px;
+}
+
+@media (max-width: 1200px) {
+  .providerTopGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .providerMiddleGrid,
+  .providerBottomGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .providerSnapshotGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .providerDataGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .providerTopGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .providerSnapshotGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .providerDataGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .providerProgressArea {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .providerPhotoGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .providerPatientName {
+    font-size: 24px;
+  }
+
+  .providerDataGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .providerPhotoGrid {
+    grid-template-columns: 1fr;
+  }
+}
