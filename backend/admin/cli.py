@@ -13,27 +13,42 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def add_provider(email, password):
     db = SessionLocal()
     try:
-        existing_provider = db.query(Provider).filter(Provider.email == email).first()
-        if existing_provider:
-            print(f"Error: A provider with the email '{email}' already exists.")
+        existing = db.query(Provider).filter(Provider.email == email).first()
+        if existing:
+            print(f"Error: Provider '{email}' already exists.")
             return
-
-        hashed_password = pwd_context.hash(password)
-        new_provider = Provider(email=email, password=hashed_password)
-        db.add(new_provider)
+        new_p = Provider(email=email, password=pwd_context.hash(password))
+        db.add(new_p)
         db.commit()
-        
-        print(f"Success: Provider '{email}' has been securely added to the database.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        db.rollback()
+        print(f"Success: Added provider '{email}'")
+    finally:
+        db.close()
+
+def remove_provider(email):
+    db = SessionLocal()
+    try:
+        provider = db.query(Provider).filter(Provider.email == email).first()
+        if not provider:
+            print(f"Error: Provider '{email}' not found.")
+            return
+        db.delete(provider)
+        db.commit()
+        print(f"Success: Provider '{email}' has been removed.")
     finally:
         db.close()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Admin CLI for secure backend management.")
-    parser.add_argument("--email", required=True, help="The provider's email address.")
-    parser.add_argument("--password", required=True, help="The provider's secure password.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", choices=["add", "remove"], help="Action to perform")
+    parser.add_argument("--email", required=True, help="Provider email")
+    parser.add_argument("--password", help="Password (only required for 'add')")
     
     args = parser.parse_args()
-    add_provider(args.email, args.password)
+    
+    if args.action == "add":
+        if not args.password:
+            print("Error: --password is required to add a provider.")
+        else:
+            add_provider(args.email, args.password)
+    elif args.action == "remove":
+        remove_provider(args.email)
