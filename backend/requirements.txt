@@ -7,3 +7,5 @@ email-validator
 requests
 google.generativeai
 Pillow
+passlib
+bcrypt==4.0.1

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 from app.database import get_db
 from app.models.user import User as UserModel
 from app.schemas.user import UserCreate, User as UserSchema
@@ -9,6 +10,8 @@ router = APIRouter(
     tags=["users"]
 )
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 @router.post("/login", response_model=UserSchema)
 def login_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
@@ -16,7 +19,7 @@ def login_user(user: UserCreate, db: Session = Depends(get_db)):
     if not existing_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     
-    if existing_user.password != user.password:
+    if not pwd_context.verify(user.password, existing_user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password.")
     
     return existing_user
@@ -28,7 +31,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         return {"message": "User already exists."}, status.HTTP_400_BAD_REQUEST
       
-    new_user = UserModel(email=user.email, password=user.password)
+    hashed_password = pwd_context.hash(user.password)
+    new_user = UserModel(email=user.email, password=hashed_password)
     db.add(new_user)
     db.commit()
 

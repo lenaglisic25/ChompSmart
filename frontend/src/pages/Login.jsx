@@ -8,6 +8,7 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isProvider, setIsProvider] = useState(false);
 
   const isValidEmail = (s) => /\S+@\S+\.\S+/.test(s);
 
@@ -19,8 +20,12 @@ export default function Login() {
     if (!isValidEmail(e)) return alert("Please enter a valid email (must include @).");
     if (!p) return alert("Please enter a password.");
 
+    const endpoint = isProvider 
+      ? "http://localhost:8000/providers/login" 
+      : "http://localhost:8000/users/login";
+
     try {
-      const res = await fetch("http://localhost:8000/users/login", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: e, password: p }),
@@ -38,8 +43,19 @@ export default function Login() {
       }
 
       const data = JSON.parse(raw);
-      localStorage.setItem("currentUserEmail", data.email);
-      navigate("/app");
+      
+      if (isProvider) {
+        localStorage.setItem("currentProviderEmail", data.email);
+        
+        if (data.is_first_login) {
+          navigate("/provider/change-password");
+        } else {
+          navigate("/provider/dashboard");
+        }
+      } else {
+        localStorage.setItem("currentUserEmail", data.email);
+        navigate("/app");
+      }
     } catch (err) {
       console.error(err);
       alert(`Error logging in: ${err.message}`);
@@ -60,7 +76,7 @@ export default function Login() {
       </div>
 
       <div className="loginCard">
-        <h1 className="loginTitle">Login</h1>
+        <h1 className="loginTitle">{isProvider ? "Provider Login" : "Login"}</h1>
 
         <form
           className="loginForm"
@@ -97,27 +113,31 @@ export default function Login() {
             required
           />
 
+          <div style={{ display: "flex", gap: "10px", marginTop: "10px", marginBottom: "15px" }}>
+            <label style={{ fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "5px" }}>
+              <input 
+                type="checkbox" 
+                checked={isProvider} 
+                onChange={() => setIsProvider(!isProvider)} 
+              />
+              I am a Healthcare Provider
+            </label>
+          </div>
+
           <button type="submit" className="loginButton">
             Log In
           </button>
 
-          <button
-            type="button"
-            className="loginButton"
-            onClick={() => navigate("/setup-profile")}
-            style={{ marginTop: 10 }}
-          >
-            Create Account
-          </button>
-
-          <button
-            type="button"
-            className="loginButton"
-            onClick={() => navigate("/provider/dashboard")}
-            style={{ marginTop: 10 }}
-          >
-            Provider Demo
-          </button>
+          {!isProvider && (
+            <button
+              type="button"
+              className="loginButton"
+              onClick={() => navigate("/setup-profile")}
+              style={{ marginTop: 10 }}
+            >
+              Create Account
+            </button>
+          )}
         </form>
       </div>
 

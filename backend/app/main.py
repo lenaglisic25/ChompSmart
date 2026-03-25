@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import usda, meals, recipes
 from app.routers import chat
 from app.routers import grocery
+from app.api import providers
 
 Base.metadata.create_all(bind=engine)
 
@@ -25,6 +26,7 @@ app.include_router(usda.router)
 app.include_router(meals.router)
 app.include_router(recipes.router)
 app.include_router(grocery.router)
+app.include_router(providers.router)
 
 @app.get("/")
 def root():

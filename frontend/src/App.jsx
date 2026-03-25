@@ -11,13 +11,16 @@ import ProviderLayout from "./provider/ProviderLayout.jsx";
 import ProviderDashboard from "./provider/ProviderDashboard.jsx";
 import ProviderUsers from "./provider/ProviderUsers.jsx";
 import ProviderMessages from "./provider/ProviderMessages.jsx";
+import ChangePassword from "./provider/ChangePassword.jsx";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-
       <Route path="/setup-profile" element={<Profile />} />
+      
+      {/* Moved ChangePassword outside so it doesn't load the dashboard layout */}
+      <Route path="/provider/change-password" element={<ChangePassword />} />
 
       <Route path="/app" element={<MainLayout />}>
         <Route index element={<Navigate to="log" replace />} />
