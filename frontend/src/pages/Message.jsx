@@ -1,4 +1,3 @@
-// Message.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useFavorites } from "../context/FavoritesContext";
@@ -55,6 +54,9 @@ async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
 
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
+  const providerEmail = localStorage.getItem("myProviderEmail");
+  const providerName = localStorage.getItem("myProviderName") || "Provider";
+
   const { favoritesList } = useFavorites() || {};
   const { items, addItem } = useGrocery() || {};
   const storageKey = useMemo(() => `chompsmart_threads_${email}`, [email]);
@@ -75,14 +77,14 @@ export default function Message() {
         {
           id: "d1",
           from: "staff",
-          name: "Dr. Smith",
+          name: providerName,
           avatar: "doctor",
           time: nowTime(),
-          body: "Nothing has been said yet. Click here to start a conversation with your professional.",
+          body: `Nothing has been said yet. Click here to start a conversation with ${providerName}.`,
         },
       ],
     }),
-    []
+    [providerName]
   );
 
   const [view, setView] = useState("inbox"); // "inbox" | "chat"
@@ -94,7 +96,13 @@ export default function Message() {
   const [threads, setThreads] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.doctor && parsed.doctor[0] && parsed.doctor[0].name !== providerName) {
+           parsed.doctor = starterThreads.doctor;
+        }
+        return parsed;
+      }
     } catch {}
     return starterThreads;
   });
@@ -107,7 +115,7 @@ export default function Message() {
 
   const listRef = useRef(null);
   const messages = activeThread ? threads?.[activeThread] || [] : [];
-
+  
   // CAMERA/UPLOAD
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
@@ -196,7 +204,6 @@ export default function Message() {
     stopCamera();
   }
 
-
   function onPickFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -281,6 +288,29 @@ export default function Message() {
     el.scrollTop = el.scrollHeight;
   }, [view, activeThread, messages.length, typing]);
 
+  useEffect(() => {
+    if (activeThread === "doctor" && providerEmail) {
+      fetch(`http://localhost:8000/messages/${email}/${providerEmail}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            const formatted = data.map(m => ({
+              id: String(m.id),
+              from: m.sender === "patient" ? "me" : "staff",
+              name: m.sender === "patient" ? "You" : providerName,
+              avatar: m.sender === "patient" ? "me" : "doctor",
+              time: m.time,
+              body: m.text,
+            }));
+            setThreads(prev => ({ ...prev, doctor: formatted }));
+          } else {
+            setThreads(prev => ({ ...prev, doctor: starterThreads.doctor }));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [activeThread, email, providerEmail, providerName, starterThreads.doctor]);
+
   function openChat(threadKey) {
     setActiveThread(threadKey);
     setView("chat");
@@ -315,6 +345,24 @@ export default function Message() {
 
     setThreads(updatedThreads);
     setText("");
+
+    if (activeThread === "doctor" && providerEmail) {
+      try {
+        fetch("http://localhost:8000/messages/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patient_email: email,
+            provider_email: providerEmail,
+            sender: "patient",
+            text: trimmed,
+            time: nowTime()
+          })
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
 
     if (activeThread === "chompy") {
       setTyping(true);
@@ -403,10 +451,11 @@ export default function Message() {
   function previewOf(threadKey) {
     const arr = threads?.[threadKey] || [];
     const last = arr[arr.length - 1];
-    return last?.body || (last?.type === "image" ? "📷 Photo" : "");
+    if (!last) return "";
+    return last.body || (last.type === "image" ? "📷 Photo" : "");
   }
 
-  const chatTitle = activeThread === "chompy" ? "Chompy" : "Dr. Smith";
+  const chatTitle = activeThread === "chompy" ? "Chompy" : providerName;
 
   if (view === "inbox") {
     return (
@@ -427,7 +476,7 @@ export default function Message() {
               👨‍⚕️
             </div>
             <div className="msgInboxText">
-              <div className="msgInboxName">Dr. Smith</div>
+              <div className="msgInboxName">{providerName}</div>
               <div className="msgInboxPreview">{previewOf("doctor")}</div>
             </div>
           </div>
@@ -477,7 +526,7 @@ export default function Message() {
             {m.from === "me" && <div className="msgAvatar me">🙂</div>}
           </div>
         ))}
-        
+
         {/* (yavna) simple typing indicator to show chatbot is generating a response*/}
         {typing && (
           <div className="msgRow other">

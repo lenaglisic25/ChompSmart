@@ -4,12 +4,18 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-env_path = Path(__file__).resolve().parents[1] / ".env"
+BASE_DIR = Path(__file__).resolve().parents[1]
+env_path = BASE_DIR / ".env"
 load_dotenv(env_path)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
+
+if DATABASE_URL.startswith("sqlite:///./"):
+    db_name = DATABASE_URL.replace("sqlite:///./", "")
+    absolute_db_path = BASE_DIR / db_name
+    DATABASE_URL = f"sqlite:///{absolute_db_path}"
 
 engine = create_engine(
     DATABASE_URL,
@@ -24,7 +30,6 @@ def get_db():
     try:
         yield db
     finally:
-        db.close()
         db.close()
 
 

@@ -13,6 +13,7 @@ from app.routers import usda, meals, recipes
 from app.routers import chat
 from app.routers import grocery
 from app.api import providers
+from app.api import messages
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,6 +28,7 @@ app.include_router(meals.router)
 app.include_router(recipes.router)
 app.include_router(grocery.router)
 app.include_router(providers.router)
+app.include_router(messages.router)
 
 @app.get("/")
 def root():

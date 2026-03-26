@@ -249,6 +249,7 @@ const DEFAULT_FORM = {
   // Account
   email: "",
   password: "",
+  providerEmail: "",
 
   // Personal Basics
   name: "",
@@ -358,6 +359,20 @@ export default function Profile() {
     email: location.pathname === "/setup-profile" ? "" : currentUserEmail 
   });
   const [loading, setLoading] = useState(false);
+  const [providers, setProviders] = useState([]);
+
+  useEffect(() => {
+    if (location.pathname === "/setup-profile") {
+      fetch("http://localhost:8000/providers/list")
+        .then((res) => res.json())
+        .then((data) => {
+          setProviders(data);
+          if (data.length > 0) {
+            setForm((prev) => ({ ...prev, providerEmail: data[0].email }));
+          }
+        .catch((err) => console.error("Failed to load providers", err));
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!currentUserEmail || location.pathname === "/setup-profile") return;
@@ -460,6 +475,11 @@ export default function Profile() {
       return;
     }
 
+    if (isSetup && !form.providerEmail) {
+      alert("Please select a healthcare provider.");
+      return;
+    }
+
     setLoading(true);
     try {
       // if on setup-profile, first create the user account
@@ -467,13 +487,19 @@ export default function Profile() {
         const userResponse = await fetch("http://localhost:8000/users/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userEmail, password: form.password }),
+          body: JSON.stringify({ 
+            email: userEmail, 
+            password: form.password,
+            name: form.name || "",
+            provider_email: form.providerEmail
+          }),
         });
 
         if (!userResponse.ok) {
           const raw = await userResponse.text();
           console.error("Error creating user:", raw);
           alert(`Error creating account: ${raw}`);
+          setLoading(false);
           return;
         }
       }
@@ -489,6 +515,7 @@ export default function Profile() {
         const raw = await response.text();
         console.error("Error saving profile:", raw);
         alert(`Error saving profile: ${raw}`);
+        setLoading(false);
         return;
       }
 
@@ -498,6 +525,14 @@ export default function Profile() {
       // if on setup-profile, log in the new user
       if (isSetup) {
         localStorage.setItem("currentUserEmail", userEmail);
+        localStorage.setItem("myProviderEmail", form.providerEmail);
+        
+        const prov = providers.find((p) => p.email === form.providerEmail);
+        if (prov && prov.name) {
+          localStorage.setItem("myProviderName", prov.name);
+        } else {
+          localStorage.setItem("myProviderName", "Provider");
+        }
       }
       
       navigate("/app/learn");
@@ -536,6 +571,23 @@ export default function Profile() {
                 onChange={(v) => update("password", v)}
                 placeholder="Enter password"
               />
+
+              <div className="psField">
+                <label className="psLabel">Choose your Healthcare Provider</label>
+                <select 
+                  className="psSelect" 
+                  value={form.providerEmail} 
+                  onChange={(e) => update("providerEmail", e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select a Provider</option>
+                  {providers.map((p) => (
+                    <option key={p.email} value={p.email}>
+                      {p.name} ({p.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </>
           ) : (
             <>

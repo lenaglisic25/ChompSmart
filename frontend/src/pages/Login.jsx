@@ -44,6 +44,8 @@ export default function Login() {
 
       const data = JSON.parse(raw);
       
+      localStorage.setItem("userType", data.userType);
+
       if (isProvider) {
         localStorage.setItem("currentProviderEmail", data.email);
         
@@ -54,6 +56,13 @@ export default function Login() {
         }
       } else {
         localStorage.setItem("currentUserEmail", data.email);
+        
+        if (data.provider_email) {
+          localStorage.setItem("myProviderEmail", data.provider_email);
+        }
+        
+        localStorage.setItem("myProviderName", data.provider_name || "My Provider");
+        
         navigate("/app");
       }
     } catch (err) {

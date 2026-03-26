@@ -1,117 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProviderMessages.css";
 
-const STORAGE_KEY = "provider_mock_conversations";
-
-const mockConversations = [
-  {
-    id: "c1",
-    patientName: "Maria Gonzalez",
-    preview: "I am confused about carb counting for tortillas.",
-    lastTime: "10:42 AM",
-    unread: 2,
-    status: "Needs reply",
-    messages: [
-      {
-        id: "m1",
-        sender: "patient",
-        text: "Hi, I am confused about carb counting for tortillas.",
-        time: "10:30 AM",
-      },
-      {
-        id: "m2",
-        sender: "provider",
-        text: "No problem — are these corn or flour tortillas?",
-        time: "10:35 AM",
-      },
-      {
-        id: "m3",
-        sender: "patient",
-        text: "Mostly flour tortillas, and I do not know how many carbs to count.",
-        time: "10:42 AM",
-      },
-    ],
-  },
-  {
-    id: "c2",
-    patientName: "James Carter",
-    preview: "I missed my pickup this week.",
-    lastTime: "Yesterday",
-    unread: 0,
-    status: "Follow-up",
-    messages: [
-      {
-        id: "m1",
-        sender: "patient",
-        text: "I missed my Food Pharmacy pickup this week.",
-        time: "Yesterday",
-      },
-      {
-        id: "m2",
-        sender: "provider",
-        text: "Thanks for letting us know. We can help figure out another option.",
-        time: "Yesterday",
-      },
-    ],
-  },
-  {
-    id: "c3",
-    patientName: "Alicia Brown",
-    preview: "Can you explain sodium on labels again?",
-    lastTime: "Mon",
-    unread: 1,
-    status: "Unread",
-    messages: [
-      {
-        id: "m1",
-        sender: "patient",
-        text: "Can you explain sodium on labels again?",
-        time: "Mon",
-      },
-    ],
-  },
-  {
-    id: "c4",
-    patientName: "Kevin Lopez",
-    preview: "Thank you for the meal suggestions.",
-    lastTime: "Sun",
-    unread: 0,
-    status: "Resolved",
-    messages: [
-      {
-        id: "m1",
-        sender: "patient",
-        text: "Thank you for the meal suggestions.",
-        time: "Sun",
-      },
-      {
-        id: "m2",
-        sender: "provider",
-        text: "You are welcome — glad they helped.",
-        time: "Sun",
-      },
-    ],
-  },
-];
-
 function getCurrentTimeLabel() {
   return new Date().toLocaleTimeString([], {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function loadStoredConversations() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return mockConversations;
-
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : mockConversations;
-  } catch (error) {
-    console.error("Failed to load provider messages from localStorage:", error);
-    return mockConversations;
-  }
 }
 
 function MessageBubble({ sender, text, time }) {
@@ -129,13 +23,65 @@ function MessageBubble({ sender, text, time }) {
 
 export default function ProviderMessages() {
   const [search, setSearch] = useState("");
-  const [conversations, setConversations] = useState(loadStoredConversations);
-  const [selectedId, setSelectedId] = useState(mockConversations[0].id);
+  const [conversations, setConversations] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [draft, setDraft] = useState("");
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-  }, [conversations]);
+    const fetchPatients = async () => {
+      const email = localStorage.getItem("currentProviderEmail");
+      if (!email) return;
+
+      try {
+        const res = await fetch(`http://localhost:8000/providers/patients?email=${email}`);
+        if (!res.ok) throw new Error("Failed to fetch patients");
+
+        const dbPatients = await res.json();
+
+        const formattedConvos = dbPatients.map((user) => ({
+          id: user.email,
+          patientEmail: user.email,
+          patientName: user.name || user.email, 
+          preview: "No messages yet.",
+          lastTime: "--",
+          unread: 0,
+          status: "New Patient",
+          messages: [],
+        }));
+
+        if (formattedConvos.length > 0) {
+          const firstConv = formattedConvos[0];
+          setSelectedId(firstConv.id);
+          
+          try {
+            const msgRes = await fetch(`http://localhost:8000/messages/${firstConv.patientEmail}/${email}`);
+            const msgData = await msgRes.json();
+            
+            if (Array.isArray(msgData) && msgData.length > 0) {
+              const formattedMsgs = msgData.map(m => ({
+                id: String(m.id),
+                sender: m.sender,
+                text: m.text,
+                time: m.time
+              }));
+              
+              formattedConvos[0].messages = formattedMsgs;
+              formattedConvos[0].preview = formattedMsgs[formattedMsgs.length - 1].text;
+              formattedConvos[0].lastTime = formattedMsgs[formattedMsgs.length - 1].time;
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        setConversations(formattedConvos);
+      } catch (error) {
+        console.error("Error fetching database patients:", error);
+      }
+    };
+
+    fetchPatients();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -154,26 +100,71 @@ export default function ProviderMessages() {
     filtered[0] ||
     null;
 
-  function handleSelectConversation(id) {
+  async function handleSelectConversation(id) {
     setSelectedId(id);
-
-    setConversations((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              unread: 0,
-            }
-          : item
-      )
-    );
+    
+    const conv = conversations.find(c => c.id === id);
+    const providerEmail = localStorage.getItem("currentProviderEmail");
+    
+    if (conv && conv.patientEmail && providerEmail) {
+      try {
+        const res = await fetch(`http://localhost:8000/messages/${conv.patientEmail}/${providerEmail}`);
+        const data = await res.json();
+        
+        if (Array.isArray(data)) {
+          const formatted = data.map(m => ({
+            id: String(m.id),
+            sender: m.sender,
+            text: m.text,
+            time: m.time
+          }));
+          
+          setConversations((prev) =>
+            prev.map((item) =>
+              item.id === id ? { 
+                ...item, 
+                unread: 0, 
+                messages: formatted,
+                preview: formatted.length > 0 ? formatted[formatted.length - 1].text : "No messages yet.",
+                lastTime: formatted.length > 0 ? formatted[formatted.length - 1].time : "--"
+              } : item
+            )
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setConversations((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, unread: 0 } : item
+        )
+      );
+    }
   }
 
-  function handleSend() {
+  async function handleSend() {
     const clean = draft.trim();
     if (!clean || !selectedConversation) return;
 
     const now = getCurrentTimeLabel();
+    const providerEmail = localStorage.getItem("currentProviderEmail");
+
+    try {
+      await fetch("http://localhost:8000/messages/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_email: selectedConversation.patientEmail,
+          provider_email: providerEmail,
+          sender: "provider",
+          text: clean,
+          time: now
+        })
+      });
+    } catch (err) {
+      console.error(err);
+    }
 
     setConversations((prev) =>
       prev.map((conv) =>
@@ -196,7 +187,6 @@ export default function ProviderMessages() {
           : conv
       )
     );
-
     setDraft("");
   }
 
@@ -221,15 +211,7 @@ export default function ProviderMessages() {
           : conv
       )
     );
-
     setDraft("");
-  }
-
-  function handleResetAllMessages() {
-    setConversations(mockConversations);
-    setSelectedId(mockConversations[0].id);
-    setDraft("");
-    localStorage.removeItem(STORAGE_KEY);
   }
 
   return (
@@ -250,15 +232,7 @@ export default function ProviderMessages() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <button
-          type="button"
-          className="providerMessagesResetBtn"
-          onClick={handleResetAllMessages}
-        >
-          Reset All Mock Messages
-        </button>
-
-        <div className="providerMessagesList">
+        <div className="providerMessagesList" style={{ marginTop: "15px" }}>
           {filtered.length === 0 ? (
             <div className="providerMessagesEmpty">No conversations found.</div>
           ) : (

@@ -4,7 +4,7 @@ from app.database import Base
 class Provider(Base):
     __tablename__ = "providers"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, primary_key=True, index=True, unique=True)
     password = Column(String, nullable=False)
+    name = Column(String, nullable=True)
     is_first_login = Column(Boolean, default=True)

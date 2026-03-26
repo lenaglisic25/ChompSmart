@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import PageAccess from "./components/PageAccess.jsx";
 import Login from "./pages/Login.jsx";
 import MainLayout from "./layout/MainLayout.jsx";
 import Learn from "./pages/Learn.jsx";
@@ -19,10 +20,23 @@ export default function App() {
       <Route path="/" element={<Login />} />
       <Route path="/setup-profile" element={<Profile />} />
       
-      {/* Moved ChangePassword outside so it doesn't load the dashboard layout */}
-      <Route path="/provider/change-password" element={<ChangePassword />} />
+      <Route 
+        path="/provider/change-password" 
+        element={
+          <PageAccess requiredType="provider">
+            <ChangePassword />
+          </PageAccess>
+        } 
+      />
 
-      <Route path="/app" element={<MainLayout />}>
+      <Route 
+        path="/app" 
+        element={
+          <PageAccess requiredType="patient">
+            <MainLayout />
+          </PageAccess>
+        }
+      >
         <Route index element={<Navigate to="log" replace />} />
         <Route path="learn" element={<Learn />} />
         <Route path="log" element={<Log />} />
@@ -31,7 +45,14 @@ export default function App() {
         <Route path="profile" element={<Profile />} />
       </Route>
 
-      <Route path="/provider" element={<ProviderLayout />}>
+      <Route 
+        path="/provider" 
+        element={
+          <PageAccess requiredType="provider">
+            <ProviderLayout />
+          </PageAccess>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ProviderDashboard />} />
         <Route path="users" element={<ProviderUsers />} />
