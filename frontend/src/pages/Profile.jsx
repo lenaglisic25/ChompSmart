@@ -370,6 +370,7 @@ export default function Profile() {
           if (data.length > 0) {
             setForm((prev) => ({ ...prev, providerEmail: data[0].email }));
           }
+        })
         .catch((err) => console.error("Failed to load providers", err));
     }
   }, [location.pathname]);
