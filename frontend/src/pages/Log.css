@@ -993,3 +993,366 @@
     font-size: 15px;
   }
 }
+/* WATER TRACKER */
+
+.waterCard {
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+  margin: 14px 0;
+  box-shadow: 0 8px 22px rgba(80, 130, 180, 0.08);
+}
+
+.waterCardCompact {
+  padding: 14px 14px 12px;
+}
+
+.waterCompactTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.waterCompactEyebrow {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6ea8df;
+  margin-bottom: 2px;
+}
+
+.waterCompactTitle {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.waterEditBtn {
+  border: 2px solid #d7e7f9;
+  background: #ffffff;
+  color: #1b3554;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.waterEditBtnCompact {
+  min-height: 40px;
+}
+
+.waterCompactStats {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.waterCompactMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waterCompactBig {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 1000;
+  color: #163458;
+}
+
+.waterCompactBig span {
+  font-size: 15px;
+  font-weight: 900;
+  color: #50729a;
+}
+
+.waterCompactGoal {
+  font-size: 13px;
+  font-weight: 800;
+  color: #67809f;
+}
+
+.waterCompactPills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.waterMiniPill {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #edf7ff;
+  border: 1px solid #d6eaff;
+  color: #1b3554;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.waterCompactProgressWrap {
+  margin-bottom: 12px;
+}
+
+.waterCompactProgressTrack {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: #e8f3ff;
+  overflow: hidden;
+  border: 1px solid #d2e7ff;
+}
+
+.waterCompactProgressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8dd7ff 0%, #56b7ff 45%, #2f7bdc 100%);
+  transition: width 0.25s ease;
+}
+
+.waterBubbleRow {
+  display: flex;
+  gap: 7px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.waterBubble {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #d9ebfb;
+  box-shadow: inset 0 0 0 1px #c2dbf4;
+  opacity: 0.65;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.waterBubble.filled {
+  background: radial-gradient(circle at 30% 30%, #d8f4ff 0%, #86d7ff 45%, #54aeff 100%);
+  opacity: 1;
+  transform: translateY(-1px) scale(1.05);
+}
+
+.waterEditWrap {
+  margin-bottom: 12px;
+}
+
+.waterEditWrapCompact {
+  padding-top: 4px;
+}
+
+.waterGoalEdit {
+  margin-bottom: 12px;
+}
+
+.waterEditField {
+  display: grid;
+  gap: 6px;
+}
+
+.waterEditField span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.waterEditField input {
+  width: 100%;
+  border: 2px solid #d9e7f7;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.waterPresetEditor {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.waterPresetEditCard {
+  border: 2px solid #deebf8;
+  background: #f8fbff;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.waterPresetEditTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.waterPresetEmoji {
+  font-size: 20px;
+}
+
+.waterRemovePresetBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 2px solid #d6e6f7;
+  background: #fff;
+  color: #b91c1c;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.waterRemovePresetBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.waterAddPresetBtn {
+  margin-top: 12px;
+  border: 2px dashed #9ecfff;
+  background: #eef7ff;
+  color: #1b3554;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.waterActionsPresets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.waterActionsPresetsCompact {
+  margin-top: 2px;
+}
+
+.waterPresetTapBtn {
+  border: 2px solid #d7e9fb;
+  background: linear-gradient(180deg, #fafdff 0%, #eef7ff 100%);
+  color: #1b3554;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.waterPresetTapBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(78, 139, 198, 0.12);
+  border-color: #b8d9fb;
+}
+
+.waterPresetTapBtnCompact {
+  min-height: 68px;
+  border-radius: 18px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  text-align: left;
+}
+
+.waterPresetTapEmoji {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.waterPresetTapText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.waterPresetTapName {
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.1;
+}
+
+.waterPresetTapOz {
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.waterBottomActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.waterBottomActionsCompact {
+  margin-top: 10px;
+}
+
+.waterActionSecondary {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 1000;
+  cursor: pointer;
+  border: 2px solid #d9e7f7;
+  background: #fff;
+  color: #1b3554;
+}
+
+.waterHeader,
+.waterTitle,
+.waterSubtitle,
+.waterTopRow,
+.waterGoalBlock,
+.waterProgressBlock,
+.waterProgressTrack,
+.waterProgressFill,
+.waterProgressLabel,
+.waterMarkers,
+.waterMarker,
+.waterHelperRow,
+.waterHelperPill {
+
+}
+
+@media (max-width: 900px) {
+  .waterPresetEditor,
+  .waterActionsPresets {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .waterCard {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .waterCompactTitle {
+    font-size: 21px;
+  }
+
+  .waterCompactBig {
+    font-size: 28px;
+  }
+
+  .waterCompactStats {
+    align-items: flex-start;
+  }
+
+  .waterPresetTapBtnCompact {
+    min-height: 62px;
+  }
+}
