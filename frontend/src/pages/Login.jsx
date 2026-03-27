@@ -17,11 +17,11 @@ export default function Login() {
     const p = password;
 
     if (!e) return alert("Please enter an email.");
-    if (!isValidEmail(e)) return alert("Please enter a valid email (must include @).");
+    if (!isValidEmail(e)) return alert("Please enter a valid email.");
     if (!p) return alert("Please enter a password.");
 
-    const endpoint = isProvider 
-      ? "http://localhost:8000/providers/login" 
+    const endpoint = isProvider
+      ? "http://localhost:8000/providers/login"
       : "http://localhost:8000/users/login";
 
     try {
@@ -43,12 +43,12 @@ export default function Login() {
       }
 
       const data = JSON.parse(raw);
-      
+
       localStorage.setItem("userType", data.userType);
 
       if (isProvider) {
         localStorage.setItem("currentProviderEmail", data.email);
-        
+
         if (data.is_first_login) {
           navigate("/provider/change-password");
         } else {
@@ -56,13 +56,12 @@ export default function Login() {
         }
       } else {
         localStorage.setItem("currentUserEmail", data.email);
-        
+
         if (data.provider_email) {
           localStorage.setItem("myProviderEmail", data.provider_email);
         }
-        
+
         localStorage.setItem("myProviderName", data.provider_name || "My Provider");
-        
         navigate("/app");
       }
     } catch (err) {
@@ -82,10 +81,41 @@ export default function Login() {
           <span className="chomp">Chomp</span>
           <span className="smart">Smart</span>
         </div>
+
+        <p className="loginSubtitle">
+          {isProvider
+            ? "Welcome back, healthcare provider"
+            : "Healthy eating support made simple"}
+        </p>
       </div>
 
       <div className="loginCard">
-        <h1 className="loginTitle">{isProvider ? "Provider Login" : "Login"}</h1>
+        <div className="loginRoleSwitch" aria-label="Choose account type">
+          <button
+            type="button"
+            className={`rolePill ${!isProvider ? "active" : ""}`}
+            onClick={() => setIsProvider(false)}
+          >
+            I’m a Patient
+          </button>
+          <button
+            type="button"
+            className={`rolePill ${isProvider ? "active" : ""}`}
+            onClick={() => setIsProvider(true)}
+          >
+            Healthcare Provider Login
+          </button>
+        </div>
+
+        <h1 className="loginTitle">
+          {isProvider ? "Provider Portal" : "Patient Login"}
+        </h1>
+
+        <p className="loginHelperText">
+          {isProvider
+            ? "Sign in to view your dashboard, patients, and messages."
+            : "Sign in to track meals, chat with Chompy, and stay on goal."}
+        </p>
 
         <form
           className="loginForm"
@@ -101,7 +131,7 @@ export default function Login() {
             id="email"
             className="loginInput"
             type="email"
-            placeholder="you@clinic.com"
+            placeholder={isProvider ? "you@clinic.com" : "you@example.com"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
@@ -122,29 +152,17 @@ export default function Login() {
             required
           />
 
-          <div style={{ display: "flex", gap: "10px", marginTop: "10px", marginBottom: "15px" }}>
-            <label style={{ fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "5px" }}>
-              <input 
-                type="checkbox" 
-                checked={isProvider} 
-                onChange={() => setIsProvider(!isProvider)} 
-              />
-              I am a Healthcare Provider
-            </label>
-          </div>
-
           <button type="submit" className="loginButton">
-            Log In
+            {isProvider ? "Enter Provider Portal" : "Log In"}
           </button>
 
           {!isProvider && (
             <button
               type="button"
-              className="loginButton"
+              className="loginButton loginButtonSecondary"
               onClick={() => navigate("/setup-profile")}
-              style={{ marginTop: 10 }}
             >
-              Create Account
+              Create Patient Account
             </button>
           )}
         </form>
