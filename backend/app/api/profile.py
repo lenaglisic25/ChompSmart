@@ -47,12 +47,14 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 Meal.user_email == email,
                 func.date(Meal.created_at) == today
             ).all()
+            
             result = compute_tdee(
                 birthday_text=new_profile.birthday_text,
                 height_text=new_profile.height_text,
                 weight_text=new_profile.weight_text,
                 steps_range=new_profile.steps_range,
                 active_days_per_week=new_profile.active_days_per_week,
+                weight_goal=new_profile.weight_goal,
             )
 
             new_profile.bmr_male = result.mifflin_bmr_male
@@ -60,13 +62,11 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             new_profile.tdee_male = result.mifflin_tdee_male
             new_profile.tdee_female = result.mifflin_tdee_female
             new_profile.activity_factor = result.pal
-
                         
-            # set calorie goal based on gender - UPDATED THIS- jack
+            # set calorie goal based on gender and weight goal target (updated by yavna)
             sex = (new_profile.sex_at_birth or "").lower()
             if sex in ["male", "m"]:
-                new_profile.calorie_goal = round(result.mifflin_tdee_male)
-                # Save male macros
+                new_profile.calorie_goal = round(result.target_calories_male)
                 new_profile.carbs_g = result.macros_male.carbs_g
                 new_profile.protein_g = result.macros_male.protein_g
                 new_profile.fats_g = result.macros_male.fats_g
@@ -75,7 +75,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 new_profile.protein_pct = result.macros_male.protein_pct
                 new_profile.fats_pct = result.macros_male.fats_pct
             else:
-                new_profile.calorie_goal = round(result.mifflin_tdee_female)
+                new_profile.calorie_goal = round(result.target_calories_female)
                 # Save female macros
                 new_profile.carbs_g = result.macros_female.carbs_g
                 new_profile.protein_g = result.macros_female.protein_g
@@ -126,6 +126,7 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
             weight_text=profile.weight_text,
             steps_range=profile.steps_range,
             active_days_per_week=profile.active_days_per_week,
+            weight_goal=profile.weight_goal,
         )
 
         # Sodium totals from TODAY'S meals (mg)
@@ -182,6 +183,8 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
         "bmr_female": round(result.mifflin_bmr_female),
         "tdee_male": round(result.mifflin_tdee_male),
         "tdee_female": round(result.mifflin_tdee_female),
+        "target_calories_male": round(result.target_calories_male),
+        "target_calories_female": round(result.target_calories_female),
         "macros_male": result.macros_male,
         "macros_female": result.macros_female,
         "sodium_mg_max": sodium_mg_max,

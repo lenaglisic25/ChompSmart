@@ -8,6 +8,7 @@ class ProfileCreate(BaseModel):
     home_address: Optional[str] = None
     height_text: Optional[str] = None
     weight_text: Optional[str] = None
+    weight_goal: Optional[str] = None
     race: Optional[List[str]] = None
     race_other_text: Optional[str] = None
     ethnicity: Optional[str] = None

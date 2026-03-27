@@ -126,7 +126,6 @@ function mapTotalsToGoals(data) {
 }
 
 function TopDashboard({ user }) {
-  // MOCK VALUES for now (front-end only)
   // (yavna) update to fetch from backend
   const [profile, setProfile] = useState(null);
 
@@ -140,11 +139,11 @@ function TopDashboard({ user }) {
 
 const goals = {
   calories: Number(profile?.calorie_goal ?? 2100),
-  carbs: 275,
-  fiber: 25,
-  protein: 95,
-  fats: 90,
-  sodiumMg: 2300,
+  carbs: Number(profile?.carbs_g ?? 275),
+  fiber: Number(profile?.fiber_g ?? 25),
+  protein: Number(profile?.protein_g ?? 95),
+  fats: Number(profile?.fats_g ?? 90),
+  sodiumMg: Number(profile?.sodium_fda_limit ?? 2300),
   fluidsL: 3.0,
 };
 
@@ -184,9 +183,9 @@ const goals = {
               <Ring
                   title={`${remainingCalories}`}
                   subtitle="Cals Remaining"
-                  current={remainingCalories}
+                  current={metrics.calories}
                   goal={goals.calories}
-                  mode="goal"
+                  mode="limit"
               />
             </div>
 
@@ -286,3 +285,5 @@ const goals = {
     </div>
   );
 }
+
+export default TopDashboard;

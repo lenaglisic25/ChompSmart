@@ -12,6 +12,7 @@ class Profile(Base):
     home_address = Column(String, nullable=True)
     height_text = Column(String, nullable=True)
     weight_text = Column(String, nullable=True)
+    weight_goal = Column(String, nullable=True)
 
     race = Column(JSON, nullable=True)
     health_conditions = Column(JSON, nullable=True)
