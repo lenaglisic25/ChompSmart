@@ -1,7 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./ProviderUsers.css";
 
-const mockUsers = [
+const BARRIER_OPTIONS = [
+  "Food access",
+  "Missed pickup",
+  "Transportation",
+  "Cost",
+  "Meal planning",
+  "Label reading",
+  "Carb counting confusion",
+  "Low motivation",
+  "Time constraints",
+  "Low health literacy",
+  "Medication confusion",
+  "Technology access",
+  "Language barrier",
+  "Social support",
+];
+
+const initialUsers = [
   {
     id: "u1",
     name: "Maria Gonzalez",
@@ -12,7 +29,7 @@ const mockUsers = [
     nextAppointment: "Mar 26, 2026",
     adherence: "72%",
     engagement: "Moderate",
-    barriers: ["Food access", "Carb counting confusion"],
+    barriers: ["Food access", "Carb counting confusion", "Missed pickup"],
     goal: "Lower sodium intake",
     notes: "Needs follow-up on carb counting and weekend sodium intake.",
   },
@@ -74,26 +91,91 @@ function StatCard({ label, value }) {
 }
 
 export default function ProviderUsers() {
+  const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState(mockUsers[0].id);
+  const [selectedId, setSelectedId] = useState(initialUsers[0].id);
+  const [customBarrier, setCustomBarrier] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaved, setNoteSaved] = useState(false);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return mockUsers;
+    if (!q) return users;
 
-    return mockUsers.filter(
+    return users.filter(
       (user) =>
         user.name.toLowerCase().includes(q) ||
         user.risk.toLowerCase().includes(q) ||
         user.conditions.join(" ").toLowerCase().includes(q) ||
         user.barriers.join(" ").toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, users]);
 
   const selectedUser =
-    mockUsers.find((user) => user.id === selectedId) ||
-    filteredUsers[0] ||
-    null;
+    users.find((user) => user.id === selectedId) || filteredUsers[0] || null;
+
+  useEffect(() => {
+    if (selectedUser) {
+      setNoteDraft(selectedUser.notes || "");
+      setNoteSaved(false);
+    }
+  }, [selectedUser]);
+
+  function updateSelectedUser(updater) {
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === selectedId ? { ...user, ...updater(user) } : user
+      )
+    );
+  }
+
+  function toggleBarrier(barrier) {
+    if (!selectedUser) return;
+
+    updateSelectedUser((user) => {
+      const exists = user.barriers.includes(barrier);
+      return {
+        barriers: exists
+          ? user.barriers.filter((item) => item !== barrier)
+          : [...user.barriers, barrier],
+      };
+    });
+  }
+
+  function addCustomBarrier() {
+    const value = customBarrier.trim();
+    if (!value || !selectedUser) return;
+
+    if (selectedUser.barriers.some((item) => item.toLowerCase() === value.toLowerCase())) {
+      setCustomBarrier("");
+      return;
+    }
+
+    updateSelectedUser((user) => ({
+      barriers: [...user.barriers, value],
+    }));
+    setCustomBarrier("");
+  }
+
+  function removeBarrier(barrier) {
+    if (!selectedUser) return;
+    updateSelectedUser((user) => ({
+      barriers: user.barriers.filter((item) => item !== barrier),
+    }));
+  }
+
+  function saveNotes() {
+    if (!selectedUser) return;
+
+    updateSelectedUser(() => ({
+      notes: noteDraft.trim(),
+    }));
+    setNoteSaved(true);
+
+    window.setTimeout(() => {
+      setNoteSaved(false);
+    }, 1800);
+  }
 
   return (
     <div className="providerUsersPage">
@@ -197,16 +279,89 @@ export default function ProviderUsers() {
 
               <section className="providerUsersPanel">
                 <h3>Barriers / Concerns</h3>
-                <div className="providerUsersChipList">
+
+                <div className="providerUsersOptionGrid">
+                  {BARRIER_OPTIONS.map((option) => {
+                    const checked = selectedUser.barriers.includes(option);
+                    return (
+                      <label
+                        key={option}
+                        className={`providerUsersOption ${checked ? "selected" : ""}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleBarrier(option)}
+                        />
+                        <span>{option}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="providerUsersCustomRow">
+                  <input
+                    type="text"
+                    className="providerUsersCustomInput"
+                    placeholder="Add custom concern..."
+                    value={customBarrier}
+                    onChange={(e) => setCustomBarrier(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomBarrier();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="providerUsersAddBtn"
+                    onClick={addCustomBarrier}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="providerUsersChipList providerUsersSelectedBarriers">
                   {selectedUser.barriers.map((barrier) => (
-                    <InfoChip key={barrier}>{barrier}</InfoChip>
+                    <button
+                      key={barrier}
+                      type="button"
+                      className="providerUsersChip removable"
+                      onClick={() => removeBarrier(barrier)}
+                      title="Remove barrier"
+                    >
+                      {barrier} ×
+                    </button>
                   ))}
                 </div>
               </section>
 
               <section className="providerUsersPanel providerUsersNotesPanel">
-                <h3>Provider Notes</h3>
-                <div className="providerUsersNotesBox">{selectedUser.notes}</div>
+                <div className="providerUsersNotesHeader">
+                  <h3>Provider Notes</h3>
+                  <button
+                    type="button"
+                    className="providerUsersSaveBtn"
+                    onClick={saveNotes}
+                  >
+                    Save Notes
+                  </button>
+                </div>
+
+                <textarea
+                  className="providerUsersNotesTextarea"
+                  value={noteDraft}
+                  onChange={(e) => {
+                    setNoteDraft(e.target.value);
+                    setNoteSaved(false);
+                  }}
+                  placeholder="Add provider notes here..."
+                />
+
+                {noteSaved ? (
+                  <div className="providerUsersSavedText">Notes saved</div>
+                ) : null}
               </section>
             </div>
           </>

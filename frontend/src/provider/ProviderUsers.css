@@ -241,6 +241,70 @@
   font-weight: 900;
 }
 
+.providerUsersChip.removable {
+  cursor: pointer;
+}
+
+.providerUsersOptionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.providerUsersOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f7fafe;
+  border: 2px solid #dfe8f1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1b3554;
+  cursor: pointer;
+}
+
+.providerUsersOption.selected {
+  background: #edf5fd;
+  border-color: #2f69a8;
+}
+
+.providerUsersOption input {
+  margin: 0;
+}
+
+.providerUsersCustomRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.providerUsersCustomInput {
+  flex: 1;
+  border: 2px solid #d9e3ee;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.providerUsersAddBtn {
+  border: 2px solid #2f69a8;
+  background: #2f69a8;
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.providerUsersSelectedBarriers {
+  margin-top: 2px;
+}
+
 .providerUsersNotesPanel {
   grid-column: 1 / -1;
 }
@@ -287,4 +351,54 @@
   .providerUsersStatsGrid {
     grid-template-columns: 1fr;
   }
+
+  .providerUsersOptionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .providerUsersCustomRow {
+    flex-direction: column;
+  }
+}
+.providerUsersNotesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.providerUsersSaveBtn {
+  border: 2px solid #2f69a8;
+  background: #2f69a8;
+  color: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.providerUsersNotesTextarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #f8fbff;
+  border: 2px solid #dce7f3;
+  border-radius: 14px;
+  padding: 14px;
+  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b3554;
+  outline: none;
+  font-family: inherit;
+}
+
+.providerUsersSavedText {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #2f69a8;
 }

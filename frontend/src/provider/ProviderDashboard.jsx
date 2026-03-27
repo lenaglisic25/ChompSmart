@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
 import "./ProviderDashboard.css";
 import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
+import { useState } from "react";
 import { mockPanelAnalytics, mockPatient } from "./mockProviderData";
 
 function SummaryCard({ title, action, children, className = "" }) {
@@ -43,42 +43,15 @@ function ProgressRing({ value, label }) {
   );
 }
 
-function NutrientRow({ label, value, unit, target, direction }) {
-  const pct = Math.min((value / target) * 100, 100);
-  return (
-    <div className="providerNutrientRow">
-      <div className="providerNutrientTop">
-        <span>{label}</span>
-        <span>
-          {value} {unit} / {target} {unit}
-        </span>
-      </div>
-      <div className="providerNutrientTrack">
-        <div
-          className={`providerNutrientFill ${direction}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function AlertBadge({ severity }) {
   return <span className={`providerAlertBadge ${severity}`}>{severity}</span>;
 }
 
 export default function ProviderDashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [nutrientView, setNutrientView] = useState("daily");
 
   const patient = mockPatient;
   const analytics = mockPanelAnalytics;
-
-  const nutrientData = useMemo(() => {
-    if (nutrientView === "weekly") return patient.nutrients.weeklyAvg;
-    if (nutrientView === "monthly") return patient.nutrients.monthlyAvg;
-    return patient.nutrients.daily;
-  }, [nutrientView, patient]);
 
   return (
     <>
@@ -176,78 +149,7 @@ export default function ProviderDashboard() {
         </div>
 
         <div className="providerMiddleGrid">
-          <SummaryCard
-            title="Nutrient Totals / Averages"
-            action={
-              <div className="providerSegmented">
-                <button
-                  className={nutrientView === "daily" ? "active" : ""}
-                  onClick={() => setNutrientView("daily")}
-                >
-                  Daily
-                </button>
-                <button
-                  className={nutrientView === "weekly" ? "active" : ""}
-                  onClick={() => setNutrientView("weekly")}
-                >
-                  7-Day
-                </button>
-                <button
-                  className={nutrientView === "monthly" ? "active" : ""}
-                  onClick={() => setNutrientView("monthly")}
-                >
-                  30-Day
-                </button>
-              </div>
-            }
-            className="providerWideCard"
-          >
-            <div className="providerDataGrid">
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Calories</div>
-                <div className="providerDataValue">{nutrientData.calories}</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Protein</div>
-                <div className="providerDataValue">{nutrientData.protein} g</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Carbs</div>
-                <div className="providerDataValue">{nutrientData.carbs} g</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Fat</div>
-                <div className="providerDataValue">{nutrientData.fat} g</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Sodium</div>
-                <div className="providerDataValue">{nutrientData.sodium} mg</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Sugar</div>
-                <div className="providerDataValue">{nutrientData.sugar} g</div>
-              </div>
-              <div className="providerDataBox">
-                <div className="providerDataLabel">Fiber</div>
-                <div className="providerDataValue">{nutrientData.fiber} g</div>
-              </div>
-            </div>
-          </SummaryCard>
-
-          <SummaryCard title="Critical Nutrients & Warnings">
-            <div className="providerNutrientList">
-              {patient.criticalNutrients.map((item) => (
-                <NutrientRow
-                  key={item.key}
-                  label={item.label}
-                  value={item.value}
-                  unit={item.unit}
-                  target={item.target}
-                  direction={item.direction}
-                />
-              ))}
-            </div>
-
+          <SummaryCard title="Warnings">
             <div className="providerInlineAlerts">
               {patient.mealAlerts.map((item) => (
                 <div key={item} className="providerInlineAlert">
