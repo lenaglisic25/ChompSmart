@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import logo from "../assets/Chomp Smart Logo Transparent.png";
 
+
 export default function Login() {
   const navigate = useNavigate();
 
