@@ -15,7 +15,13 @@ const OPTIONS = {
   ethnicity: ["Hispanic or Latino", "Not Hispanic or Latino", "Prefer not to say"],
   sexAtBirth: ["Male", "Female"],
 
-  weightGoals: ["Lose weight", "Maintain weight", "Gain weight"],
+  weightGoals: [
+    "Yes, I want to lose weight.",
+    "Yes, I want to gain weight.",
+    "I want to stay the same.",
+    "I’m not sure yet.",
+    "I’d rather not say.",
+  ],
 
   healthConditions: [
     "Obesity",
@@ -26,22 +32,32 @@ const OPTIONS = {
     "Other",
   ],
 
-  steps: [
-    "None (0–4,000 steps)",
-    "Some (5,000–7,000 steps)",
-    "Moderate (8,000–10,000 steps)",
-    "Lots (10,000 or more steps)",
+  dayMovement: [
+    "I mostly sit (like at a desk at work, school, or gaming).",
+    "I stand or walk a little.",
+    "I walk or move around a lot.",
+    "My day is very active and physical (heavy lifting, hard work, sports).",
   ],
 
-  activeDays: ["0 days", "1–2 days", "3–4 days", "5–7 days"],
+  dailyExercise: [
+    "I don’t exercise much.",
+    "I do light activity for about 15-20 minutes.",
+    "I do moderate activity for 30-40 minutes.",
+    "I do hard exercise for more than 1 hour.",
+  ],
 
-  movement: [
-    "Walking or light jogging",
-    "Running or sprinting",
-    "Dancing or aerobic classes",
-    "Strength or weight training",
-    "Yoga or stretching",
-    "Sports (e.g., soccer, basketball)",
+  moderateMinutesWeekly: [
+    "Less than 60 minutes.",
+    "60-150 minutes.",
+    "150-300 minutes.",
+    "More than 300 minutes.",
+  ],
+
+  vigorousMinutesWeekly: [
+    "None",
+    "1-60 minutes.",
+    "60-120 minutes.",
+    "More than 120 minutes.",
   ],
 
   householdSizes: Array.from({ length: 20 }, (_, i) => String(i + 1)),
@@ -143,6 +159,52 @@ const OPTIONS = {
   ],
 };
 
+const ACTIVITY_POINTS = {
+  dayMovement: {
+    "I mostly sit (like at a desk at work, school, or gaming).": 0,
+    "I stand or walk a little.": 1,
+    "I walk or move around a lot.": 2,
+    "My day is very active and physical (heavy lifting, hard work, sports).": 3,
+  },
+  dailyExercise: {
+    "I don’t exercise much.": 0,
+    "I do light activity for about 15-20 minutes.": 1,
+    "I do moderate activity for 30-40 minutes.": 2,
+    "I do hard exercise for more than 1 hour.": 3,
+  },
+  moderateMinutesWeekly: {
+    "Less than 60 minutes.": 0,
+    "60-150 minutes.": 1,
+    "150-300 minutes.": 2,
+    "More than 300 minutes.": 3,
+  },
+  vigorousMinutesWeekly: {
+    None: 0,
+    "1-60 minutes.": 1,
+    "60-120 minutes.": 2,
+    "More than 120 minutes.": 3,
+  },
+};
+
+function getActivitySummary(form) {
+  const score =
+    (ACTIVITY_POINTS.dayMovement[form.dayMovement] ?? 0) +
+    (ACTIVITY_POINTS.dailyExercise[form.dailyExercise] ?? 0) +
+    (ACTIVITY_POINTS.moderateMinutesWeekly[form.moderateMinutesWeekly] ?? 0) +
+    (ACTIVITY_POINTS.vigorousMinutesWeekly[form.vigorousMinutesWeekly] ?? 0);
+
+  if (score <= 3) {
+    return { score, category: "Sedentary", activityFactor: "1.0-1.3" };
+  }
+  if (score <= 6) {
+    return { score, category: "Low Active", activityFactor: "1.4-1.5" };
+  }
+  if (score <= 9) {
+    return { score, category: "Active", activityFactor: "1.6-1.8" };
+  }
+  return { score, category: "Very Active", activityFactor: "1.9-2.4" };
+}
+
 const DEFAULT_FORM = {
   email: "",
   password: "",
@@ -164,9 +226,10 @@ const DEFAULT_FORM = {
   medications: "",
   medAllergies: "",
 
-  stepsRange: "",
-  activeDays: "",
-  movementTypes: [],
+  dayMovement: "",
+  dailyExercise: "",
+  moderateMinutesWeekly: "",
+  vigorousMinutesWeekly: "",
 
   householdSize: "",
   householdAgeGroups: [],
@@ -215,9 +278,14 @@ function normalizeProfile(data) {
     medications: data.medications_text ?? "",
     medAllergies: data.med_allergies_text ?? "",
 
-    stepsRange: data.steps_range ?? "",
-    activeDays: data.active_days_per_week ?? "",
-    movementTypes: data.movement_types ?? [],
+    dayMovement: data.day_movement ?? data.steps_range ?? "",
+    dailyExercise: data.daily_exercise ?? data.active_days_per_week ?? "",
+    moderateMinutesWeekly:
+      data.moderate_minutes_weekly ??
+      (Array.isArray(data.movement_types) ? data.movement_types[0] ?? "" : ""),
+    vigorousMinutesWeekly:
+      data.vigorous_minutes_weekly ??
+      (Array.isArray(data.movement_types) ? data.movement_types[1] ?? "" : ""),
 
     householdSize: data.household_size ? String(data.household_size) : "",
     householdAgeGroups: data.household_age_groups ?? [],
@@ -330,7 +398,12 @@ function RadioGroup({ label, value, onChange, options, required = false }) {
       <div className={`psRadios ${required ? "psRequiredGroup" : ""}`}>
         {options.map((o) => (
           <label key={o} className="psRadio">
-            <input type="radio" name={label} checked={(value ?? "") === o} onChange={() => onChange(o)} />
+            <input
+              type="radio"
+              name={label}
+              checked={(value ?? "") === o}
+              onChange={() => onChange(o)}
+            />
             <span>{o}</span>
           </label>
         ))}
@@ -389,6 +462,8 @@ export default function Profile() {
   const showFoodHelpOther =
     Array.isArray(form.foodHelpPrograms) && form.foodHelpPrograms.includes("Other");
 
+  const activitySummary = useMemo(() => getActivitySummary(form), [form]);
+
   function update(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -424,11 +499,21 @@ export default function Profile() {
       medications_text: safeTrim(form.medications) || null,
       med_allergies_text: safeTrim(form.medAllergies) || null,
 
-      steps_range: form.stepsRange || null,
-      active_days_per_week: form.activeDays || null,
+      // New activity fields
+      day_movement: form.dayMovement || null,
+      daily_exercise: form.dailyExercise || null,
+      moderate_minutes_weekly: form.moderateMinutesWeekly || null,
+      vigorous_minutes_weekly: form.vigorousMinutesWeekly || null,
+      activity_score: activitySummary.score,
+      activity_category: activitySummary.category,
+      activity_factor_range: activitySummary.activityFactor,
+
+      // Legacy fallback keys in case backend still uses the old names
+      steps_range: form.dayMovement || null,
+      active_days_per_week: form.dailyExercise || null,
       movement_types:
-        Array.isArray(form.movementTypes) && form.movementTypes.length > 0
-          ? form.movementTypes
+        form.moderateMinutesWeekly || form.vigorousMinutesWeekly
+          ? [form.moderateMinutesWeekly, form.vigorousMinutesWeekly].filter(Boolean)
           : null,
 
       household_size: form.householdSize ? Number(form.householdSize) : null,
@@ -469,7 +554,15 @@ export default function Profile() {
           ? form.groceryStores
           : null,
     };
-  }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail, location.pathname]);
+  }, [
+    form,
+    showRaceOther,
+    showHealthOther,
+    showFoodHelpOther,
+    currentUserEmail,
+    location.pathname,
+    activitySummary,
+  ]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -492,6 +585,11 @@ export default function Profile() {
       return;
     }
 
+    if (!form.birthday.trim()) {
+      alert("Please enter your birthday.");
+      return;
+    }
+
     if (!form.height.trim()) {
       alert("Please enter your height.");
       return;
@@ -507,13 +605,28 @@ export default function Profile() {
       return;
     }
 
-    if (!form.activeDays) {
-      alert("Please select your activity level.");
+    if (!form.weightGoal) {
+      alert("Please select your weight goal.");
       return;
     }
 
-    if (!form.weightGoal) {
-      alert("Please select your weight goal.");
+    if (!form.dayMovement) {
+      alert("Please answer how much you move during the day.");
+      return;
+    }
+
+    if (!form.dailyExercise) {
+      alert("Please answer how much you exercise on most days.");
+      return;
+    }
+
+    if (!form.moderateMinutesWeekly) {
+      alert("Please answer your weekly moderate exercise minutes.");
+      return;
+    }
+
+    if (!form.vigorousMinutesWeekly) {
+      alert("Please answer your weekly hard activity minutes.");
       return;
     }
 
@@ -647,6 +760,7 @@ export default function Profile() {
             value={form.birthday}
             onChange={(v) => update("birthday", v)}
             placeholder="MM/DD/YYYY"
+            required
           />
 
           <TextField
@@ -673,7 +787,7 @@ export default function Profile() {
           />
 
           <SelectField
-            label="Weight Goal"
+            label="Weight Goals"
             value={form.weightGoal}
             onChange={(v) => update("weightGoal", v)}
             options={OPTIONS.weightGoals}
@@ -735,35 +849,64 @@ export default function Profile() {
           />
 
           <TextAreaField
-            label="Medication or Food Allergies"
+            label="Medication Allergies"
             value={form.medAllergies}
             onChange={(v) => update("medAllergies", v)}
-            placeholder="List any allergies"
+            placeholder="List any medication allergies"
           />
         </Section>
 
         <Section title="Physical Activity">
           <RadioGroup
-            label="How many steps do you walk in a typical day?"
-            value={form.stepsRange}
-            onChange={(v) => update("stepsRange", v)}
-            options={OPTIONS.steps}
-          />
-
-          <RadioGroup
-            label="How many days each week do you do at least 30 minutes of moderate to vigorous activity?"
-            value={form.activeDays}
-            onChange={(v) => update("activeDays", v)}
-            options={OPTIONS.activeDays}
+            label="How much do you move during the day?"
+            value={form.dayMovement}
+            onChange={(v) => update("dayMovement", v)}
+            options={OPTIONS.dayMovement}
             required
           />
 
-          <CheckboxGroup
-            label="What kinds of movement do you do most often? (select all that apply)"
-            values={form.movementTypes}
-            onToggle={(o) => update("movementTypes", toggleInArray(form.movementTypes, o))}
-            options={OPTIONS.movement}
+          <RadioGroup
+            label="How much do you exercise on most days?"
+            value={form.dailyExercise}
+            onChange={(v) => update("dailyExercise", v)}
+            options={OPTIONS.dailyExercise}
+            required
           />
+
+          <RadioGroup
+            label="How many minutes each week do you do moderate exercise?"
+            value={form.moderateMinutesWeekly}
+            onChange={(v) => update("moderateMinutesWeekly", v)}
+            options={OPTIONS.moderateMinutesWeekly}
+            required
+          />
+
+          <RadioGroup
+            label="How many minutes each week do you do hard activities?"
+            value={form.vigorousMinutesWeekly}
+            onChange={(v) => update("vigorousMinutesWeekly", v)}
+            options={OPTIONS.vigorousMinutesWeekly}
+            required
+          />
+
+          <div
+            className="psField"
+            style={{
+              border: "2px solid #d9e7f7",
+              borderRadius: "10px",
+              padding: "12px",
+              background: "#f8fbff",
+            }}
+          >
+            <div className="psLabel" style={{ marginBottom: 8 }}>
+              Activity Summary
+            </div>
+            <div style={{ fontWeight: 700, color: "#1b3554" }}>
+              Total Score: {activitySummary.score}
+            </div>
+            <div style={{ marginTop: 4 }}>Category: {activitySummary.category}</div>
+            <div style={{ marginTop: 4 }}>Activity Factor: {activitySummary.activityFactor}</div>
+          </div>
         </Section>
 
         <Section title="Family & Home">
