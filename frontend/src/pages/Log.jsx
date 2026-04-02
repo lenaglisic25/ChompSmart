@@ -75,15 +75,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
 
   useEffect(() => {
     if (!userEmail) return;
-<<<<<<< Updated upstream
-    fetch(`http://localhost:8000/profile/${encodeURIComponent(userEmail)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data != null) setProfile(data);
-      })
-      .catch((err) => console.error("Profile fetch failed:", err));
-  }, [userEmail]);
-=======
 
     const fetchProfile = () => {
       fetch(`http://localhost:8000/profile/${encodeURIComponent(userEmail)}?t=${Date.now()}`)
@@ -100,7 +91,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
     const interval = setInterval(fetchProfile, 30000);
     return () => clearInterval(interval);
   }, [userEmail, refreshKey]);
->>>>>>> Stashed changes
 
   useEffect(() => {
     if (!userEmail || !formattedDate) return;

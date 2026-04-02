@@ -358,15 +358,9 @@ export default function Profile() {
   const isSetup = location.pathname === "/setup-profile";
   const isManualSetup = isSetup && !currentUserEmail; // Hit setup without logging in first
 
-<<<<<<< Updated upstream
-  const [form, setForm] = useState({ 
-    ...DEFAULT_FORM, 
-    email: location.pathname === "/setup-profile" ? "" : currentUserEmail 
-=======
   const [form, setForm] = useState({
     ...DEFAULT_FORM,
     email: isManualSetup ? "" : currentUserEmail,
->>>>>>> Stashed changes
   });
   const [loading, setLoading] = useState(false);
   const [providers, setProviders] = useState([]);
@@ -437,10 +431,6 @@ export default function Profile() {
       medications_text: safeTrim(form.medications) || null,
       med_allergies_text: safeTrim(form.medAllergies) || null,
 
-<<<<<<< Updated upstream
-      steps_range: form.stepsRange || null,
-      active_days_per_week: form.activeDays || null,
-=======
       day_movement: form.dayMovement || null,
       daily_exercise: form.dailyExercise || null,
       moderate_minutes_weekly: form.moderateMinutesWeekly || null,
@@ -451,7 +441,6 @@ export default function Profile() {
 
       steps_range: form.dayMovement || null,
       active_days_per_week: form.dailyExercise || null,
->>>>>>> Stashed changes
       movement_types:
         Array.isArray(form.movementTypes) && form.movementTypes.length > 0 ? form.movementTypes : null,
 
@@ -479,9 +468,6 @@ export default function Profile() {
       technology_devices:
         Array.isArray(form.technologyDevices) && form.technologyDevices.length > 0 ? form.technologyDevices : null,
     };
-<<<<<<< Updated upstream
-  }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail, location.pathname]);
-=======
   }, [
     form,
     showRaceOther,
@@ -491,7 +477,6 @@ export default function Profile() {
     isManualSetup,
     activitySummary,
   ]);
->>>>>>> Stashed changes
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -503,12 +488,7 @@ export default function Profile() {
       return;
     }
 
-<<<<<<< Updated upstream
-    // Only require password on setup-profile
-    if (isSetup && !form.password) {
-=======
     if (isManualSetup && !form.password) {
->>>>>>> Stashed changes
       alert("Please enter a password.");
       return;
     }
@@ -520,12 +500,7 @@ export default function Profile() {
 
     setLoading(true);
     try {
-<<<<<<< Updated upstream
-      // if on setup-profile, first create the user account
-      if (isSetup) {
-=======
       if (isManualSetup) {
->>>>>>> Stashed changes
         const userResponse = await fetch("http://localhost:8000/users/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -591,13 +566,9 @@ export default function Profile() {
     <div className="psPage">
       <form className="psForm" onSubmit={onSubmit}>
         <h1 className="psTitle">
-<<<<<<< Updated upstream
-          {location.pathname !== "/setup-profile" ? "User Profile" : "ChompSmart User Profile Set-Up"}
-=======
           {!isSetup
             ? "User Profile"
             : "ChompSmart User Profile Set-Up"}
->>>>>>> Stashed changes
         </h1>
 
         {loading && <div style={{ marginBottom: 12, fontWeight: 600 }}>Loading profile...</div>}
@@ -619,26 +590,6 @@ export default function Profile() {
                 onChange={(v) => update("password", v)}
                 placeholder="Enter password"
               />
-<<<<<<< Updated upstream
-
-              <div className="psField">
-                <label className="psLabel">Choose your Healthcare Provider</label>
-                <select 
-                  className="psSelect" 
-                  value={form.providerEmail} 
-                  onChange={(e) => update("providerEmail", e.target.value)}
-                  required
-                >
-                  <option value="" disabled>Select a Provider</option>
-                  {providers.map((p) => (
-                    <option key={p.email} value={p.email}>
-                      {p.name} ({p.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-=======
->>>>>>> Stashed changes
             </>
           )}
 
@@ -687,19 +638,12 @@ export default function Profile() {
           <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
 
           <TextField
-<<<<<<< Updated upstream
-            label="Birthday"
-            value={form.birthday}
-            onChange={(v) => update("birthday", v)}
-            placeholder="MM/DD/YYYY"
-=======
           label="Birthday"
           type="date"
           value={form.birthday}
           onChange={(v) => update("birthday", v)}
           placeholder="MM/DD/YYYY"
             required
->>>>>>> Stashed changes
           />
 
           <TextField
@@ -902,29 +846,8 @@ export default function Profile() {
           />
         </Section>
 
-<<<<<<< Updated upstream
-        <Section title="Technology Skills">
-          <RadioGroup
-            label="Do you have internet access?"
-            value={form.internetAccess}
-            onChange={(v) => update("internetAccess", v)}
-            options={OPTIONS.internetAccess}
-          />
-
-          <CheckboxGroup
-            label="What technology do you use? (select all that apply)"
-            values={form.technologyDevices}
-            onToggle={(o) => update("technologyDevices", toggleInArray(form.technologyDevices, o))}
-            options={OPTIONS.technology}
-          />
-        </Section>
-
-        <button className="psSaveBtn" type="submit">
-          Save Profile
-=======
         <button className="psSaveBtn" type="submit" disabled={loading}>
           {loading ? "Saving..." : isSetup ? "Create Account" : "Save Profile"}
->>>>>>> Stashed changes
         </button>
       </form>
     </div>

@@ -1,11 +1,7 @@
-import { useMemo, useState } from "react";
-import "./ProviderDashboard.css";
-import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
-<<<<<<< Updated upstream
-=======
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
->>>>>>> Stashed changes
+import "./ProviderDashboard.css";
+import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
 import { mockPanelAnalytics, mockPatient } from "./mockProviderData";
 
 function SummaryCard({ title, action, children, className = "" }) {
@@ -75,12 +71,11 @@ function AlertBadge({ severity }) {
 export default function ProviderDashboard() {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
-<<<<<<< Updated upstream
-  const [nutrientView, setNutrientView] = useState("daily");
-=======
   const [patients, setPatients] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState("");
->>>>>>> Stashed changes
+  
+  // Added missing state for the nutrient view toggle
+  const [nutrientView, setNutrientView] = useState("daily");
 
   const providerEmail = localStorage.getItem("currentProviderEmail") || localStorage.getItem("currentUserEmail");
 
@@ -140,7 +135,6 @@ export default function ProviderDashboard() {
 
   const handleMessageClick = () => {
     if (patient.id) {
-      // Fixed path: navigating to the nested route defined in App.jsx
       navigate(`/provider/messages?email=${patient.id}`);
     } else {
       navigate("/provider/messages");

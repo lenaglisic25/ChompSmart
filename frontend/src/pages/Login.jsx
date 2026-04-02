@@ -5,12 +5,8 @@ import { jwtDecode } from "jwt-decode";
 import "./Login.css";
 import logo from "../assets/Chomp Smart Logo Transparent.png";
 
-<<<<<<< Updated upstream
-=======
 const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
->>>>>>> Stashed changes
 export default function Login() {
   const navigate = useNavigate();
 
@@ -20,8 +16,9 @@ export default function Login() {
 
   const isValidEmail = (s) => /\S+@\S+\.\S+/.test(s);
 
-  const processAuthResponse = (data) => {
-    localStorage.setItem("userType", data.userType || (isProvider ? "provider" : "patient"));
+  // Helper to handle the navigation and storage logic for both login types
+  const handleAuthSuccess = (data) => {
+    localStorage.setItem("userType", data.userType);
 
     if (isProvider) {
       localStorage.setItem("currentProviderEmail", data.email);
@@ -32,13 +29,12 @@ export default function Login() {
       }
     } else {
       localStorage.setItem("currentUserEmail", data.email);
-      
       if (data.provider_email) {
         localStorage.setItem("myProviderEmail", data.provider_email);
       }
       localStorage.setItem("myProviderName", data.provider_name || "My Provider");
       
-      // Drops brand new Google users directly into Setup Profile
+      // If it's a brand new Google user, send to setup
       if (data.is_first_login) {
         navigate("/setup-profile");
       } else {
@@ -47,27 +43,17 @@ export default function Login() {
     }
   };
 
-  const handleAuth = async () => {
+  const login = async () => {
     const e = email.trim();
     const p = password;
 
-<<<<<<< Updated upstream
     if (!e) return alert("Please enter an email.");
-    if (!isValidEmail(e)) return alert("Please enter a valid email (must include @).");
+    if (!isValidEmail(e)) return alert("Please enter a valid email.");
     if (!p) return alert("Please enter a password.");
 
-    const endpoint = isProvider 
-      ? "http://localhost:8000/providers/login" 
+    const endpoint = isProvider
+      ? "http://localhost:8000/providers/login"
       : "http://localhost:8000/users/login";
-=======
-    if (!e || !isValidEmail(e) || !p) {
-      return alert("Please enter a valid email and password.");
-    }
-
-    const endpoint = isProvider 
-      ? `${API_BASE}/providers/login` 
-      : `${API_BASE}/users/login`;
->>>>>>> Stashed changes
 
     try {
       const res = await fetch(endpoint, {
@@ -76,42 +62,22 @@ export default function Login() {
         body: JSON.stringify({ email: e, password: p }),
       });
 
-      const data = await res.json();
+      const raw = await res.text();
 
       if (!res.ok) {
-        throw new Error(data.detail || "Authentication failed.");
+        try {
+          const errorData = JSON.parse(raw);
+          throw new Error(errorData.detail || raw || `HTTP ${res.status}`);
+        } catch {
+          throw new Error(raw || `HTTP ${res.status}`);
+        }
       }
 
-<<<<<<< Updated upstream
       const data = JSON.parse(raw);
-      
-      localStorage.setItem("userType", data.userType);
-
-      if (isProvider) {
-        localStorage.setItem("currentProviderEmail", data.email);
-        
-        if (data.is_first_login) {
-          navigate("/provider/change-password");
-        } else {
-          navigate("/provider/dashboard");
-        }
-      } else {
-        localStorage.setItem("currentUserEmail", data.email);
-        
-        if (data.provider_email) {
-          localStorage.setItem("myProviderEmail", data.provider_email);
-        }
-        
-        localStorage.setItem("myProviderName", data.provider_name || "My Provider");
-        
-        navigate("/app");
-      }
-=======
-      processAuthResponse(data);
->>>>>>> Stashed changes
+      handleAuthSuccess(data);
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      alert(`Error logging in: ${err.message}`);
     }
   };
 
@@ -119,7 +85,7 @@ export default function Login() {
     const decoded = jwtDecode(credentialResponse.credential);
     
     try {
-      const res = await fetch(`${API_BASE}/users/google-login`, {
+      const res = await fetch("http://localhost:8000/users/google-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -132,7 +98,7 @@ export default function Login() {
       if (!res.ok) throw new Error("Google authentication failed.");
       
       const data = await res.json();
-      processAuthResponse(data);
+      handleAuthSuccess(data);
     } catch (err) {
       console.error(err);
       alert("Google Login Error: " + err.message);
@@ -159,75 +125,6 @@ export default function Login() {
           </p>
         </div>
 
-<<<<<<< Updated upstream
-        <div className="brandWordmark" aria-label="ChompSmart">
-          <span className="chomp">Chomp</span>
-          <span className="smart">Smart</span>
-        </div>
-      </div>
-
-      <div className="loginCard">
-        <h1 className="loginTitle">{isProvider ? "Provider Login" : "Login"}</h1>
-
-        <form
-          className="loginForm"
-          onSubmit={(e) => {
-            e.preventDefault();
-            login();
-          }}
-        >
-          <label className="loginLabel" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            className="loginInput"
-            type="email"
-            placeholder="you@clinic.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            required
-          />
-
-          <label className="loginLabel" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            className="loginInput"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-
-          <div style={{ display: "flex", gap: "10px", marginTop: "10px", marginBottom: "15px" }}>
-            <label style={{ fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "5px" }}>
-              <input 
-                type="checkbox" 
-                checked={isProvider} 
-                onChange={() => setIsProvider(!isProvider)} 
-              />
-              I am a Healthcare Provider
-            </label>
-          </div>
-
-          <button type="submit" className="loginButton">
-            Log In
-          </button>
-
-          {!isProvider && (
-            <button
-              type="button"
-              className="loginButton"
-              onClick={() => navigate("/setup-profile")}
-              style={{ marginTop: 10 }}
-            >
-              Create Account
-=======
         <div className="loginCard">
           <div className="loginRoleSwitch" aria-label="Choose account type">
             <button
@@ -235,15 +132,14 @@ export default function Login() {
               className={`rolePill ${!isProvider ? "active" : ""}`}
               onClick={() => setIsProvider(false)}
             >
-              Patient
->>>>>>> Stashed changes
+              I’m a Patient
             </button>
             <button
               type="button"
               className={`rolePill ${isProvider ? "active" : ""}`}
               onClick={() => setIsProvider(true)}
             >
-              Healthcare Provider
+              Healthcare Provider Login
             </button>
           </div>
 
@@ -261,10 +157,12 @@ export default function Login() {
             className="loginForm"
             onSubmit={(e) => {
               e.preventDefault();
-              handleAuth();
+              login();
             }}
           >
-            <label className="loginLabel" htmlFor="email">Email</label>
+            <label className="loginLabel" htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               className="loginInput"
@@ -276,7 +174,9 @@ export default function Login() {
               required
             />
 
-            <label className="loginLabel" htmlFor="password">Password</label>
+            <label className="loginLabel" htmlFor="password">
+              Password
+            </label>
             <input
               id="password"
               className="loginInput"
@@ -293,12 +193,13 @@ export default function Login() {
             </button>
 
             {!isProvider && (
-              <div className="googleLoginWrapper" style={{ marginTop: "15px", display: "flex", justifyContent: "center" }}>
+              <div style={{ marginTop: "15px", display: "flex", justifyContent: "center" }}>
                 <GoogleLogin
                   onSuccess={onGoogleSuccess}
                   onError={() => alert("Google Login Failed")}
-                  theme="filled_blue"
-                  shape="pill"
+                  theme="outline"
+                  shape="rectangular"
+                  width="100%"
                 />
               </div>
             )}
@@ -307,18 +208,20 @@ export default function Login() {
               <button
                 type="button"
                 className="loginButton loginButtonSecondary"
-                style={{ marginTop: "10px" }}
                 onClick={() => {
-                  // Wipe any old sessions to trigger manual setup mode in Profile.jsx
                   localStorage.removeItem("currentUserEmail");
                   navigate("/setup-profile");
                 }}
               >
-                Sign Up
+                Create Patient Account
               </button>
             )}
           </form>
         </div>
+
+        <p className="copyright">
+          ©Copyright 2026 University of Florida Research Foundation, Inc. All Rights Reserved.
+        </p>
       </div>
     </GoogleOAuthProvider>
   );

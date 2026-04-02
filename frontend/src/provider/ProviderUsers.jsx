@@ -1,66 +1,3 @@
-<<<<<<< Updated upstream
-import { useMemo, useState } from "react";
-import "./ProviderUsers.css";
-
-const mockUsers = [
-  {
-    id: "u1",
-    name: "Maria Gonzalez",
-    age: 52,
-    conditions: ["Hypertension", "Type 2 Diabetes"],
-    risk: "High",
-    lastSync: "2 hours ago",
-    nextAppointment: "Mar 26, 2026",
-    adherence: "72%",
-    engagement: "Moderate",
-    barriers: ["Food access", "Carb counting confusion"],
-    goal: "Lower sodium intake",
-    notes: "Needs follow-up on carb counting and weekend sodium intake.",
-  },
-  {
-    id: "u2",
-    name: "James Carter",
-    age: 47,
-    conditions: ["Hypertension"],
-    risk: "Moderate",
-    lastSync: "Yesterday",
-    nextAppointment: "Mar 28, 2026",
-    adherence: "64%",
-    engagement: "Low",
-    barriers: ["Missed pickup", "Transportation"],
-    goal: "Improve logging consistency",
-    notes: "Missed Food Pharmacy pickup. May need outreach support.",
-  },
-  {
-    id: "u3",
-    name: "Alicia Brown",
-    age: 38,
-    conditions: ["Prediabetes"],
-    risk: "Low",
-    lastSync: "Today",
-    nextAppointment: "Apr 2, 2026",
-    adherence: "81%",
-    engagement: "High",
-    barriers: ["Label reading"],
-    goal: "Reduce added sugar",
-    notes: "Frequently engages with educational content.",
-  },
-  {
-    id: "u4",
-    name: "Kevin Lopez",
-    age: 59,
-    conditions: ["Type 2 Diabetes", "High Cholesterol"],
-    risk: "Moderate",
-    lastSync: "3 days ago",
-    nextAppointment: "Apr 4, 2026",
-    adherence: "58%",
-    engagement: "Moderate",
-    barriers: ["Cost", "Meal planning"],
-    goal: "Increase fiber intake",
-    notes: "Would benefit from quick meal-prep suggestions.",
-  },
-];
-=======
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ProviderUsers.css";
@@ -112,7 +49,6 @@ function formatDateDisplay(dateStr) {
   if (parts.length !== 3) return dateStr;
   return `${parts[1]}/${parts[2]}/${parts[0]}`;
 }
->>>>>>> Stashed changes
 
 function InfoChip({ children }) {
   return <span className="providerUsersChip">{children}</span>;
@@ -137,10 +73,6 @@ function StatCard({ label, value, isEditable, onChange, type = "text" }) {
 }
 
 export default function ProviderUsers() {
-<<<<<<< Updated upstream
-  const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState(mockUsers[0].id);
-=======
   const navigate = useNavigate();
   const providerEmail = localStorage.getItem("currentProviderEmail");
   const [users, setUsers] = useState([]);
@@ -151,7 +83,6 @@ export default function ProviderUsers() {
   const [noteDraft, setNoteDraft] = useState("");
   const [appointmentDraft, setAppointmentDraft] = useState("");
   const [noteSaved, setNoteSaved] = useState(false);
->>>>>>> Stashed changes
 
   useEffect(() => {
     if (!providerEmail) return;
@@ -184,26 +115,14 @@ export default function ProviderUsers() {
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
-<<<<<<< Updated upstream
-    if (!q) return mockUsers;
-
-    return mockUsers.filter(
-=======
     if (!q) return users;
     return users.filter(
->>>>>>> Stashed changes
       (user) =>
         user.name.toLowerCase().includes(q) ||
         user.conditions.join(" ").toLowerCase().includes(q)
     );
   }, [search]);
 
-<<<<<<< Updated upstream
-  const selectedUser =
-    mockUsers.find((user) => user.id === selectedId) ||
-    filteredUsers[0] ||
-    null;
-=======
   const selectedUser = users.find((user) => user.id === selectedId) || null;
 
   useEffect(() => {
@@ -276,7 +195,6 @@ export default function ProviderUsers() {
       console.error(err);
     }
   }
->>>>>>> Stashed changes
 
   if (loading) return <div className="providerUsersPage">Loading...</div>;
 
@@ -380,11 +298,6 @@ export default function ProviderUsers() {
 
               <section className="providerUsersPanel">
                 <h3>Barriers / Concerns</h3>
-<<<<<<< Updated upstream
-                <div className="providerUsersChipList">
-                  {selectedUser.barriers.map((barrier) => (
-                    <InfoChip key={barrier}>{barrier}</InfoChip>
-=======
                 <div className="providerUsersOptionGrid">
                   {BARRIER_OPTIONS.map((option) => {
                     const checked = selectedUser.barriers.includes(option);
@@ -437,7 +350,6 @@ export default function ProviderUsers() {
                     >
                       {barrier} ×
                     </button>
->>>>>>> Stashed changes
                   ))}
                 </div>
               </section>
