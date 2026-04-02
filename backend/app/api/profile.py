@@ -23,7 +23,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
 
     if existing_profile:
         for key, value in profile_data.items():
-            if value is not None:
+            if hasattr(existing_profile, key):
                 setattr(existing_profile, key, value)
         new_profile = existing_profile
     else:
@@ -85,12 +85,16 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 new_profile.protein_pct = result.macros_female.protein_pct
                 new_profile.fats_pct = result.macros_female.fats_pct
 
-
+            print(f"TDEE calculated for {email}: calorie_goal={new_profile.calorie_goal}")
             db.commit()
             db.refresh(new_profile)
+        else:
+            print(f"Missing required fields: birthday_text={new_profile.birthday_text}, height_text={new_profile.height_text}, weight_text={new_profile.weight_text}, sex_at_birth={new_profile.sex_at_birth}")
 
     except Exception as e:
-        print("TDEE calculation failed:", e)
+        print(f"TDEE calculation failed for {email}: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
     return new_profile
 

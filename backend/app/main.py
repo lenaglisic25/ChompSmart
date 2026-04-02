@@ -15,7 +15,7 @@ from app.routers import grocery
 from app.api import providers
 from app.api import messages
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ChompSmart DB")
 

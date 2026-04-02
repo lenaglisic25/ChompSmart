@@ -70,3 +70,8 @@ class Profile(Base):
     sugar_limit_g = Column(Float, nullable=True)
     sugar_difference_from_limit = Column(Float, nullable=True)
     sugar_message = Column(String, nullable=True)
+
+    # for patient/providers side
+    next_appointment = Column(String, nullable=True)
+    provider_notes = Column(String, nullable=True)
+    barriers = Column(JSON, nullable=True)

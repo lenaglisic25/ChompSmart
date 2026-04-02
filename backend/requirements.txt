@@ -9,3 +9,7 @@ google.generativeai
 Pillow
 passlib
 bcrypt==4.0.1
+alembic
+google-auth
+fastapi-mail
+python-jose[cryptography]

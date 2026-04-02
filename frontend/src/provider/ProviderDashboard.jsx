@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import "./ProviderDashboard.css";
 import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
+<<<<<<< Updated upstream
+=======
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+>>>>>>> Stashed changes
 import { mockPanelAnalytics, mockPatient } from "./mockProviderData";
 
 function SummaryCard({ title, action, children, className = "" }) {
@@ -68,11 +73,79 @@ function AlertBadge({ severity }) {
 }
 
 export default function ProviderDashboard() {
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+<<<<<<< Updated upstream
   const [nutrientView, setNutrientView] = useState("daily");
+=======
+  const [patients, setPatients] = useState([]);
+  const [selectedEmail, setSelectedEmail] = useState("");
+>>>>>>> Stashed changes
 
-  const patient = mockPatient;
-  const analytics = mockPanelAnalytics;
+  const providerEmail = localStorage.getItem("currentProviderEmail") || localStorage.getItem("currentUserEmail");
+
+  useEffect(() => {
+    if (!providerEmail) return;
+    fetch(`http://localhost:8000/providers/patients?email=${providerEmail}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPatients(data);
+        if (data.length > 0) {
+          setSelectedEmail(data[0].email);
+        }
+      })
+      .catch(() => {});
+  }, [providerEmail]);
+
+  const analytics = useMemo(() => {
+    const barriers = {};
+    let total = 0;
+    patients.forEach((p) => {
+      const b = p.profile?.barriers || [];
+      b.forEach((barrier) => {
+        barriers[barrier] = (barriers[barrier] || 0) + 1;
+        total++;
+      });
+    });
+    const topBarriers = Object.entries(barriers)
+      .map(([label, count]) => ({ label, percent: Math.round((count / Math.max(total, 1)) * 100) }))
+      .sort((a, b) => b.percent - a.percent)
+      .slice(0, 5);
+
+    return {
+      riskCounts: { high: 0, moderate: patients.length, low: 0 },
+      followUpQueue: patients.length,
+      avgEngagementLogsPerWeek: 3.2,
+      topBarriers: topBarriers.length > 0 ? topBarriers : mockPanelAnalytics.topBarriers,
+      patientsNeedingFollowUp: patients.map((p) => p.name || p.email).slice(0, 5),
+    };
+  }, [patients]);
+
+  const patient = useMemo(() => {
+    const p = patients.find((x) => x.email === selectedEmail);
+    if (!p) return mockPatient;
+
+    return {
+      ...mockPatient,
+      id: p.email,
+      name: p.name || p.email,
+      conditions: p.profile?.health_conditions || [],
+      weightKg: p.profile?.weight_text || mockPatient.weightKg,
+      nextAppointment: p.profile?.next_appointment || "Not set",
+      providerNotes: p.profile?.provider_notes || "",
+      adherence: p.adherence || mockPatient.adherence,
+      progress: p.progress || mockPatient.progress,
+    };
+  }, [patients, selectedEmail]);
+
+  const handleMessageClick = () => {
+    if (patient.id) {
+      // Fixed path: navigating to the nested route defined in App.jsx
+      navigate(`/provider/messages?email=${patient.id}`);
+    } else {
+      navigate("/provider/messages");
+    }
+  };
 
   const nutrientData = useMemo(() => {
     if (nutrientView === "weekly") return patient.nutrients.weeklyAvg;
@@ -83,6 +156,21 @@ export default function ProviderDashboard() {
   return (
     <>
       <div className="providerDashboard">
+        <div style={{ padding: "20px 30px 0 30px" }}>
+          <select
+            style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "16px" }}
+            value={selectedEmail}
+            onChange={(e) => setSelectedEmail(e.target.value)}
+          >
+            {patients.length === 0 && <option value="">Loading patients...</option>}
+            {patients.map((p) => (
+              <option key={p.email} value={p.email}>
+                {p.name || p.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <section className="providerSnapshotBar">
           <div className="providerSnapshotMain">
             <div className="providerPatientName">{patient.name}</div>
@@ -99,11 +187,8 @@ export default function ProviderDashboard() {
           </div>
 
           <div className="providerQuickActions">
-            <button type="button" className="providerQuickBtn">
+            <button type="button" className="providerQuickBtn" onClick={handleMessageClick}>
               Message
-            </button>
-            <button type="button" className="providerQuickBtn">
-              Add Note
             </button>
             <button type="button" className="providerQuickBtn primary">
               Set Goal
@@ -292,7 +377,7 @@ export default function ProviderDashboard() {
                   <div className="providerFollowUpActions">
                     <button type="button">Send Tip</button>
                     <button type="button">Queue Note</button>
-                    <button type="button">Add to Plan</button>
+                    <button type="button" className="primary">Add to Plan</button>
                   </div>
                 </div>
               ))}
@@ -300,7 +385,15 @@ export default function ProviderDashboard() {
           </SummaryCard>
 
           <SummaryCard title="Provider Notes / Last Visit Summary">
-            <div className="providerNotesBox">{patient.providerNotes}</div>
+            <div className="providerNotesBox">
+              {patient.providerNotes ? (
+                patient.providerNotes
+              ) : (
+                <div style={{ color: "#888", fontStyle: "italic", textAlign: "center", padding: "10px" }}>
+                  No provider notes saved for this patient.
+                </div>
+              )}
+            </div>
 
             <div className="providerResourceBox">
               <div className="providerResourceTitle">Engaged Resources</div>

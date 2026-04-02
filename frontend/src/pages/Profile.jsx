@@ -353,16 +353,26 @@ export default function Profile() {
   const location = useLocation();
 
   const currentUserEmail = localStorage.getItem("currentUserEmail") || "";
+  
+  // Logic to determine which path they are on
+  const isSetup = location.pathname === "/setup-profile";
+  const isManualSetup = isSetup && !currentUserEmail; // Hit setup without logging in first
 
+<<<<<<< Updated upstream
   const [form, setForm] = useState({ 
     ...DEFAULT_FORM, 
     email: location.pathname === "/setup-profile" ? "" : currentUserEmail 
+=======
+  const [form, setForm] = useState({
+    ...DEFAULT_FORM,
+    email: isManualSetup ? "" : currentUserEmail,
+>>>>>>> Stashed changes
   });
   const [loading, setLoading] = useState(false);
   const [providers, setProviders] = useState([]);
 
   useEffect(() => {
-    if (location.pathname === "/setup-profile") {
+    if (isSetup) {
       fetch("http://localhost:8000/providers/list")
         .then((res) => res.json())
         .then((data) => {
@@ -373,10 +383,10 @@ export default function Profile() {
         })
         .catch((err) => console.error("Failed to load providers", err));
     }
-  }, [location.pathname]);
+  }, [isSetup]);
 
   useEffect(() => {
-    if (!currentUserEmail || location.pathname === "/setup-profile") return;
+    if (!currentUserEmail || isSetup) return;
 
     setLoading(true);
     fetch(`http://localhost:8000/profile/${currentUserEmail}`)
@@ -391,7 +401,7 @@ export default function Profile() {
       })
       .catch((err) => console.error("Profile fetch failed:", err))
       .finally(() => setLoading(false));
-  }, [currentUserEmail, location.pathname]);
+  }, [currentUserEmail, isSetup]);
 
   const showRaceOther = Array.isArray(form.race) && form.race.includes("Other");
   const showHealthOther = Array.isArray(form.healthConditions) && form.healthConditions.includes("Other");
@@ -403,10 +413,9 @@ export default function Profile() {
 
   const dbPayload = useMemo(() => {
     const safeTrim = (v) => (v ?? "").trim();
-    const isSetup = location.pathname === "/setup-profile";
 
     return {
-      user_email: isSetup ? safeTrim(form.email) || null : currentUserEmail || null,
+      user_email: isManualSetup ? safeTrim(form.email) || null : currentUserEmail || null,
       email: safeTrim(form.email) || null,
       password: safeTrim(form.password) || null,
 
@@ -428,8 +437,21 @@ export default function Profile() {
       medications_text: safeTrim(form.medications) || null,
       med_allergies_text: safeTrim(form.medAllergies) || null,
 
+<<<<<<< Updated upstream
       steps_range: form.stepsRange || null,
       active_days_per_week: form.activeDays || null,
+=======
+      day_movement: form.dayMovement || null,
+      daily_exercise: form.dailyExercise || null,
+      moderate_minutes_weekly: form.moderateMinutesWeekly || null,
+      vigorous_minutes_weekly: form.vigorousMinutesWeekly || null,
+      activity_score: activitySummary.score,
+      activity_category: activitySummary.category,
+      activity_factor_range: activitySummary.activityFactor,
+
+      steps_range: form.dayMovement || null,
+      active_days_per_week: form.dailyExercise || null,
+>>>>>>> Stashed changes
       movement_types:
         Array.isArray(form.movementTypes) && form.movementTypes.length > 0 ? form.movementTypes : null,
 
@@ -457,21 +479,36 @@ export default function Profile() {
       technology_devices:
         Array.isArray(form.technologyDevices) && form.technologyDevices.length > 0 ? form.technologyDevices : null,
     };
+<<<<<<< Updated upstream
   }, [form, showRaceOther, showHealthOther, showFoodHelpOther, currentUserEmail, location.pathname]);
+=======
+  }, [
+    form,
+    showRaceOther,
+    showHealthOther,
+    showFoodHelpOther,
+    currentUserEmail,
+    isManualSetup,
+    activitySummary,
+  ]);
+>>>>>>> Stashed changes
 
   async function onSubmit(e) {
     e.preventDefault();
 
-    const isSetup = location.pathname === "/setup-profile";
-    const userEmail = isSetup ? form.email : currentUserEmail;
+    const userEmail = isManualSetup ? form.email : currentUserEmail;
 
     if (!userEmail) {
       alert("No email provided. Please enter an email.");
       return;
     }
 
+<<<<<<< Updated upstream
     // Only require password on setup-profile
     if (isSetup && !form.password) {
+=======
+    if (isManualSetup && !form.password) {
+>>>>>>> Stashed changes
       alert("Please enter a password.");
       return;
     }
@@ -483,8 +520,12 @@ export default function Profile() {
 
     setLoading(true);
     try {
+<<<<<<< Updated upstream
       // if on setup-profile, first create the user account
       if (isSetup) {
+=======
+      if (isManualSetup) {
+>>>>>>> Stashed changes
         const userResponse = await fetch("http://localhost:8000/users/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -550,13 +591,19 @@ export default function Profile() {
     <div className="psPage">
       <form className="psForm" onSubmit={onSubmit}>
         <h1 className="psTitle">
+<<<<<<< Updated upstream
           {location.pathname !== "/setup-profile" ? "User Profile" : "ChompSmart User Profile Set-Up"}
+=======
+          {!isSetup
+            ? "User Profile"
+            : "ChompSmart User Profile Set-Up"}
+>>>>>>> Stashed changes
         </h1>
 
         {loading && <div style={{ marginBottom: 12, fontWeight: 600 }}>Loading profile...</div>}
 
         <Section title="Account">
-          {location.pathname === "/setup-profile" ? (
+          {isManualSetup && (
             <>
               <TextField
                 label="Email"
@@ -572,6 +619,7 @@ export default function Profile() {
                 onChange={(v) => update("password", v)}
                 placeholder="Enter password"
               />
+<<<<<<< Updated upstream
 
               <div className="psField">
                 <label className="psLabel">Choose your Healthcare Provider</label>
@@ -589,8 +637,34 @@ export default function Profile() {
                   ))}
                 </select>
               </div>
+=======
+>>>>>>> Stashed changes
             </>
-          ) : (
+          )}
+
+          {isSetup && (
+            <div className="psField">
+              <label className="psLabel">Choose your Healthcare Provider</label>
+              <select
+                className="psSelect"
+                value={form.providerEmail}
+                onChange={(e) => update("providerEmail", e.target.value)}
+                required
+              >
+                <option value="" disabled>
+                  Select a Provider
+                </option>
+                {providers.map((p) => (
+                  <option key={p.email} value={p.email}>
+                    {p.name} ({p.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {/* Display read-only view for existing users viewing their profile */}
+          {!isSetup && (
             <>
               <div className="psField">
                 <label className="psLabel">Email</label>
@@ -613,10 +687,19 @@ export default function Profile() {
           <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
 
           <TextField
+<<<<<<< Updated upstream
             label="Birthday"
             value={form.birthday}
             onChange={(v) => update("birthday", v)}
             placeholder="MM/DD/YYYY"
+=======
+          label="Birthday"
+          type="date"
+          value={form.birthday}
+          onChange={(v) => update("birthday", v)}
+          placeholder="MM/DD/YYYY"
+            required
+>>>>>>> Stashed changes
           />
 
           <TextField
@@ -819,6 +902,7 @@ export default function Profile() {
           />
         </Section>
 
+<<<<<<< Updated upstream
         <Section title="Technology Skills">
           <RadioGroup
             label="Do you have internet access?"
@@ -837,6 +921,10 @@ export default function Profile() {
 
         <button className="psSaveBtn" type="submit">
           Save Profile
+=======
+        <button className="psSaveBtn" type="submit" disabled={loading}>
+          {loading ? "Saving..." : isSetup ? "Create Account" : "Save Profile"}
+>>>>>>> Stashed changes
         </button>
       </form>
     </div>

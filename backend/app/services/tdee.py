@@ -52,7 +52,22 @@ class TdeeResult:
 
 
 def parse_dob_mmddyyyy(dob_text: str) -> date:
-    return datetime.strptime(dob_text.strip(), "%m/%d/%Y").date()
+    dob_text = dob_text.strip()
+    # Try ISO format (YYYY-MM-DD) first
+    try:
+        return datetime.strptime(dob_text, "%Y-%m-%d").date()
+    except ValueError:
+        pass
+    # Try MM/DD/YYYY format
+    try:
+        return datetime.strptime(dob_text, "%m/%d/%Y").date()
+    except ValueError:
+        pass
+    # Try M/D/YYYY format
+    try:
+        return datetime.strptime(dob_text, "%m/%d/%y").date()
+    except ValueError:
+        raise ValueError(f"Invalid date format: '{dob_text}'. Expected YYYY-MM-DD or MM/DD/YYYY")
 
 
 def calc_age_years(dob: date, today: Optional[date] = None) -> int:

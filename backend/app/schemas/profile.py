@@ -34,6 +34,10 @@ class ProfileCreate(BaseModel):
     internet_access: Optional[str] = None
     technology_devices: Optional[List[str]] = None
 
+    next_appointment: Optional[str] = None
+    provider_notes: Optional[str] = None
+    barriers: Optional[List[str]] = None
+
 
 
 class Profile(ProfileCreate):
