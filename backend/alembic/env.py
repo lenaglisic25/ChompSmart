@@ -17,7 +17,7 @@ load_dotenv(dotenv_path=env_path)
 
 # Import your models
 from app.database import Base
-from app.models.user import User
+from app.models.user import UserModel
 from app.models.profile import Profile
 from app.models.meals import Meal
 

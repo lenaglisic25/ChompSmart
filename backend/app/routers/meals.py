@@ -4,7 +4,7 @@ from sqlalchemy import func
 from datetime import date, datetime
 from app.database import get_db
 from app.models.meals import Meal
-
+from app.services.badge_service import evaluate_badges_after_meal_log
 router = APIRouter(prefix="/meals", tags=["meals"])
 
 
@@ -44,6 +44,7 @@ def log_meal(meal: dict, db: Session = Depends(get_db)):
     db.add(m)
     db.commit()
     db.refresh(m)
+    evaluate_badges_after_meal_log(m.user_email, db)
     return {"ok": True, "id": m.id}
 
 

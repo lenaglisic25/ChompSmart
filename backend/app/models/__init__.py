@@ -1,0 +1,1 @@
+from app.models.badge import Badge, UserBadge

@@ -12,8 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import usda, meals, recipes
 from app.routers import chat
 from app.routers import grocery
+from app.routers import badges
 from app.api import providers
 from app.api import messages
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -29,6 +31,7 @@ app.include_router(recipes.router)
 app.include_router(grocery.router)
 app.include_router(providers.router)
 app.include_router(messages.router)
+app.include_router(badges.router)
 
 @app.get("/")
 def root():
@@ -43,4 +46,11 @@ app.add_middleware(
 )
 
 # create tables
+# create tables
 Base.metadata.create_all(bind=engine)
+
+from app.services.badge_service import seed_badges
+from app.database import SessionLocal
+db = SessionLocal()
+seed_badges(db)
+db.close()
