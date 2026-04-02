@@ -121,7 +121,7 @@ export default function ProviderUsers() {
         user.name.toLowerCase().includes(q) ||
         user.conditions.join(" ").toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, users]);
 
   const selectedUser = users.find((user) => user.id === selectedId) || null;
 
@@ -355,8 +355,30 @@ export default function ProviderUsers() {
               </section>
 
               <section className="providerUsersPanel providerUsersNotesPanel">
-                <h3>Provider Notes</h3>
-                <div className="providerUsersNotesBox">{selectedUser.notes}</div>
+                <div className="providerUsersNotesHeader">
+                  <h3>Provider Notes</h3>
+                  <button
+                    type="button"
+                    className="providerUsersSaveBtn"
+                    onClick={saveNotes}
+                  >
+                    Save Notes
+                  </button>
+                </div>
+
+                <textarea
+                  className="providerUsersNotesTextarea"
+                  value={noteDraft}
+                  onChange={(e) => {
+                    setNoteDraft(e.target.value);
+                    setNoteSaved(false);
+                  }}
+                  placeholder="Add provider notes here..."
+                />
+
+                {noteSaved ? (
+                  <div className="providerUsersSavedText">Notes saved</div>
+                ) : null}
               </section>
             </div>
           </>

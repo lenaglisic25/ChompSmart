@@ -41,7 +41,10 @@ class TdeeResult:
     mifflin_bmr_female: float
     mifflin_tdee_male: float
     mifflin_tdee_female: float
-
+    
+    # target intake after weight goal adjustments
+    target_calories_male: float
+    target_calories_female: float
 
     eer_male: float
     eer_female: float
@@ -279,6 +282,7 @@ def compute_tdee(
     weight_text: str,
     steps_range: Optional[str],
     active_days_per_week: Optional[str],
+    weight_goal: Optional[str] = None,
 ) -> TdeeResult:
     dob = parse_dob_mmddyyyy(birthday_text)
     age = calc_age_years(dob)
@@ -295,12 +299,24 @@ def compute_tdee(
     mifflin_tdee_m = bmr_m * pal
     mifflin_tdee_f = bmr_f * pal
 
+    # apply weight goal
+    offset = 0.0
+    if weight_goal:
+        goal = weight_goal.lower()
+        if "lose" in goal:
+            offset = -500.0
+        elif "gain" in goal:
+            offset = 500.0
+
+    target_m = mifflin_tdee_m + offset
+    target_f = mifflin_tdee_f + offset
+
     # this is for 19 and older,so that it works
     eer_m = eer_adult_19_plus(weight_kg, height_cm, age, "male", pal_cat)
     eer_f = eer_adult_19_plus(weight_kg, height_cm, age, "female", pal_cat)
 
-    macros_m = calculate_macros(mifflin_tdee_m)
-    macros_f = calculate_macros(mifflin_tdee_f)
+    macros_m = calculate_macros(target_m)
+    macros_f = calculate_macros(target_f)
 
     return TdeeResult(
         age_years=age,
@@ -312,6 +328,8 @@ def compute_tdee(
         mifflin_bmr_female=bmr_f,
         mifflin_tdee_male=mifflin_tdee_m,
         mifflin_tdee_female=mifflin_tdee_f,
+        target_calories_male=target_m,
+        target_calories_female=target_f,
         eer_male=eer_m,
         eer_female=eer_f,
         macros_male=macros_m,

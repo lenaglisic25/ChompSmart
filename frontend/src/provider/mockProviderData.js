@@ -57,36 +57,6 @@ export const mockPatient = {
     escalationFlags: ["Can't afford healthy food consistently"],
   },
 
-  nutrients: {
-    daily: {
-      calories: 2200,
-      protein: 98,
-      carbs: 240,
-      fat: 75,
-      sodium: 1920,
-      sugar: 28,
-      fiber: 18,
-    },
-    weeklyAvg: {
-      calories: 1970,
-      protein: 92,
-      carbs: 228,
-      fat: 68,
-      sodium: 1950,
-      sugar: 30,
-      fiber: 20,
-    },
-    monthlyAvg: {
-      calories: 2050,
-      protein: 94,
-      carbs: 235,
-      fat: 70,
-      sodium: 1800,
-      sugar: 27,
-      fiber: 21,
-    },
-  },
-
   criticalNutrients: [
     { key: "sodium", label: "Sodium", value: 1920, unit: "mg", target: 1800, direction: "high" },
     { key: "sugar", label: "Added Sugar", value: 28, unit: "g", target: 25, direction: "high" },
@@ -185,22 +155,18 @@ export const mockPanelAnalytics = {
   },
   followUpQueue: 7,
   avgEngagementLogsPerWeek: 3.2,
-  nutritionTrends: {
-    sodium: "down slightly",
-    fiber: "up slightly",
-    sugar: "stable",
-  },
   topBarriers: [
     { label: "Food access", percent: 30 },
-    { label: "Sodium awareness", percent: 25 },
-    { label: "Cost", percent: 20 },
-    { label: "Transportation", percent: 15 },
+    { label: "Missed pickup", percent: 24 },
+    { label: "Transportation", percent: 18 },
+    { label: "Cost", percent: 16 },
+    { label: "Low health literacy", percent: 12 },
   ],
   patientsNeedingFollowUp: [
     "No logs ≥ 3 days",
-    "High sodium 4/7 days",
+    "Missed Food Pharmacy pickup",
     "Food access issue",
-    "Missed appointment",
+    "Transportation barrier",
     "AI escalation",
   ],
 };

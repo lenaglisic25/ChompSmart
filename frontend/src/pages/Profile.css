@@ -14,6 +14,13 @@
   color: #1b3554;
 }
 
+.psRequiredNote {
+  margin: -2px 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b5fa7;
+}
+
 .psSection {
   border: 2px solid var(--border);
   border-radius: 12px;
@@ -40,6 +47,16 @@
   color: #1b3554;
 }
 
+.psRequiredLabel {
+  color: #163a63;
+}
+
+.psRequiredStar {
+  color: #d62828;
+  font-weight: 1000;
+  margin-left: 2px;
+}
+
 .psInput,
 .psSelect,
 .psTextarea {
@@ -49,6 +66,13 @@
   padding: 10px 12px;
   font-size: 16px;
   outline: none;
+  box-sizing: border-box;
+}
+
+.psRequiredInput {
+  border: 3px solid #5b9df0;
+  background: #f8fbff;
+  box-shadow: 0 0 0 3px rgba(91, 157, 240, 0.12);
 }
 
 .psTextarea {
@@ -60,6 +84,13 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+}
+
+.psRequiredGroup {
+  border: 2px solid #5b9df0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f8fbff;
 }
 
 .psCheck,
@@ -82,6 +113,12 @@
   background: #fff;
   color: #1b3554;
 }
+
+.psSaveBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .psPage {
     padding: 10px 0 8px;
@@ -89,6 +126,11 @@
 
   .psTitle {
     font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .psRequiredNote {
+    font-size: 13px;
     margin-bottom: 10px;
   }
 

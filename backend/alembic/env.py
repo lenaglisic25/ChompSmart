@@ -18,7 +18,6 @@ load_dotenv(dotenv_path=env_path)
 # 3. Import Base and ALL Models (Crucial to prevent accidental drops)
 from app.database import Base
 from app.models.user import UserModel
-from app.models.provider import Provider
 from app.models.profile import Profile
 from app.models.meals import Meal
 from app.models.message import Message

@@ -60,16 +60,7 @@ export default function ProviderAnalyticsDrawer({ open, onClose, analytics }) {
         </section>
 
         <section className="providerDrawerSection">
-          <h3>Nutrition Trends</h3>
-          <ul className="providerBulletList">
-            <li>Sodium: {analytics.nutritionTrends.sodium}</li>
-            <li>Fiber: {analytics.nutritionTrends.fiber}</li>
-            <li>Sugar: {analytics.nutritionTrends.sugar}</li>
-          </ul>
-        </section>
-
-        <section className="providerDrawerSection">
-          <h3>Top Barriers</h3>
+          <h3>Top Barriers / Concerns</h3>
           <div className="providerBarrierList">
             {analytics.topBarriers.map((item) => (
               <BarrierBar key={item.label} label={item.label} percent={item.percent} />

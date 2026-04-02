@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import "./Log.css";
-
-
 
 function clamp01(x) {
   return Math.max(0, Math.min(1, x));
 }
+
 function pct(current, goal) {
   if (!goal || goal <= 0) return 0;
   return clamp01(current / goal);
@@ -22,6 +20,53 @@ function limitStatus(p) {
   if (p <= 0.6) return "good";
   if (p <= 0.9) return "warn";
   return "bad";
+}
+
+function ozToLiters(oz) {
+  return Number(oz || 0) * 0.0295735;
+}
+
+function litersToOz(liters) {
+  return Number(liters || 0) * 33.814;
+}
+
+function getWaterStorageKey(email, date) {
+  return `chompsmart_water_${email}_${date}`;
+}
+
+function loadWaterForDay(email, date) {
+  try {
+    const raw = localStorage.getItem(getWaterStorageKey(email, date));
+    if (!raw) {
+      return {
+        goalOz: 64,
+        cupOz: 8,
+        bottleOz: 24,
+        totalOz: 0,
+        history: [],
+      };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      goalOz: Number(parsed.goalOz) || 64,
+      cupOz: Number(parsed.cupOz) || 8,
+      bottleOz: Number(parsed.bottleOz) || 24,
+      totalOz: Number(parsed.totalOz) || 0,
+      history: Array.isArray(parsed.history) ? parsed.history : [],
+    };
+  } catch {
+    return {
+      goalOz: 64,
+      cupOz: 8,
+      bottleOz: 24,
+      totalOz: 0,
+      history: [],
+    };
+  }
+}
+
+function saveWaterForDay(email, date, payload) {
+  localStorage.setItem(getWaterStorageKey(email, date), JSON.stringify(payload));
 }
 
 function Ring({ title, subtitle, current, goal, mode = "goal" }) {
@@ -57,8 +102,7 @@ function Ring({ title, subtitle, current, goal, mode = "goal" }) {
   );
 }
 
-// (yavna) Update dashboard to fetch data
-function TopDashboard({ userEmail, refreshKey, formattedDate }) {
+function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, waterGoalOz = 64 }) {
   const [profile, setProfile] = useState(null);
 
   const [metrics, setMetrics] = useState({
@@ -99,10 +143,10 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         let list = [];
-        
+
         if (Array.isArray(data)) {
           list = data;
-        } else if (typeof data === 'object' && data !== null) {
+        } else if (typeof data === "object" && data !== null) {
           list = Object.values(data).flat();
         }
 
@@ -111,7 +155,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
         const totalCarbs = list.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
         const totalFats = list.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
         const totalFluids = list.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
-        
         const totalFiber = list.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
         const totalSodium = list.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0);
 
@@ -129,7 +172,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
       .catch((err) => console.error("Metrics fetch failed:", err));
   }, [userEmail, refreshKey, formattedDate]);
 
-  // goals from profile (TDEE/macros when set), with fallbacks
   const goals = {
     calories: Number(profile?.calorie_goal ?? 2100),
     protein: Number(profile?.protein_g ?? 95),
@@ -137,18 +179,34 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
     fats: Number(profile?.fats_g ?? 90),
     fiber: Number(profile?.fiber_g ?? 25),
     sodiumMg: 2300,
-    fluidsL: 3.0,
+    fluidsL: ozToLiters(waterGoalOz) || 3.0,
   };
 
+  const combinedFluidsL = Number(metrics.fluidsL || 0) + ozToLiters(waterOz);
   const remainingCalories = Math.max(0, goals.calories - metrics.calories);
+  const remainingHydrationL = Math.max(0, goals.fluidsL - combinedFluidsL);
 
   const alerts = useMemo(() => {
-    return [
-      { level: "warn", text: "Hydration is low — drink water to reach 3L." },
-      { level: "warn", text: "Protein is low — try adding a high-protein food." },
-      { level: "good", text: "Nice start — keep logging meals to build your streak." },
-    ];
-  }, []);
+    const output = [];
+
+    if (combinedFluidsL < goals.fluidsL * 0.5) {
+      output.push({ level: "warn", text: "Hydration is low — tap your cup or bottle to catch up." });
+    }
+
+    if (metrics.protein < goals.protein * 0.5) {
+      output.push({ level: "warn", text: "Protein is low — try adding a high-protein food." });
+    }
+
+    if (metrics.sodiumMg > goals.sodiumMg * 0.9) {
+      output.push({ level: "bad", text: "Sodium is getting high today — watch salty foods." });
+    }
+
+    if (output.length === 0) {
+      output.push({ level: "good", text: "Nice progress today — keep going!" });
+    }
+
+    return output;
+  }, [combinedFluidsL, goals.fluidsL, metrics.protein, goals.protein, metrics.sodiumMg, goals.sodiumMg]);
 
   const [slide, setSlide] = useState(0);
 
@@ -169,42 +227,36 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
 
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
-            <div className="tdGoalLine">Cals: {metrics.calories}/{goals.calories}</div>
+            <div className="tdGoalLine">Cals: {Math.round(metrics.calories)}/{Math.round(goals.calories)}</div>
             <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{Math.round(goals.carbs)}g</div>
-            <div className="tdGoalLine">Protein: {metrics.protein}/{goals.protein}g</div>
+            <div className="tdGoalLine">Protein: {Math.round(metrics.protein)}/{Math.round(goals.protein)}g</div>
             <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{Math.round(goals.fats)}g</div>
-            <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{goals.fiber}g</div>
-            <div className="tdGoalLine">
-              Sodium: {Math.round(metrics.sodiumMg || 0)}/{goals.sodiumMg || 2300}mg
-            </div>
+            <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{Math.round(goals.fiber)}g</div>
+            <div className="tdGoalLine">Sodium: {Math.round(metrics.sodiumMg)}/{Math.round(goals.sodiumMg)}mg</div>
           </div>
 
           <div className="tdMiniCard tdHydCard">
             <div className="tdHydTitle">Hydration</div>
             <div className="tdHydLine">
-              Fluids: {metrics.fluidsL.toFixed(1)}/{goals.fluidsL.toFixed(1)}L
+              Fluids: {combinedFluidsL.toFixed(1)}/{goals.fluidsL.toFixed(1)}L
             </div>
+            <div className="tdHydLine">Water Tracker: {Math.round(waterOz)} oz</div>
             <div className="tdHydCheer">
-              Only {(goals.fluidsL - metrics.fluidsL).toFixed(1)}L more to go, you got this!
+              {remainingHydrationL > 0
+                ? `Only ${remainingHydrationL.toFixed(1)}L more to go, you got this!`
+                : "Hydration goal reached — amazing job!"}
             </div>
           </div>
         </div>
       ),
     },
-
     {
       key: "dot2",
       content: (
         <div className="tdSecondGrid">
-          {/* GATOR + SPEECH BUBBLE */}
           <div className="tdMiniCard tdMascotCard">
             <div className="tdMascotWrap">
-              <img
-                src="/gator.png"
-                alt="ChompSmart gator"
-                className="tdGatorImg"
-              />
-
+              <img src="/gator.png" alt="ChompSmart gator" className="tdGatorImg" />
               <div className="tdSpeechBubble">
                 You are doing great! Keep logging to keep up the progress!
                 <span className="tdSpeechTail" />
@@ -212,7 +264,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
             </div>
           </div>
 
-          {/* STREAK */}
           <div className="tdMiniCard tdCenterRing">
             <Ring
               title={`${metrics.streakDays}`}
@@ -224,30 +275,24 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
             <div className="tdCenterRingSub">Log one meal today to increase your streak</div>
           </div>
 
-          {/* WEEKLY AVG */}
           <div className="tdMiniCard tdCenterRing">
             <Ring
-              title={`${metrics.weeklyAvgCalories}`}
+              title={`${Math.round(metrics.weeklyAvgCalories)}`}
               subtitle="Weekly Avg Cals"
               current={metrics.weeklyAvgCalories}
               goal={goals.calories}
               mode="limit"
             />
-            <div className="tdCenterRingSub">Goal: {goals.calories} cals</div>
+            <div className="tdCenterRingSub">Goal: {Math.round(goals.calories)} cals</div>
           </div>
 
-          {/* ALERTS */}
           <div className="tdMiniCard tdAlertsBox">
             <div className="tdAlertsTitle">Alerts</div>
-            {alerts.length === 0 ? (
-              <div className="tdAlertItem good">No alerts right now. Keep going!</div>
-            ) : (
-              alerts.map((a, i) => (
-                <div key={i} className={`tdAlertItem ${a.level}`}>
-                  {a.text}
-                </div>
-              ))
-            )}
+            {alerts.map((a, i) => (
+              <div key={i} className={`tdAlertItem ${a.level}`}>
+                {a.text}
+              </div>
+            ))}
           </div>
         </div>
       ),
@@ -258,7 +303,6 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
     <div className="tdOuter">
       <div className="tdWidget">
         <div className="tdInner">{slides[slide].content}</div>
-
         <div className="tdDots">
           {slides.map((s, idx) => (
             <button
@@ -275,7 +319,132 @@ function TopDashboard({ userEmail, refreshKey, formattedDate }) {
   );
 }
 
+function WaterTracker({
+  waterGoalOz,
+  setWaterGoalOz,
+  cupOz,
+  setCupOz,
+  bottleOz,
+  setBottleOz,
+  waterOz,
+  addWater,
+  undoWater,
+  resetWater,
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const progress = pct(waterOz, waterGoalOz);
+  const markers = Array.from({ length: 8 }, (_, i) => i);
+  const filledCount = Math.round(progress * 8);
+  const remainingOz = Math.max(0, waterGoalOz - waterOz);
+  const cupsLeft = cupOz > 0 ? Math.ceil(remainingOz / cupOz) : 0;
+  const bottlesLeft = bottleOz > 0 ? (remainingOz / bottleOz).toFixed(1) : "0";
 
+  return (
+    <section className="waterCard">
+      <div className="waterHeader">
+        <div>
+          <h2 className="waterTitle">Water Tracker</h2>
+          <p className="waterSubtitle">Tap your cup or bottle to add water to today’s goal.</p>
+        </div>
+
+        <button
+          type="button"
+          className="waterEditBtn"
+          onClick={() => setIsEditing((v) => !v)}
+        >
+          {isEditing ? "Done" : "Edit"}
+        </button>
+      </div>
+
+      <div className="waterTopRow">
+        <div className="waterGoalBlock">
+          <div className="waterBigNumber">
+            {Math.round(waterOz)} <span>oz</span>
+          </div>
+          <div className="waterGoalText">Goal: {Math.round(waterGoalOz)} oz daily</div>
+        </div>
+
+        <div className="waterProgressBlock">
+          <div className="waterProgressTrack">
+            <div className="waterProgressFill" style={{ width: `${Math.min(progress * 100, 100)}%` }} />
+          </div>
+          <div className="waterProgressLabel">
+            {Math.round(waterOz)} / {Math.round(waterGoalOz)} oz
+          </div>
+        </div>
+      </div>
+
+      <div className="waterMarkers" aria-hidden="true">
+        {markers.map((idx) => (
+          <div key={idx} className={`waterMarker ${idx < filledCount ? "filled" : ""}`}>
+            💧
+          </div>
+        ))}
+      </div>
+
+      {isEditing && (
+        <div className="waterEditPanel">
+          <label className="waterEditField">
+            <span>Daily goal (oz)</span>
+            <input
+              type="number"
+              min="1"
+              value={waterGoalOz}
+              onChange={(e) => setWaterGoalOz(Math.max(1, Number(e.target.value) || 64))}
+            />
+          </label>
+
+          <label className="waterEditField">
+            <span>Default cup (oz)</span>
+            <input
+              type="number"
+              min="1"
+              value={cupOz}
+              onChange={(e) => setCupOz(Math.max(1, Number(e.target.value) || 8))}
+            />
+          </label>
+
+          <label className="waterEditField">
+            <span>Default bottle (oz)</span>
+            <input
+              type="number"
+              min="1"
+              value={bottleOz}
+              onChange={(e) => setBottleOz(Math.max(1, Number(e.target.value) || 24))}
+            />
+          </label>
+        </div>
+      )}
+
+      <div className="waterActions">
+        <button type="button" className="waterActionPrimary" onClick={() => addWater(cupOz, "cup")}>
+          + Cup ({cupOz} oz)
+        </button>
+
+        <button type="button" className="waterActionPrimary" onClick={() => addWater(bottleOz, "bottle")}>
+          + Bottle ({bottleOz} oz)
+        </button>
+
+        <button type="button" className="waterActionSecondary" onClick={undoWater}>
+          Undo
+        </button>
+
+        <button type="button" className="waterActionSecondary" onClick={resetWater}>
+          Reset
+        </button>
+      </div>
+
+      <div className="waterHelperRow">
+        <div className="waterHelperPill">
+          {remainingOz > 0 ? `${cupsLeft} cup${cupsLeft === 1 ? "" : "s"} left` : "Goal reached"}
+        </div>
+        <div className="waterHelperPill">
+          {remainingOz > 0 ? `${bottlesLeft} bottle${Number(bottlesLeft) === 1 ? "" : "s"} left` : "Nice job"}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snacks"];
 const MEAL_LABELS = {
@@ -287,9 +456,7 @@ const MEAL_LABELS = {
 
 async function searchFood(query) {
   if (!query.trim()) return [];
-  const res = await fetch(
-    `http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`
-  );
+  const res = await fetch(`http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`);
   if (!res.ok) return [];
   return res.json();
 }
@@ -297,12 +464,11 @@ async function searchFood(query) {
 async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
   const email = localStorage.getItem("currentUserEmail");
   const mult = Number(servingMultiplier) || 1;
-  
+
   const calories = food.macros?.calories ?? food.calories ?? 0;
   const protein = food.macros?.protein ?? food.protein ?? 0;
   const carbs = food.macros?.carbs ?? food.carbohydrates ?? 0;
   const fats = food.macros?.fats ?? food.fat ?? 0;
-  
   const fiber = food.extras?.fiber ?? food.fiber ?? 0;
   const sodium = food.extras?.sodium ?? food.sodium ?? 0;
 
@@ -322,10 +488,10 @@ async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
       created_at: `${targetDate} 12:00:00`,
     }),
   });
+
   return response.json();
 }
 
-// (yavna) added clear backend meals function for testing
 async function clearBackendMeals(targetDate) {
   const email = localStorage.getItem("currentUserEmail");
   await fetch(`http://localhost:8000/meals/reset?user_email=${email}&target_date=${targetDate}`, {
@@ -355,8 +521,8 @@ export default function Log() {
 
   const formattedDate = useMemo(() => {
     const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDate.getDate()).padStart(2, '0');
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const day = String(currentDate.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }, [currentDate]);
 
@@ -367,6 +533,55 @@ export default function Log() {
     snacks: [],
   });
 
+  const [waterGoalOz, setWaterGoalOz] = useState(64);
+  const [cupOz, setCupOz] = useState(8);
+  const [bottleOz, setBottleOz] = useState(24);
+  const [waterOz, setWaterOz] = useState(0);
+  const [waterHistory, setWaterHistory] = useState([]);
+
+  useEffect(() => {
+    if (!email || !formattedDate) return;
+    const saved = loadWaterForDay(email, formattedDate);
+    setWaterGoalOz(saved.goalOz);
+    setCupOz(saved.cupOz);
+    setBottleOz(saved.bottleOz);
+    setWaterOz(saved.totalOz);
+    setWaterHistory(saved.history);
+  }, [email, formattedDate]);
+
+  useEffect(() => {
+    if (!email || !formattedDate) return;
+    saveWaterForDay(email, formattedDate, {
+      goalOz: waterGoalOz,
+      cupOz,
+      bottleOz,
+      totalOz: waterOz,
+      history: waterHistory,
+    });
+  }, [email, formattedDate, waterGoalOz, cupOz, bottleOz, waterOz, waterHistory]);
+
+  function addWater(amount, type) {
+    const oz = Math.max(0, Number(amount) || 0);
+    if (!oz) return;
+    setWaterOz((prev) => prev + oz);
+    setWaterHistory((prev) => [...prev, { oz, type, ts: Date.now() }]);
+  }
+
+  function undoWater() {
+    setWaterHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setWaterOz((current) => Math.max(0, current - (Number(last.oz) || 0)));
+      return prev.slice(0, -1);
+    });
+  }
+
+  function resetWater() {
+    if (!window.confirm("Reset today’s water tracker?")) return;
+    setWaterOz(0);
+    setWaterHistory([]);
+  }
+
   useEffect(() => {
     if (!email || !formattedDate) return;
 
@@ -376,26 +591,26 @@ export default function Log() {
         if (!data) return;
 
         if (Array.isArray(data)) {
-            const newMeals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
-            data.forEach(item => {
-                const type = item.meal_type ? item.meal_type.toLowerCase() : 'snacks';
-                if (newMeals[type]) newMeals[type].push(item);
-            });
-            setMeals(newMeals);
+          const newMeals = { breakfast: [], lunch: [], dinner: [], snacks: [] };
+          data.forEach((item) => {
+            const type = item.meal_type ? item.meal_type.toLowerCase() : "snacks";
+            if (newMeals[type]) newMeals[type].push(item);
+          });
+          setMeals(newMeals);
         } else {
-            setMeals({
-                breakfast: data.breakfast || [],
-                lunch: data.lunch || [],
-                dinner: data.dinner || [],
-                snacks: data.snacks || []
-            });
+          setMeals({
+            breakfast: data.breakfast || [],
+            lunch: data.lunch || [],
+            dinner: data.dinner || [],
+            snacks: data.snacks || [],
+          });
         }
       })
       .catch((err) => console.error("Failed to load meals:", err));
   }, [email, refreshKey, formattedDate]);
 
   function goToPrevDay() {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
       newDate.setDate(newDate.getDate() - 1);
       return newDate;
@@ -403,7 +618,7 @@ export default function Log() {
   }
 
   function goToNextDay() {
-    setCurrentDate(prev => {
+    setCurrentDate((prev) => {
       const newDate = new Date(prev);
       newDate.setDate(newDate.getDate() + 1);
       return newDate;
@@ -414,7 +629,7 @@ export default function Log() {
     setCurrentDate(new Date());
   }
 
-  const isToday = formattedDate === new Date().toLocaleDateString('en-CA');
+  const isToday = formattedDate === new Date().toLocaleDateString("en-CA");
 
   const [expandedSection, setExpandedSection] = useState(null);
   const [inputValues, setInputValues] = useState({
@@ -428,91 +643,88 @@ export default function Log() {
   const [selectedForModal, setSelectedForModal] = useState(null);
   const [servingMultiplier, setServingMultiplier] = useState(1);
 
-  // ---------------- CAMERA / UPLOAD ----------------
-const fileInputRef = useRef(null);
-const videoRef = useRef(null);
-const streamRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
-const [isCameraOpen, setIsCameraOpen] = useState(false);
-const [cameraStream, setCameraStream] = useState(null);
-const [cameraError, setCameraError] = useState("");
-const [previewImage, setPreviewImage] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState("");
+  const [previewImage, setPreviewImage] = useState(null);
 
-function stopCamera() {
-  try {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-  } catch {}
-  setCameraStream(null);
-  setIsCameraOpen(false);
-}
-
-async function openCamera() {
-  setCameraError("");
-  setIsCameraOpen(true);
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: false,
-    });
-
-    streamRef.current = stream;
-    setCameraStream(stream);
-  } catch (e) {
-    console.error(e);
-    setCameraError("Camera not available. Use Upload instead.");
+  function stopCamera() {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+    } catch {}
+    setCameraStream(null);
     setIsCameraOpen(false);
   }
-}
 
+  async function openCamera() {
+    setCameraError("");
+    setIsCameraOpen(true);
 
-useEffect(() => {
-  if (!isCameraOpen) return;
-  if (!cameraStream) return;
-
-  const video = videoRef.current;
-  if (!video) return;
-
-  video.srcObject = cameraStream;
-
-  const play = async () => {
     try {
-      await video.play();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      setCameraStream(stream);
     } catch (e) {
-      console.error("video.play() failed:", e);
+      console.error(e);
+      setCameraError("Camera not available. Use Upload instead.");
+      setIsCameraOpen(false);
     }
-  };
-
-  video.onloadedmetadata = play;
-  play();
-
-  return () => {
-    video.onloadedmetadata = null;
-  };
-}, [isCameraOpen, cameraStream]);
-
-function capturePhoto() {
-  const video = videoRef.current;
-  if (!video) return;
-
-  if (!video.videoWidth || !video.videoHeight) {
-    setCameraError("Camera is still loading — wait a second and try again.");
-    return;
   }
 
-  const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  useEffect(() => {
+    if (!isCameraOpen || !cameraStream) return;
 
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const video = videoRef.current;
+    if (!video) return;
 
-  setPreviewImage(canvas.toDataURL("image/jpeg", 0.9));
-  stopCamera();
-}
+    video.srcObject = cameraStream;
+
+    const play = async () => {
+      try {
+        await video.play();
+      } catch (e) {
+        console.error("video.play() failed:", e);
+      }
+    };
+
+    video.onloadedmetadata = play;
+    play();
+
+    return () => {
+      video.onloadedmetadata = null;
+    };
+  }, [isCameraOpen, cameraStream]);
+
+  function capturePhoto() {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (!video.videoWidth || !video.videoHeight) {
+      setCameraError("Camera is still loading — wait a second and try again.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    setPreviewImage(canvas.toDataURL("image/jpeg", 0.9));
+    stopCamera();
+  }
 
   function onPickFile(e) {
     const file = e.target.files?.[0];
@@ -536,6 +748,7 @@ function capturePhoto() {
       setSearchResults([]);
       return;
     }
+
     setSearchLoading(true);
     searchFood(currentQuery)
       .then((list) => setSearchResults(list || []))
@@ -544,7 +757,7 @@ function capturePhoto() {
   }, [expandedSection, inputValues]);
 
   function toggleExpand(mealKey) {
-    setExpandedSection(expandedSection === mealKey ? null : mealKey);
+    setExpandedSection((prev) => (prev === mealKey ? null : mealKey));
     if (expandedSection === mealKey) setSearchResults([]);
   }
 
@@ -562,7 +775,7 @@ function capturePhoto() {
   async function confirmAddFromModal() {
     if (!selectedForModal) return;
     const { food, mealKey } = selectedForModal;
-    
+
     await logMealWithFood(mealKey, food, servingMultiplier, formattedDate);
 
     setSelectedForModal(null);
@@ -574,126 +787,88 @@ function capturePhoto() {
     const itemToRemove = meals[mealKey][index];
 
     if (!itemToRemove || !itemToRemove.id) {
-        setRefreshKey((k) => k + 1);
-        return;
+      setRefreshKey((k) => k + 1);
+      return;
     }
 
     try {
-        await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
-            method: "DELETE",
-        });
-        setRefreshKey((k) => k + 1);
+      await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
+        method: "DELETE",
+      });
+      setRefreshKey((k) => k + 1);
     } catch (err) {
-        console.error("Delete failed:", err);
+      console.error("Delete failed:", err);
     }
   }
 
-  // (yavna) clear log
   async function handleClearAll() {
-    if(!window.confirm(`Are you sure you want to clear your meal log for ${currentDate.toLocaleDateString()}?`)) return;
-    
+    if (!window.confirm(`Are you sure you want to clear your meal log for ${currentDate.toLocaleDateString()}?`)) {
+      return;
+    }
+
     await clearBackendMeals(formattedDate);
     setRefreshKey((k) => k + 1);
   }
 
   return (
     <div className="logPage">
-      {selectedForModal && (
-        <div className="logModalOverlay" onClick={() => setSelectedForModal(null)}>
-          <div className="logModal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="logModalTitle">{selectedForModal.food.description}</h3>
-            <div className="logModalNutrients">
-              <div className="logModalNutrientRow">
-                <span>Calories</span>
-                <span>{scaledNutrient(selectedForModal.food.macros?.calories ?? selectedForModal.food.calories, servingMultiplier)}</span>
-              </div>
-              <div className="logModalNutrientRow">
-                <span>Protein</span>
-                <span>{scaledNutrient(selectedForModal.food.macros?.protein ?? selectedForModal.food.protein, servingMultiplier)}g</span>
-              </div>
-              <div className="logModalNutrientRow">
-                <span>Carbs</span>
-                <span>{scaledNutrient(selectedForModal.food.macros?.carbs ?? selectedForModal.food.carbohydrates, servingMultiplier)}g</span>
-              </div>
-              <div className="logModalNutrientRow">
-                <span>Fat</span>
-                <span>{scaledNutrient(selectedForModal.food.macros?.fats ?? selectedForModal.food.fat, servingMultiplier)}g</span>
-              </div>
-              <div className="logModalNutrientRow">
-                <span>Fiber</span>
-                <span>{scaledNutrient(selectedForModal.food.extras?.fiber ?? selectedForModal.food.fiber, servingMultiplier)}g</span>
-              </div>
-              <div className="logModalNutrientRow">
-                <span>Sodium</span>
-                <span>{scaledNutrient(selectedForModal.food.extras?.sodium ?? selectedForModal.food.sodium, servingMultiplier)}mg</span>
-              </div>
-            </div>
-            <div className="logModalServing">
-              <label className="logModalServingLabel">Serving size</label>
-              <select
-                className="logModalServingSelect"
-                value={servingMultiplier}
-                onChange={(e) => setServingMultiplier(Number(e.target.value))}
-              >
-                {SERVING_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt === 1 ? "1 (default)" : opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="logModalActions">
-              <button type="button" className="logModalCancel" onClick={() => setSelectedForModal(null)}>
-                Cancel
-              </button>
-              <button type="button" className="logModalAdd" onClick={confirmAddFromModal}>
-                Add to {MEAL_LABELS[selectedForModal.mealKey]}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="logContent">
-        
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", background: "#fff", padding: "10px 15px", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-          <button onClick={goToPrevDay} style={{ border: "none", background: "#f0f0f0", padding: "8px 12px", borderRadius: "6px", cursor: "pointer" }}>
-            &larr; Prev
+        <div className="logDateBar">
+          <button onClick={goToPrevDay} className="logDateBtn" type="button">
+            ← Prev
           </button>
-          <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
-            {isToday ? "Today" : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+
+          <h2 className="logDateTitle">
+            {isToday
+              ? "Today"
+              : currentDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
           </h2>
-          <div>
-              {!isToday && (
-                <button onClick={goToToday} style={{ border: "none", background: "transparent", color: "#0066cc", fontWeight: "bold", marginRight: "10px", cursor: "pointer" }}>
-                  Today
-                </button>
-              )}
-              <button onClick={goToNextDay} style={{ border: "none", background: "#f0f0f0", padding: "8px 12px", borderRadius: "6px", cursor: "pointer" }}>
-                Next &rarr;
+
+          <div className="logDateActions">
+            {!isToday && (
+              <button onClick={goToToday} className="logTodayBtn" type="button">
+                Today
               </button>
+            )}
+            <button onClick={goToNextDay} className="logDateBtn" type="button">
+              Next →
+            </button>
           </div>
         </div>
 
         <div className="logWidgetPlaceholder">
-          <TopDashboard userEmail={email} refreshKey={refreshKey} formattedDate={formattedDate} />
+          <TopDashboard
+            userEmail={email}
+            refreshKey={refreshKey}
+            formattedDate={formattedDate}
+            waterOz={waterOz}
+            waterGoalOz={waterGoalOz}
+          />
         </div>
-        {/* RESET BUTTON * (yavna) (change this to match style)*/ }
-        <div style={{ textAlign: 'right', marginBottom: '10px' }}>
-             <button
-                onClick={handleClearAll}
-                style={{
-                    background: 'none',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    color: '#666'
-                }}
-             >
-                 Reset Log
-             </button>
+
+        <WaterTracker
+          waterGoalOz={waterGoalOz}
+          setWaterGoalOz={setWaterGoalOz}
+          cupOz={cupOz}
+          setCupOz={setCupOz}
+          bottleOz={bottleOz}
+          setBottleOz={setBottleOz}
+          waterOz={waterOz}
+          addWater={addWater}
+          undoWater={undoWater}
+          resetWater={resetWater}
+        />
+
+        <div className="logResetRow">
+          <button onClick={handleClearAll} className="logResetBtn" type="button">
+            Reset Log
+          </button>
         </div>
+
         <div className="logCard">
           {MEAL_ORDER.map((mealKey) => {
             const label = MEAL_LABELS[mealKey];
@@ -715,11 +890,15 @@ function capturePhoto() {
                   >
                     +
                   </button>
+
                   <span
                     className="logAddPrompt"
                     onClick={() => toggleExpand(mealKey)}
                     role="button"
                     tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") toggleExpand(mealKey);
+                    }}
                   >
                     Log your {mealLabelLower} here
                   </span>
@@ -731,7 +910,7 @@ function capturePhoto() {
                       <input
                         type="text"
                         className="logInput"
-                        placeholder="Search food..."
+                        placeholder="Search food."
                         value={inputValues[mealKey] || ""}
                         onChange={(e) => setInput(mealKey, e.target.value)}
                         onKeyDown={(e) => {
@@ -742,12 +921,14 @@ function capturePhoto() {
                         }}
                         autoFocus
                       />
-                      {searchLoading && <div className="logSearchLoading">Searching...</div>}
+
+                      {searchLoading && <div className="logSearchLoading">Searching.</div>}
+
                       {!searchLoading && searchResults.length > 0 && (
                         <ul className="logSearchDropdown">
                           {searchResults.map((food, i) => (
                             <li
-                              key={i}
+                              key={`${food.description}-${i}`}
                               className="logSearchDropdownItem"
                               onClick={() => openAddModal(food, mealKey)}
                             >
@@ -769,6 +950,7 @@ function capturePhoto() {
                       style={{ display: "none" }}
                       onChange={onPickFile}
                     />
+
                     <div className="logInputRow">
                       <button type="button" className="logIconBtn" onClick={openCamera} title="Open Camera">
                         📷
@@ -788,7 +970,11 @@ function capturePhoto() {
                     {previewImage ? (
                       <div className="logPreviewRow">
                         <img src={previewImage} className="logPreviewThumb" alt="preview" />
-                        <button type="button" className="logPreviewClear" onClick={() => setPreviewImage(null)}>
+                        <button
+                          type="button"
+                          className="logPreviewClear"
+                          onClick={() => setPreviewImage(null)}
+                        >
                           Remove Photo
                         </button>
                       </div>
@@ -797,13 +983,13 @@ function capturePhoto() {
                     {isCameraOpen ? (
                       <div className="logCameraOverlay" role="dialog" aria-modal="true">
                         <div className="logCameraCard">
-                          <video ref={videoRef} className="logCameraVideo" playsInline muted autoPlay/>
+                          <video ref={videoRef} className="logCameraVideo" playsInline muted />
                           <div className="logCameraActions">
-                            <button type="button" className="logOkBtn" onClick={capturePhoto}>
-                              Capture
+                            <button type="button" className="logModalCancel" onClick={stopCamera}>
+                              Cancel
                             </button>
-                            <button type="button" className="logOkBtn" onClick={stopCamera}>
-                              Close
+                            <button type="button" className="logModalAdd" onClick={capturePhoto}>
+                              Capture
                             </button>
                           </div>
                         </div>
@@ -812,48 +998,109 @@ function capturePhoto() {
                   </>
                 )}
 
-                {items.length > 0 && (
+                {items.length > 0 ? (
                   <ul className="logItemList">
-                    {items.map((item, i) => (
-                      <li key={`${mealKey}-${i}`} className="logItem">
-                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>
-                            <span className="logItemName" style={{ fontSize: '1rem', fontWeight: 500 }}>
-                                {item.food_name || item.name || "Unknown Food"}
-                            </span>
-                            <span className="logItemNutrients" style={{ fontSize: '0.8rem', color: '#666' }}>
-                                {Math.round(item.calories || 0)} kcal
-                                {' • '}{Math.round(item.protein || 0)}p
-                                {' • '}{Math.round(item.carbs || 0)}c
-                                {' • '}{Math.round(item.fats || 0)}f
-                            </span>
+                    {items.map((item, index) => (
+                      <li key={item.id ?? `${item.food_name}-${index}`} className="logItem">
+                        <div className="logItemName">
+                          {item.food_name || item.name || "Logged food"}
+                          {typeof item.calories !== "undefined" && (
+                            <span className="logItemMeta"> · {Math.round(Number(item.calories) || 0)} cal</span>
+                          )}
                         </div>
+
                         <button
                           type="button"
                           className="logItemRemove"
-                          onClick={() => removeItem(mealKey, i)}
-                          aria-label={`Remove ${item.name}`}
+                          onClick={() => removeItem(mealKey, index)}
+                          aria-label={`Remove ${item.food_name || "item"}`}
                         >
                           ×
                         </button>
                       </li>
                     ))}
                   </ul>
-                )}
-
-                {showSuggestion && (
+                ) : (
                   <div className="logEmptyState">
-                    I see you have not logged a {mealLabelLower} today. If you are stuck on what you
-                    want, can I suggest: <strong>Meal Example</strong>
-                    <br />
-                    <span className="logTutorialLink" role="button" tabIndex={0}>
-                      Click here for a step by step tutorial for the Meal Example
-                    </span>
+                    {showSuggestion ? (
+                      <>
+                        <strong>Nothing logged yet.</strong> Start with your first meal of the day here.
+                      </>
+                    ) : (
+                      <>No items logged yet.</>
+                    )}
                   </div>
                 )}
               </section>
             );
           })}
         </div>
+
+        {selectedForModal && (
+          <div className="logModalOverlay" role="dialog" aria-modal="true">
+            <div className="logModal">
+              <h3 className="logModalTitle">{selectedForModal.food.description}</h3>
+
+              <div className="logModalNutrients">
+                <div className="logModalNutrientRow">
+                  <span>Calories</span>
+                  <span>{scaledNutrient(selectedForModal.food.calories, servingMultiplier)}</span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Protein</span>
+                  <span>{scaledNutrient(selectedForModal.food.protein ?? selectedForModal.food.macros?.protein, servingMultiplier)}g</span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Carbs</span>
+                  <span>{scaledNutrient(selectedForModal.food.carbohydrates ?? selectedForModal.food.macros?.carbs, servingMultiplier)}g</span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Fat</span>
+                  <span>{scaledNutrient(selectedForModal.food.fat ?? selectedForModal.food.macros?.fats, servingMultiplier)}g</span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Fiber</span>
+                  <span>{scaledNutrient(selectedForModal.food.fiber ?? selectedForModal.food.extras?.fiber, servingMultiplier)}g</span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Sodium</span>
+                  <span>{scaledNutrient(selectedForModal.food.sodium ?? selectedForModal.food.extras?.sodium, servingMultiplier)}mg</span>
+                </div>
+              </div>
+
+              <div className="logModalServing">
+                <label className="logModalServingLabel" htmlFor="serving-multiplier">
+                  Serving size
+                </label>
+                <select
+                  id="serving-multiplier"
+                  className="logModalServingSelect"
+                  value={servingMultiplier}
+                  onChange={(e) => setServingMultiplier(Number(e.target.value))}
+                >
+                  {SERVING_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt} serving{opt !== 1 ? "s" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="logModalActions">
+                <button
+                  type="button"
+                  className="logModalCancel"
+                  onClick={() => setSelectedForModal(null)}
+                >
+                  Cancel
+                </button>
+                <button type="button" className="logModalAdd" onClick={confirmAddFromModal}>
+                  Add Food
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
