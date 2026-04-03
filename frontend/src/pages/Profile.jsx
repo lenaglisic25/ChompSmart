@@ -668,7 +668,14 @@ export default function Profile() {
       }
 
       if (isSetup) {
+        localStorage.setItem("userType", "patient");
         localStorage.setItem("currentUserEmail", userEmail);
+        localStorage.removeItem("currentProviderEmail");
+        if (form.providerEmail) {
+          localStorage.setItem("myProviderEmail", form.providerEmail);
+          const selected = providers.find((p) => p.email === form.providerEmail);
+          localStorage.setItem("myProviderName", selected?.name || "My Provider");
+        }
         navigate("/app");
       } else {
         alert("Profile saved successfully.");
