@@ -26,6 +26,12 @@ class ProfileCreate(BaseModel):
     activity_vigorous_minutes: Optional[int] = None     # Q4: vigorous exercise minutes/week
     activity_score: Optional[int] = None                # total score (0-12), computed from above
 
+    # Legacy field names (backward compatibility)
+    day_movement: Optional[int] = None
+    daily_exercise: Optional[int] = None
+    moderate_minutes_weekly: Optional[int] = None
+    vigorous_minutes_weekly: Optional[int] = None
+
     # Legacy fields kept for backward compatibility
     steps_range: Optional[str] = None
     active_days_per_week: Optional[str] = None

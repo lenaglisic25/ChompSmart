@@ -502,13 +502,11 @@ export default function Profile() {
       medications_text: safeTrim(form.medications) || null,
       med_allergies_text: safeTrim(form.medAllergies) || null,
 
-      day_movement: form.dayMovement || null,
-      daily_exercise: form.dailyExercise || null,
-      moderate_minutes_weekly: form.moderateMinutesWeekly || null,
-      vigorous_minutes_weekly: form.vigorousMinutesWeekly || null,
+      activity_daily_movement: ACTIVITY_POINTS.dayMovement[form.dayMovement] ?? null,
+      activity_exercise_intensity: ACTIVITY_POINTS.dailyExercise[form.dailyExercise] ?? null,
+      activity_moderate_minutes: ACTIVITY_POINTS.moderateMinutesWeekly[form.moderateMinutesWeekly] ?? null,
+      activity_vigorous_minutes: ACTIVITY_POINTS.vigorousMinutesWeekly[form.vigorousMinutesWeekly] ?? null,
       activity_score: activitySummary.score,
-      activity_category: activitySummary.category,
-      activity_factor_range: activitySummary.activityFactor,
 
       steps_range: form.dayMovement || null,
       active_days_per_week: form.dailyExercise || null,

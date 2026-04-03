@@ -17,6 +17,22 @@ router = APIRouter(prefix="/profile", tags=["profiles"])
 def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session = Depends(get_db)):
     email = profile.user_email
     profile_data = profile.dict(exclude_unset=True)
+    
+    # Map old field names to new ones for backward compatibility
+    if "day_movement" in profile_data and profile_data["day_movement"] is not None:
+        profile_data["activity_daily_movement"] = profile_data["day_movement"]
+    if "daily_exercise" in profile_data and profile_data["daily_exercise"] is not None:
+        profile_data["activity_exercise_intensity"] = profile_data["daily_exercise"]
+    if "moderate_minutes_weekly" in profile_data and profile_data["moderate_minutes_weekly"] is not None:
+        profile_data["activity_moderate_minutes"] = profile_data["moderate_minutes_weekly"]
+    if "vigorous_minutes_weekly" in profile_data and profile_data["vigorous_minutes_weekly"] is not None:
+        profile_data["activity_vigorous_minutes"] = profile_data["vigorous_minutes_weekly"]
+    
+    # Remove old field names from payload before saving
+    profile_data.pop("day_movement", None)
+    profile_data.pop("daily_exercise", None)
+    profile_data.pop("moderate_minutes_weekly", None)
+    profile_data.pop("vigorous_minutes_weekly", None)
 
     existing_profile = db.query(Profile).filter(Profile.user_email == email).first()
 
@@ -68,16 +84,12 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
             new_profile.tdee_male = result.mifflin_tdee_male
             new_profile.tdee_female = result.mifflin_tdee_female
             new_profile.activity_factor = result.pal
-            new_profile.activity_score = result.activity_score
-
-            # Save adjusted calories
-            new_profile.adjusted_calories_male = result.adjusted_calories_male
-            new_profile.adjusted_calories_female = result.adjusted_calories_female
 
             # Set calorie goal and macros based on sex
+            # Note: target_calories already includes weight goal adjustments from compute_tdee
             sex = (new_profile.sex_at_birth or "").lower()
             if sex in ["male", "m"]:
-                new_profile.calorie_goal = round(result.adjusted_calories_male)
+                new_profile.calorie_goal = round(result.target_calories_male)
                 new_profile.carbs_g = result.macros_male.carbs_g
                 new_profile.protein_g = result.macros_male.protein_g
                 new_profile.fats_g = result.macros_male.fats_g
@@ -86,7 +98,7 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 new_profile.protein_pct = result.macros_male.protein_pct
                 new_profile.fats_pct = result.macros_male.fats_pct
             else:
-                new_profile.calorie_goal = round(result.adjusted_calories_female)
+                new_profile.calorie_goal = round(result.target_calories_female)
                 new_profile.carbs_g = result.macros_female.carbs_g
                 new_profile.protein_g = result.macros_female.protein_g
                 new_profile.fats_g = result.macros_female.fats_g
@@ -95,7 +107,6 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 new_profile.protein_pct = result.macros_female.protein_pct
                 new_profile.fats_pct = result.macros_female.fats_pct
 
-            print(f"TDEE calculated for {email}: calorie_goal={new_profile.calorie_goal}")
             db.commit()
             db.refresh(new_profile)
         else:
@@ -139,11 +150,13 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
             birthday_text=profile.birthday_text,
             height_text=profile.height_text,
             weight_text=profile.weight_text,
+            weight_goal=profile.weight_goal,
+            # New 4-question activity scoring
             daily_movement=profile.activity_daily_movement,
             exercise_intensity=profile.activity_exercise_intensity,
             moderate_minutes_weekly=profile.activity_moderate_minutes,
             vigorous_minutes_weekly=profile.activity_vigorous_minutes,
-            weight_goal=profile.weight_goal,
+            # Legacy fallback
             steps_range=profile.steps_range,
             active_days_per_week=profile.active_days_per_week,
         )
@@ -192,16 +205,15 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
         "age_years": result.age_years,
         "height_cm": round(result.height_cm, 2),
         "weight_kg": round(result.weight_kg, 2),
-        "activity_score": result.activity_score,
         "activity_factor": round(result.pal, 3),
         "pal_category": result.pal_category,
         "bmr_male": round(result.mifflin_bmr_male),
         "bmr_female": round(result.mifflin_bmr_female),
         "tdee_male": round(result.mifflin_tdee_male),
         "tdee_female": round(result.mifflin_tdee_female),
-        "weight_goal": result.weight_goal,
-        "adjusted_calories_male": round(result.adjusted_calories_male),
-        "adjusted_calories_female": round(result.adjusted_calories_female),
+        "weight_goal": profile.weight_goal,
+        "target_calories_male": round(result.target_calories_male),
+        "target_calories_female": round(result.target_calories_female),
         "macros_male": result.macros_male,
         "macros_female": result.macros_female,
         "sodium_mg_max": sodium_mg_max,

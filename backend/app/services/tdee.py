@@ -152,27 +152,46 @@ def pal_category_from_pal(pal: float) -> PalCategory:
     return "very_active"
 
 
+def activity_score_to_label(score: Optional[int]) -> Optional[str]:
+    """
+    Convert numeric activity score (0-3) to label string for pal_from_labels.
+    0 = sedentary, 1 = light, 2 = moderate, 3 = vigorous
+    """
+    if score is None:
+        return None
+    if score == 0:
+        return "inactive"
+    elif score == 1:
+        return "low active"
+    elif score == 2:
+        return "active"
+    elif score == 3:
+        return "very active"
+    else:
+        return "low active"  # Default fallback
+
+
 def pal_from_labels(steps_range: Optional[str], active_days: Optional[str]) -> float:
     """
     Maps your UI buckets to typical PAL anchors:
-      inactive ~ 1.40
-      low_active ~ 1.60
-      active ~ 1.75
-      very_active ~ 2.05
+      inactive (score 0) ~ 1.2 (sedentary)
+      low_active (score 1) ~ 1.4 (lightly active)
+      active (score 2) ~ 1.75 (moderately active)
+      very_active (score 3) ~ 2.05 (very active)
 
     Then nudges up slightly based on workout days.
     """
-    # defult
+    # default
     base = 1.40
 
     if steps_range:
         s = steps_range.strip().lower()
 
-        # this is with old or the new lables
+        # this is with old or the new labels
         if s.startswith("inactive") or s.startswith("none"):
-            base = 1.40
+            base = 1.2
         elif s.startswith("low") or s.startswith("some"):
-            base = 1.60
+            base = 1.40
         elif s.startswith("active") or s.startswith("moderate"):
             base = 1.75
         elif s.startswith("very") or s.startswith("lots"):
@@ -229,7 +248,7 @@ def eer_adult_19_plus(weight_kg: float, height_cm: float, age_years: int, sex: s
         if pal_category == "very_active":
             return 511.83 - (7.01 * age_years) + (9.07 * height_cm) + (12.56 * weight_kg)
 
-    raise ValueError("sex must be 'male' or 'female'")
+    raise ValueError("sex must be 'female' or 'male'")
 
 def calculate_macros(
     calories: float,
@@ -280,10 +299,26 @@ def compute_tdee(
     birthday_text: str,
     height_text: str,
     weight_text: str,
-    steps_range: Optional[str],
-    active_days_per_week: Optional[str],
+    steps_range: Optional[str] = None,
+    active_days_per_week: Optional[str] = None,
     weight_goal: Optional[str] = None,
+    **kwargs
 ) -> TdeeResult:
+    # Check if we have numeric activity scores (new format)
+    daily_movement = kwargs.get("daily_movement")
+    exercise_intensity = kwargs.get("exercise_intensity")
+    
+    # If new activity parameters are provided (as integers 0-3), convert to labels
+    if isinstance(daily_movement, int) and isinstance(exercise_intensity, int):
+        steps_range = activity_score_to_label(daily_movement)
+        active_days_per_week = activity_score_to_label(exercise_intensity)
+    else:
+        # Fall back to legacy string fields or kwargs
+        if not steps_range:
+            steps_range = kwargs.get("daily_movement")
+        if not active_days_per_week:
+            active_days_per_week = kwargs.get("exercise_intensity")
+    
     dob = parse_dob_mmddyyyy(birthday_text)
     age = calc_age_years(dob)
 
