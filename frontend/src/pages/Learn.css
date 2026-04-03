@@ -360,6 +360,31 @@
   background: #f8f8f8;
 }
 
+.learnRecipeThumbCol {
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.learnRecipeRecommendedBadge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #b45309;
+  text-align: center;
+  line-height: 1.15;
+  max-width: 92px;
+}
+
+.learnModalRecommendedBadge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #b45309;
+  text-align: center;
+  margin: -8px 0 14px;
+}
+
 .learnRecipeImgWrap {
   width: 92px;
   height: 92px;
@@ -589,6 +614,46 @@
   color: #666;
   text-transform: uppercase;
   margin-bottom: 10px;
+}
+
+.learnModalSource {
+  font-size: 13px;
+  margin: -4px 0 12px;
+}
+
+.learnModalSource a {
+  font-weight: 700;
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.learnModalSource a:hover {
+  color: #1e40af;
+}
+
+.learnHealthierChanges {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  color: #14532d;
+}
+
+.learnRecipeSourceRow {
+  margin: -2px 0 6px;
+}
+
+.learnRecipeSourceLink {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.learnRecipeSourceLink:hover {
+  color: #1e40af;
 }
 
 .learnModalTags {

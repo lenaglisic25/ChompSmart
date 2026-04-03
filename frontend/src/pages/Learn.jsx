@@ -19,7 +19,9 @@ function recipeMatchesSearch(r, query) {
     r.category.toLowerCase().includes(q) ||
     (r.cuisine || "").toLowerCase().includes(q) ||
     (r.dietary_tags || []).some((t) => t.toLowerCase().includes(q)) ||
-    (r.equipment_tags || []).some((t) => t.toLowerCase().includes(q)) ||
+    canonicalEquipmentTagsList(r.equipment_tags).some((t) =>
+      t.toLowerCase().includes(q)
+    ) ||
     (r.ingredients || "").toLowerCase().includes(q)
   );
 }
@@ -45,15 +47,25 @@ function recipeMatchesFilters(r, activeFilters) {
       const tags = (r.dietary_tags || []).map((t) => t.toLowerCase());
       if (!tags.includes(value.toLowerCase())) return false;
     } else if (type === "e") {
-      const tags = (r.equipment_tags || []).map((t) => t.toLowerCase());
-      if (tags.includes(value.toLowerCase())) return false;
+      const want = canonicalEquipmentTag(value) || value;
+      const tags = canonicalEquipmentTagsList(r.equipment_tags).map((t) =>
+        t.toLowerCase()
+      );
+      if (tags.includes(want.toLowerCase())) return false;
     } else if (type === "m") {
       if (r.category !== value) return false;
     } else if (type === "c") {
-      if ((r.cuisine || "") !== value) return false;
+      const keys = cuisineCanonicalKeysFromString(r.cuisine || "");
+      const want = filterCuisineKeysFromChip(value);
+      if (!want.length) return false;
+      for (const w of want) {
+        if (!keys.has(w)) return false;
+      }
     } else if (type === "t") {
       const mins = parseFloat(r.minutes);
       if (isNaN(mins) || mins > parseFloat(value)) return false;
+    } else if (type === "rec") {
+      if (value === "recommended" && !r.recommended) return false;
     }
   }
   return true;
@@ -75,13 +87,291 @@ function shortCuisineLabel(cuisine) {
   return cuisine.replace(/ \(.*\)$/, "").replace(" & barbecue", "").trim();
 }
 
+function splitTopLevelCuisineSegments(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return [];
+  const segments = [];
+  let depth = 0;
+  let cur = "";
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === "(") depth += 1;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    if ((ch === "," || ch === ";") && depth === 0) {
+      if (cur.trim()) segments.push(cur.trim());
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) segments.push(cur.trim());
+  return segments;
+}
+
+function isJunkCuisineLeaf(lower) {
+  const t = lower.replace(/\.$/, "").replace(/^[("'\s]+|[)"'\s]+$/g, "").trim();
+  if (!t) return true;
+  if (/^etc\.?$/i.test(t)) return true;
+  return false;
+}
+
+function tidyCuisineLeaf(s) {
+  let t = String(s || "").trim();
+  t = t.replace(/^[),.;]+|[),.;]+$/g, "").trim();
+  t = t.replace(/\s+/g, " ");
+  t = shortCuisineLabel(t);
+  t = t.replace(/^[("'\s]+|[)"'\s]+$/g, "").trim();
+  return t;
+}
+
+function expandCuisineSegment(seg) {
+  const trimmed = String(seg || "").trim();
+  if (!trimmed) return [];
+  const paren = trimmed.match(/^(.+?)\s*\(([^)]*)\)\s*$/);
+  if (paren) {
+    const label = tidyCuisineLeaf(paren[1]);
+    const innerRaw = normalizeForDelimSplit(paren[2].trim());
+    const innerParts = innerRaw ? innerRaw.split(/[;,]+/).map((x) => tidyCuisineLeaf(x)) : [];
+    const out = [];
+    if (label && !isJunkCuisineLeaf(label.toLowerCase())) out.push(label);
+    for (const p of innerParts) {
+      if (p && !isJunkCuisineLeaf(p.toLowerCase())) out.push(p);
+    }
+    return out;
+  }
+  return splitOnAmpersandAndSlash(trimmed);
+}
+
+function normalizeForDelimSplit(s) {
+  return String(s || "").replace(/\s+etc\.?\s*$/i, "").trim();
+}
+
+function splitOnAmpersandAndSlash(seg) {
+  const t = tidyCuisineLeaf(seg);
+  if (!t) return [];
+  const chunks = t
+    .split(/\s*\/\s*/)
+    .flatMap((p) => p.split(/\s+&\s+/))
+    .map((x) => tidyCuisineLeaf(x))
+    .filter((x) => x && !isJunkCuisineLeaf(x.toLowerCase()));
+  return chunks.length ? chunks : [];
+}
+
+const CUISINE_CANONICAL_KEY_OVERRIDES = new Map(
+  Object.entries({
+    "mexican & tex-mex": "mexican",
+    "mexican/tex-mex": "mexican",
+    "mexican-american": "mexican",
+    "tex-mex": "mexican",
+    texmex: "mexican",
+    "italian-american": "italian",
+    "french-inspired": "french",
+    "cajun/southern": "southern",
+    "southern & barbecue": "southern",
+    barbecue: "southern",
+    "cuban & latin american": "latin american",
+    "latin american": "latin american",
+  })
+);
+
+function normalizeKeyForLookup(s) {
+  return String(s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function leafToCanonicalKey(leaf) {
+  const tidied = tidyCuisineLeaf(leaf);
+  if (!tidied) return null;
+  const lookup = normalizeKeyForLookup(tidied);
+  if (CUISINE_CANONICAL_KEY_OVERRIDES.has(lookup)) {
+    return CUISINE_CANONICAL_KEY_OVERRIDES.get(lookup);
+  }
+  const simplified = lookup.replace(/[^a-z0-9\s-]/gi, "").replace(/\s+/g, " ").trim();
+  if (CUISINE_CANONICAL_KEY_OVERRIDES.has(simplified)) {
+    return CUISINE_CANONICAL_KEY_OVERRIDES.get(simplified);
+  }
+  if (isJunkCuisineLeaf(lookup) || isJunkCuisineLeaf(simplified)) return null;
+  if (!simplified) return null;
+  return simplified.replace(/\s+/g, " ");
+}
+
+const CUISINE_KEY_DISPLAY = new Map(
+  Object.entries({
+    mexican: "Mexican",
+    italian: "Italian",
+    french: "French",
+    southern: "Southern",
+    american: "American",
+    mediterranean: "Mediterranean",
+    asian: "Asian",
+    caribbean: "Caribbean",
+    indian: "Indian",
+    german: "German",
+    chinese: "Chinese",
+    japanese: "Japanese",
+    korean: "Korean",
+    thai: "Thai",
+    vietnamese: "Vietnamese",
+    turkish: "Turkish",
+    greek: "Greek",
+    brazilian: "Brazilian",
+    "middle eastern": "Middle Eastern",
+    "native american": "Native American",
+    "central american": "Central American",
+    "latin american": "Latin American",
+    scottish: "Scottish",
+    "puerto rican": "Puerto Rican",
+    jamaican: "Jamaican",
+    other: "Other",
+    cuban: "Cuban",
+  })
+);
+
+function canonicalKeyToDisplay(key) {
+  if (!key) return "";
+  if (CUISINE_KEY_DISPLAY.has(key)) return CUISINE_KEY_DISPLAY.get(key);
+  return key
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function cuisineCanonicalKeysFromString(raw) {
+  const keys = new Set();
+  for (const top of splitTopLevelCuisineSegments(raw)) {
+    for (const leaf of expandCuisineSegment(top)) {
+      const k = leafToCanonicalKey(leaf);
+      if (k) keys.add(k);
+    }
+  }
+  return keys;
+}
+
+function filterCuisineKeysFromChip(label) {
+  const direct = normalizeKeyForLookup(label);
+  if (CUISINE_CANONICAL_KEY_OVERRIDES.has(direct)) {
+    return [CUISINE_CANONICAL_KEY_OVERRIDES.get(direct)];
+  }
+  for (const [k, disp] of CUISINE_KEY_DISPLAY.entries()) {
+    if (disp.toLowerCase() === direct) return [k];
+  }
+  const parsed = [...cuisineCanonicalKeysFromString(label)];
+  if (parsed.length) return parsed;
+  const fb = normalizeKeyForLookup(label)
+    .replace(/[^a-z0-9\s-]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return fb ? [fb] : [];
+}
+
+function recipeSourceHref(url) {
+  let s = String(url || "")
+    .trim()
+    .replace(/\r/g, "")
+    .replace(/^["'\s]+|["'\s]+$/g, "");
+  if (!s) return "";
+  const withScheme = /^https?:\/\//i.test(s) ? s : `https://${s.replace(/^\/+/, "")}`;
+  try {
+    const u = new URL(withScheme);
+    const h = u.hostname.toLowerCase();
+    if (h === "www.cookbooks.com" || h === "cookbooks.com") {
+      u.protocol = "https:";
+      u.hostname = "cookbooks.com";
+      return u.href;
+    }
+    return u.href;
+  } catch {
+    return withScheme;
+  }
+}
+
+function resolvedRecipePhotoUrl(rawUrl, recipe) {
+  const t = String(rawUrl || "").trim();
+  if (!t) return "";
+  try {
+    const u = new URL(t);
+    const host = u.hostname.toLowerCase();
+    if (host === "source.unsplash.com") {
+      const seed =
+        String(recipe?.slug || recipe?.title || "r")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "")
+          .slice(0, 48) || "recipe";
+      return `https://picsum.photos/seed/${seed}/400/300`;
+    }
+  } catch {
+    return t;
+  }
+  return t;
+}
+
 function getFilterLabel(id) {
   const colon = id.indexOf(":");
   const type = id.slice(0, colon);
   const value = id.slice(colon + 1);
   if (type === "t") return `Under ${value} min`;
   if (type === "e") return `No ${value}`;
+  if (type === "rec" && value === "recommended") return "Recommended";
   return value;
+}
+
+const EQUIPMENT_NORM_DROP = new Set(["basic kitchen tools", "mixing bowl"]);
+
+function canonicalEquipmentTag(raw) {
+  const t = String(raw || "").trim();
+  if (!t) return null;
+  const lower = t.toLowerCase().replace(/\s+/g, " ").trim();
+  if (EQUIPMENT_NORM_DROP.has(lower)) return null;
+  if (
+    lower === "oven (conventional)" ||
+    lower === "oven" ||
+    lower === "conventional oven"
+  ) {
+    return "Oven";
+  }
+  if (
+    lower === "refrigerator / fridge" ||
+    lower === "refrigerator" ||
+    lower === "fridge"
+  ) {
+    return "Refrigerator";
+  }
+  if (
+    lower === "stove / range / stovetop" ||
+    lower === "stovetop" ||
+    lower === "stove" ||
+    lower === "range"
+  ) {
+    return "Stovetop";
+  }
+  if (
+    lower === "skillet" ||
+    lower === "saucepan" ||
+    lower === "frying pan" ||
+    lower === "pots & pans" ||
+    lower === "pots and pans"
+  ) {
+    return "Pots & Pans";
+  }
+  return t;
+}
+
+function canonicalEquipmentTagsList(tags) {
+  const arr = Array.isArray(tags) ? tags : [];
+  const out = [];
+  const seen = new Set();
+  for (const raw of arr) {
+    const c = canonicalEquipmentTag(raw);
+    if (!c) continue;
+    const k = c.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(c);
+  }
+  return out;
 }
 
 const EQUIPMENT_TAGS = [
@@ -95,11 +385,11 @@ const EQUIPMENT_TAGS = [
   "Blender",
   "Cutting Board",
   "Knives (explicit mention)",
-  "Oven (conventional)",
+  "Oven",
   "Pots & Pans",
   "Microwave",
-  "Refrigerator / Fridge",
-  "Stove / Range / Stovetop",
+  "Refrigerator",
+  "Stovetop",
 ];
 
 function equipmentTagsFromProfileKitchenEquipment(kitchenEquipment) {
@@ -110,16 +400,16 @@ function equipmentTagsFromProfileKitchenEquipment(kitchenEquipment) {
     "Cutting board": "Cutting Board",
     "Food processor": "Food Processor",
     "Good set of knives": "Knives (explicit mention)",
-    Oven: "Oven (conventional)",
+    Oven: "Oven",
     "Pots and pans": "Pots & Pans",
     "Pressure cooker or Instapot": "Pressure Cooker / Instant Pot",
     Microwave: "Microwave",
     "Toaster oven": "Toaster Oven",
-    Refrigerator: "Refrigerator / Fridge",
+    Refrigerator: "Refrigerator",
     "Rice cooker": "Rice Cooker",
     "Slow cooker (crock-pot)": "Slow Cooker",
     "Stand mixer": "Stand Mixer",
-    "Stove or range": "Stove / Range / Stovetop",
+    "Stove or range": "Stovetop",
   };
 
   const set = new Set();
@@ -321,9 +611,9 @@ export default function Learn() {
       ingredients.forEach((label) => {
         const parsed = parseIngredientLabel(label);
         const category = guessCategoryFromName(parsed.name);
-      if (!ingredientInList(parsed.name, category)) {
-        addItem(parsed.name, parsed.qty, category, parsed.unit);
-      }
+        if (!ingredientInList(parsed.name, category)) {
+          addItem(parsed.name, parsed.qty, category, parsed.unit);
+        }
       });
     }
   }
@@ -352,9 +642,21 @@ export default function Learn() {
   }
 
   function getRecipeImageUrl(recipe) {
-    if (!recipe || !recipe.image_filename) return RECIPE_IMAGE_PLACEHOLDER;
+    if (!recipe) return RECIPE_IMAGE_PLACEHOLDER;
+    const remote = (recipe.photo_url || "").trim();
+    if (remote && /^https?:\/\//i.test(remote)) {
+      return resolvedRecipePhotoUrl(remote, recipe);
+    }
+    if (!recipe.image_filename) return RECIPE_IMAGE_PLACEHOLDER;
     const encoded = encodeURIComponent(recipe.image_filename);
     return `${API_BASE}/recipes/images/${encoded}`;
+  }
+
+  function recipeHasRenderableImage(recipe) {
+    if (!recipe) return false;
+    const remote = (recipe.photo_url || "").trim();
+    if (remote && /^https?:\/\//i.test(remote)) return true;
+    return Boolean(recipe.image_filename);
   }
 
   function handleRecipeImageError(e) {
@@ -425,19 +727,20 @@ export default function Learn() {
   // ---------- Filter + Search ----------
 
   const availableCuisines = useMemo(() => {
-    const set = new Set();
+    const byKey = new Map();
     for (const r of recipes) {
-      if (r?.cuisine) set.add(r.cuisine);
+      for (const k of cuisineCanonicalKeysFromString(r?.cuisine || "")) {
+        if (!byKey.has(k)) byKey.set(k, canonicalKeyToDisplay(k));
+      }
     }
-    return [...set].sort();
+    return [...byKey.values()].sort((a, b) => a.localeCompare(b));
   }, [recipes]);
 
   const availableEquipment = useMemo(() => {
     const set = new Set();
     for (const r of recipes) {
-      const tags = Array.isArray(r?.equipment_tags) ? r.equipment_tags : [];
-      for (const tag of tags) {
-        if (tag) set.add(tag);
+      for (const tag of canonicalEquipmentTagsList(r?.equipment_tags)) {
+        set.add(tag);
       }
     }
     return [...set].sort((a, b) => a.localeCompare(b));
@@ -487,6 +790,10 @@ export default function Learn() {
         .split(";")
         .map((x) => x.trim())
         .filter(Boolean)
+    : [];
+
+  const selectedRecipeEquipmentTags = selectedRecipe
+    ? canonicalEquipmentTagsList(selectedRecipe.equipment_tags)
     : [];
 
   const allIngredientsSelected =
@@ -614,7 +921,7 @@ export default function Learn() {
           <div className="learnFilterGroup">
             <div className="learnFilterGroupLabel">Meal Type</div>
             <div className="learnFilterOptions">
-              {["Breakfast", "Lunch", "Dinner", "Dessert"].map((m) => (
+              {["Breakfast", "Lunch", "Dinner", "Dessert", "Snack", "Other"].map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -624,6 +931,13 @@ export default function Learn() {
                   {m}
                 </button>
               ))}
+              <button
+                type="button"
+                className={`learnFilterOption ${activeFilters.includes("rec:recommended") ? "active" : ""}`}
+                onClick={() => toggleFilter("rec:recommended")}
+              >
+                ★ Recommended
+              </button>
             </div>
           </div>
 
@@ -638,7 +952,7 @@ export default function Learn() {
                     className={`learnFilterOption ${activeFilters.includes(`c:${c}`) ? "active" : ""}`}
                     onClick={() => toggleFilter(`c:${c}`)}
                   >
-                    {shortCuisineLabel(c)}
+                    {c}
                   </button>
                 ))}
               </div>
@@ -778,7 +1092,9 @@ export default function Learn() {
             )}
 
             {!recipesLoading &&
-              visibleRecipes.map((r) => (
+              visibleRecipes.map((r) => {
+                const equipmentTags = canonicalEquipmentTagsList(r.equipment_tags);
+                return (
                 <div
                   key={`${r.category}-${r.title}`}
                   className="learnRecipeRow"
@@ -787,17 +1103,36 @@ export default function Learn() {
                   onClick={() => setSelectedRecipe(r)}
                   onKeyDown={(e) => handleRecipeKeyDown(e, r)}
                 >
-                  <div className="learnRecipeImgWrap">
-                    <img
-                      className={`learnRecipeImg ${!r.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
-                      src={getRecipeImageUrl(r)}
-                      alt={r.title}
-                      onError={handleRecipeImageError}
-                    />
+                  <div className="learnRecipeThumbCol">
+                    <div className="learnRecipeImgWrap">
+                      <img
+                        className={`learnRecipeImg ${!recipeHasRenderableImage(r) ? "learnRecipeImgPlaceholder" : ""}`}
+                        src={getRecipeImageUrl(r)}
+                        alt={r.title}
+                        referrerPolicy="no-referrer"
+                        onError={handleRecipeImageError}
+                      />
+                    </div>
+                    {r.recommended && (
+                      <div className="learnRecipeRecommendedBadge">★ Recommended</div>
+                    )}
                   </div>
 
                   <div className="learnRecipeMid">
                     <div className="learnRecipeCategory">{r.category}</div>
+                    {r.source_url && (
+                      <div className="learnRecipeSourceRow">
+                        <a
+                          className="learnRecipeSourceLink"
+                          href={recipeSourceHref(r.source_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Source
+                        </a>
+                      </div>
+                    )}
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
 
@@ -820,9 +1155,9 @@ export default function Learn() {
                       </div>
                     )}
 
-                    {r.equipment_tags && r.equipment_tags.length > 0 && (
+                    {equipmentTags.length > 0 && (
                       <div className="learnRecipeTags">
-                        {r.equipment_tags.map((tag) => (
+                        {equipmentTags.map((tag) => (
                           <span key={tag} className="learnRecipeTag learnEquipmentTag">
                             {tag}
                           </span>
@@ -863,7 +1198,8 @@ export default function Learn() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
           </div>
         )}
 
@@ -888,17 +1224,36 @@ export default function Learn() {
                   onClick={() => setSelectedRecipe(r)}
                   onKeyDown={(e) => handleRecipeKeyDown(e, r)}
                 >
-                  <div className="learnRecipeImgWrap">
-                    <img
-                      className={`learnRecipeImg ${!r.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
-                      src={getRecipeImageUrl(r)}
-                      alt={r.title}
-                      onError={handleRecipeImageError}
-                    />
+                  <div className="learnRecipeThumbCol">
+                    <div className="learnRecipeImgWrap">
+                      <img
+                        className={`learnRecipeImg ${!recipeHasRenderableImage(r) ? "learnRecipeImgPlaceholder" : ""}`}
+                        src={getRecipeImageUrl(r)}
+                        alt={r.title}
+                        referrerPolicy="no-referrer"
+                        onError={handleRecipeImageError}
+                      />
+                    </div>
+                    {r.recommended && (
+                      <div className="learnRecipeRecommendedBadge">★ Recommended</div>
+                    )}
                   </div>
 
                   <div className="learnRecipeMid">
                     <div className="learnRecipeCategory">{r.category}</div>
+                    {r.source_url && (
+                      <div className="learnRecipeSourceRow">
+                        <a
+                          className="learnRecipeSourceLink"
+                          href={recipeSourceHref(r.source_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Source
+                        </a>
+                      </div>
+                    )}
                     <div className="learnRecipeTitle">{r.title}</div>
                     <div className="learnRecipeCTA">Click for full recipe</div>
 
@@ -982,6 +1337,18 @@ export default function Learn() {
 
               <div className="learnModalCategory">{selectedRecipe.category}</div>
 
+              {selectedRecipe.source_url && (
+                <div className="learnModalSource">
+                  <a
+                    href={recipeSourceHref(selectedRecipe.source_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View original recipe
+                  </a>
+                </div>
+              )}
+
               {selectedRecipe.cuisine && (
                 <div className="learnModalTags" style={{ marginBottom: "4px" }}>
                   <span className="learnModalTag learnCuisineTag">{selectedRecipe.cuisine}</span>
@@ -1027,10 +1394,9 @@ export default function Learn() {
                   </div>
                 )}
 
-              {selectedRecipe.equipment_tags &&
-                selectedRecipe.equipment_tags.length > 0 && (
+              {selectedRecipeEquipmentTags.length > 0 && (
                   <div className="learnModalTags">
-                    {selectedRecipe.equipment_tags.map((tag) => (
+                    {selectedRecipeEquipmentTags.map((tag) => (
                       <span key={tag} className="learnModalTag learnEquipmentTag">
                         {tag}
                       </span>
@@ -1054,10 +1420,14 @@ export default function Learn() {
                 <img
                   src={getRecipeImageUrl(selectedRecipe)}
                   alt={selectedRecipe.title}
-                  className={`learnModalImg ${!selectedRecipe.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
+                  className={`learnModalImg ${!recipeHasRenderableImage(selectedRecipe) ? "learnRecipeImgPlaceholder" : ""}`}
+                  referrerPolicy="no-referrer"
                   onError={handleRecipeImageError}
                 />
               </div>
+              {selectedRecipe.recommended && (
+                <div className="learnModalRecommendedBadge">★ Recommended</div>
+              )}
 
               <section className="learnModalSection">
                 <div className="learnIngredientsHeader">
@@ -1083,6 +1453,15 @@ export default function Learn() {
                   {renderSteps(selectedRecipe)}
                 </div>
               </section>
+
+              {selectedRecipe.healthier_changes && (
+                <section className="learnModalSection">
+                  <h3>Healthier changes</h3>
+                  <div className="learnModalText learnHealthierChanges">
+                    {selectedRecipe.healthier_changes}
+                  </div>
+                </section>
+              )}
 
               <section className="learnModalSection">
                 <h3>Nutrition per serving</h3>

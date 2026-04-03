@@ -44,6 +44,40 @@ MEAL_CSV_FILES = [
     ("Dinner", "MASTER Recipe Database(Dinner Recipes).csv"),
     ("Dessert", "MASTER Recipe Database(Dessert Recipes).csv"),
 ]
+
+COOKBOOKS_DIR = CSV_DIR / "Cookbooks DB"
+COOKBOOK_RECIPE_FILES = [
+    ("Breakfast", "cookbooks_breakfast_recipe_database_CORRECTED.csv"),
+    ("Lunch", "cookbooks_lunch_recipe_database_CORRECTED.csv"),
+    ("Dinner", "cookbooks_dinner_recipe_database_CORRECTED.csv"),
+    ("Dessert", "cookbooks_dessert_recipe_database_CORRECTED.csv"),
+    ("Snack", "cookbooks_snack_recipe_database_CORRECTED.csv"),
+    ("Other", "cookbooks_other_recipe_database_CORRECTED.csv"),
+]
+COOKBOOK_DIET_FILES = [
+    ("Lunch", "cookbooks_lunch_diet_restrictions.csv"),
+    ("Dinner", "cookbooks_dinner_diet_restrictions.csv"),
+    ("Dessert", "cookbooks_dessert_diet_restrictions.csv"),
+    ("Snack", "cookbooks_snack_diet_restrictions.csv"),
+    ("Other", "cookbooks_other_diet_restrictions.csv"),
+]
+
+COOKBOOK_DIET_COL_TO_INTERNAL = {
+    "Dairy_Free": "Dairy?Free",
+    "Egg_Free": "Egg?Free",
+    "Gluten_Free": "Gluten?Free",
+    "Keto": "Keto",
+    "Low_Carb": "Low?Carb",
+    "Low_Fat": "Low?Fat",
+    "Low_Salt": "Low?Salt",
+    "Low_Sugar": "Low?Sugar",
+    "No Seafood": "No Seafood",
+    "Paleo": "Paleo",
+    "Soy_Free": "Soy?Free",
+    "Vegan": "Vegan",
+    "Vegetarian": "Vegetarian",
+}
+
 DIET_FLAGS_FILE = "Recipe.Database.Including.Dietary.Flags.2.27.csv"
 CUISINE_FILE = "Cuisine.Analysis.Recipe.csv"
 EQUIPMENT_FILE = "Equipment.Analysis.Recipe.csv"
@@ -68,10 +102,14 @@ def _open_csv(path):
     raw = path.read_bytes()
     for enc in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
         try:
-            return io.StringIO(raw.decode(enc))
+            text = raw.decode(enc)
+            break
         except UnicodeDecodeError:
             continue
-    return io.StringIO(raw.decode("latin-1", errors="replace"))
+    else:
+        text = raw.decode("latin-1", errors="replace")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return io.StringIO(text)
 
 
 def _normalize_header(key):
@@ -182,6 +220,26 @@ def _parse_number(s):
         return None
 
 
+def _split_equipment_tags(raw):
+    if not raw or not str(raw).strip():
+        return []
+    parts = re.split(r",|\bor\b", str(raw), flags=re.IGNORECASE)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _yes_no_to_true_false(val):
+    v = (val or "").strip().lower()
+    return "true" if v == "yes" else "false"
+
+
+def _cookbook_diet_row_to_flags(row):
+    out = {}
+    for src_col, internal in COOKBOOK_DIET_COL_TO_INTERNAL.items():
+        out[internal] = _yes_no_to_true_false(row.get(src_col))
+    out["Nut?Free"] = "false"
+    return out
+
+
 def _parse_recipe_row(row, category):
     title = _get_cell(row, "Recipe Title")
     title = (title or row.get("Recipe Title", "")).strip()
@@ -200,8 +258,9 @@ def _parse_recipe_row(row, category):
     sodium = _get_cell(row, "sodium_mg") or ""
     sugar = _get_cell(row, "sugar_g") or ""
 
-    return {
+    rec = {
         "title": title,
+        "diet_lookup_title": title,
         "category": category,
         "serving_size": (serving or "").strip(),
         "minutes": (minutes_raw or "").strip(),
@@ -216,6 +275,35 @@ def _parse_recipe_row(row, category):
         "sugar_g": _parse_number(sugar),
         "slug": _slug(title),
     }
+    cuisine_tags = (row.get("Cuisine Tags") or "").strip()
+    meal_type_tags = (row.get("Meal Type Tags") or "").strip()
+    equipment_raw = (row.get("Equipment Tags") or "").strip()
+    photo_url = (row.get("Photo URL") or "").strip()
+    source_url = (row.get("Source URL") or "").strip()
+    healthier = (row.get("Healthier Changes") or "").strip()
+    if healthier:
+        rec["healthier_changes"] = _clean_text(healthier)
+    if cuisine_tags or meal_type_tags or equipment_raw or photo_url or source_url:
+        rec["cuisine_tags"] = cuisine_tags
+        rec["meal_type_tags"] = meal_type_tags
+        rec["equipment_tags_csv"] = _split_equipment_tags(equipment_raw)
+        rec["photo_url"] = photo_url
+        rec["source_url"] = source_url
+    return rec
+
+
+def _dedupe_recipe_titles(recipes):
+    counts = {}
+    for r in recipes:
+        base = r["diet_lookup_title"]
+        k = (r["category"], base)
+        counts[k] = counts.get(k, 0) + 1
+        n = counts[k]
+        if n > 1:
+            r["title"] = f"{base} ({n})"
+        else:
+            r["title"] = base
+        r["slug"] = _slug(r["title"])
 
 
 def _load_recipe_rows():
@@ -229,8 +317,38 @@ def _load_recipe_rows():
             for row in reader:
                 rec = _parse_recipe_row(row, category)
                 if rec is not None:
+                    rec["recommended"] = True
                     recipes.append(rec)
+    for category, filename in COOKBOOK_RECIPE_FILES:
+        path = COOKBOOKS_DIR / filename
+        if not path.is_file():
+            continue
+        with _open_csv(path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                rec = _parse_recipe_row(row, category)
+                if rec is not None:
+                    rec["recommended"] = False
+                    recipes.append(rec)
+    _dedupe_recipe_titles(recipes)
     return recipes
+
+
+def _load_cookbook_diet_flags():
+    flags_by_key = {}
+    for category, filename in COOKBOOK_DIET_FILES:
+        path = COOKBOOKS_DIR / filename
+        if not path.is_file():
+            continue
+        with _open_csv(path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                title = (row.get("Recipe") or "").strip()
+                if not title:
+                    continue
+                key = (category, title)
+                flags_by_key[key] = _cookbook_diet_row_to_flags(row)
+    return flags_by_key
 
 
 def _load_diet_flags():
@@ -336,25 +454,46 @@ def _recipe_matches_restrictions(flags_row, user_restrictions):
 def _build_recipes_with_flags(user_restrictions=None):
     recipes = _load_recipe_rows()
     flags = _load_diet_flags()
+    flags.update(_load_cookbook_diet_flags())
     cuisine_data = _load_cuisine_data()
     equipment_data = _load_equipment_data()
     out = []
     for r in recipes:
-        key = (r["category"], r["title"])
-        flags_row = flags.get(key)
+        lookup_key = (r["category"], r["diet_lookup_title"])
+        flags_row = flags.get(lookup_key)
         if user_restrictions is not None:
             if not _recipe_matches_restrictions(flags_row, user_restrictions):
                 continue
         dietary_tags = _get_dietary_tags(flags_row)
-        image_filename = _find_image(r["slug"])
+        eq_key = (r["category"], r["title"])
+        equipment_tags = equipment_data.get(eq_key, [])
+        if r.get("equipment_tags_csv"):
+            equipment_tags = r["equipment_tags_csv"]
         cuisine_info = cuisine_data.get(r["title"], {})
-        equipment_tags = equipment_data.get(key, [])
+        if r.get("cuisine_tags"):
+            cuisine_primary = r["cuisine_tags"]
+            cuisine_also = (r.get("meal_type_tags") or "").strip()
+        else:
+            cuisine_primary = cuisine_info.get("primary_cuisine", "")
+            cuisine_also = cuisine_info.get("also_tagged", "")
+        photo_raw = (r.get("photo_url") or "").strip()
+        if photo_raw.lower().startswith(("http://", "https://")):
+            photo_url = photo_raw
+            image_filename = None
+        else:
+            photo_url = None
+            image_filename = _find_image(r["slug"])
         recipe_out = dict(r)
+        recipe_out.pop("diet_lookup_title", None)
+        recipe_out.pop("equipment_tags_csv", None)
+        recipe_out.pop("cuisine_tags", None)
+        recipe_out.pop("meal_type_tags", None)
         recipe_out["dietary_tags"] = dietary_tags
         recipe_out["equipment_tags"] = equipment_tags
         recipe_out["image_filename"] = image_filename
-        recipe_out["cuisine"] = cuisine_info.get("primary_cuisine", "")
-        recipe_out["cuisine_also_tagged"] = cuisine_info.get("also_tagged", "")
+        recipe_out["photo_url"] = photo_url
+        recipe_out["cuisine"] = cuisine_primary
+        recipe_out["cuisine_also_tagged"] = cuisine_also
         out.append(recipe_out)
     return out
 
