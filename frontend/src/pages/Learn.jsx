@@ -9,6 +9,7 @@ import { useGrocery } from "../grocery/GroceryContext";
 import { guessCategoryFromName, INGREDIENT_UNITS } from "../grocery/categories";
 
 const API_BASE = "http://localhost:8000";
+const RECIPE_IMAGE_PLACEHOLDER = `${import.meta.env.BASE_URL}recipe-bowl-placeholder.svg`;
 
 function recipeMatchesSearch(r, query) {
   if (!query) return true;
@@ -18,6 +19,7 @@ function recipeMatchesSearch(r, query) {
     r.category.toLowerCase().includes(q) ||
     (r.cuisine || "").toLowerCase().includes(q) ||
     (r.dietary_tags || []).some((t) => t.toLowerCase().includes(q)) ||
+    (r.equipment_tags || []).some((t) => t.toLowerCase().includes(q)) ||
     (r.ingredients || "").toLowerCase().includes(q)
   );
 }
@@ -42,6 +44,9 @@ function recipeMatchesFilters(r, activeFilters) {
     if (type === "d") {
       const tags = (r.dietary_tags || []).map((t) => t.toLowerCase());
       if (!tags.includes(value.toLowerCase())) return false;
+    } else if (type === "e") {
+      const tags = (r.equipment_tags || []).map((t) => t.toLowerCase());
+      if (tags.includes(value.toLowerCase())) return false;
     } else if (type === "m") {
       if (r.category !== value) return false;
     } else if (type === "c") {
@@ -75,7 +80,54 @@ function getFilterLabel(id) {
   const type = id.slice(0, colon);
   const value = id.slice(colon + 1);
   if (type === "t") return `Under ${value} min`;
+  if (type === "e") return `No ${value}`;
   return value;
+}
+
+const EQUIPMENT_TAGS = [
+  "Air Fryer",
+  "Food Processor",
+  "Pressure Cooker / Instant Pot",
+  "Toaster Oven",
+  "Rice Cooker",
+  "Stand Mixer",
+  "Slow Cooker",
+  "Blender",
+  "Cutting Board",
+  "Knives (explicit mention)",
+  "Oven (conventional)",
+  "Pots & Pans",
+  "Microwave",
+  "Refrigerator / Fridge",
+  "Stove / Range / Stovetop",
+];
+
+function equipmentTagsFromProfileKitchenEquipment(kitchenEquipment) {
+  const list = Array.isArray(kitchenEquipment) ? kitchenEquipment : [];
+  const map = {
+    "Air-fryer": "Air Fryer",
+    Blender: "Blender",
+    "Cutting board": "Cutting Board",
+    "Food processor": "Food Processor",
+    "Good set of knives": "Knives (explicit mention)",
+    Oven: "Oven (conventional)",
+    "Pots and pans": "Pots & Pans",
+    "Pressure cooker or Instapot": "Pressure Cooker / Instant Pot",
+    Microwave: "Microwave",
+    "Toaster oven": "Toaster Oven",
+    Refrigerator: "Refrigerator / Fridge",
+    "Rice cooker": "Rice Cooker",
+    "Slow cooker (crock-pot)": "Slow Cooker",
+    "Stand mixer": "Stand Mixer",
+    "Stove or range": "Stove / Range / Stovetop",
+  };
+
+  const set = new Set();
+  for (const item of list) {
+    const tag = map[item];
+    if (tag) set.add(tag);
+  }
+  return set;
 }
 
 function parseIngredientLabel(raw) {
@@ -164,9 +216,18 @@ export default function Learn() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const restrictions = data?.dietary_restrictions;
+        const next = [];
+
         if (Array.isArray(restrictions) && restrictions.length > 0) {
-          setActiveFilters(restrictions.map((r) => `d:${r}`));
+          for (const r of restrictions) next.push(`d:${r}`);
         }
+
+        const available = equipmentTagsFromProfileKitchenEquipment(data?.kitchen_equipment);
+        for (const tag of EQUIPMENT_TAGS) {
+          if (!available.has(tag)) next.push(`e:${tag}`);
+        }
+
+        if (next.length > 0) setActiveFilters(next);
       })
       .catch(() => {});
   }, [userEmail]);
@@ -291,9 +352,16 @@ export default function Learn() {
   }
 
   function getRecipeImageUrl(recipe) {
-    if (!recipe || !recipe.image_filename) return null;
+    if (!recipe || !recipe.image_filename) return RECIPE_IMAGE_PLACEHOLDER;
     const encoded = encodeURIComponent(recipe.image_filename);
     return `${API_BASE}/recipes/images/${encoded}`;
+  }
+
+  function handleRecipeImageError(e) {
+    const el = e.currentTarget;
+    el.onerror = null;
+    el.src = RECIPE_IMAGE_PLACEHOLDER;
+    el.classList.add("learnRecipeImgPlaceholder");
   }
 
   function handleRecipeKeyDown(e, recipe) {
@@ -356,9 +424,24 @@ export default function Learn() {
 
   // ---------- Filter + Search ----------
 
-  const availableCuisines = [...new Set(
-    recipes.filter((r) => r.cuisine).map((r) => r.cuisine)
-  )].sort();
+  const availableCuisines = useMemo(() => {
+    const set = new Set();
+    for (const r of recipes) {
+      if (r?.cuisine) set.add(r.cuisine);
+    }
+    return [...set].sort();
+  }, [recipes]);
+
+  const availableEquipment = useMemo(() => {
+    const set = new Set();
+    for (const r of recipes) {
+      const tags = Array.isArray(r?.equipment_tags) ? r.equipment_tags : [];
+      for (const tag of tags) {
+        if (tag) set.add(tag);
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [recipes]);
 
   const visibleRecipes = useMemo(
     () =>
@@ -463,37 +546,65 @@ export default function Learn() {
 
         {(showRecipes || showFavorites) && (
           <div className="learnFilterBar">
-            <button
-              type="button"
-              className={`learnFilterToggle ${showFilters ? "open" : ""} ${activeFilters.length > 0 ? "hasFilters" : ""}`}
-              onClick={() => setShowFilters((prev) => !prev)}
-            >
-              Filter {activeFilters.length > 0 ? `(${activeFilters.length})` : ""}
-              <span className="learnFilterArrow">{showFilters ? "▴" : "▾"}</span>
-            </button>
+            {(() => {
+              const excludedEquipment = activeFilters.filter((f) => f.startsWith("e:"));
+              const visibleFilterCount = activeFilters.length - excludedEquipment.length + (excludedEquipment.length > 0 ? 1 : 0);
+              const visibleFilters = activeFilters.filter((f) => !f.startsWith("e:"));
 
-            {activeFilters.map((f) => (
-              <span key={f} className="learnActiveChip">
-                {getFilterLabel(f)}
-                <button
-                  type="button"
-                  onClick={() => toggleFilter(f)}
-                  aria-label={`Remove ${getFilterLabel(f)}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+              function clearExcludedEquipment() {
+                if (excludedEquipment.length === 0) return;
+                setActiveFilters((prev) => prev.filter((f) => !f.startsWith("e:")));
+              }
 
-            {activeFilters.length > 0 && (
-              <button
-                type="button"
-                className="learnClearFilters"
-                onClick={() => setActiveFilters([])}
-              >
-                Clear all
-              </button>
-            )}
+              return (
+                <>
+                  <button
+                    type="button"
+                    className={`learnFilterToggle ${showFilters ? "open" : ""} ${activeFilters.length > 0 ? "hasFilters" : ""}`}
+                    onClick={() => setShowFilters((prev) => !prev)}
+                  >
+                    Filter {visibleFilterCount > 0 ? `(${visibleFilterCount})` : ""}
+                    <span className="learnFilterArrow">{showFilters ? "▴" : "▾"}</span>
+                  </button>
+
+                  {visibleFilters.map((f) => (
+                    <span key={f} className="learnActiveChip">
+                      {getFilterLabel(f)}
+                      <button
+                        type="button"
+                        onClick={() => toggleFilter(f)}
+                        aria-label={`Remove ${getFilterLabel(f)}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+
+                  {excludedEquipment.length > 0 && (
+                    <span key="excluded-equipment" className="learnActiveChip">
+                      Excluding equipment
+                      <button
+                        type="button"
+                        onClick={clearExcludedEquipment}
+                        aria-label="Remove excluded equipment filters"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+
+                  {activeFilters.length > 0 && (
+                    <button
+                      type="button"
+                      className="learnClearFilters"
+                      onClick={() => setActiveFilters([])}
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -565,6 +676,24 @@ export default function Learn() {
               ))}
             </div>
           </div>
+
+          {availableEquipment.length > 0 && (
+            <div className="learnFilterGroup">
+              <div className="learnFilterGroupLabel">Exclude Equipment</div>
+              <div className="learnFilterOptions">
+                {availableEquipment.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    className={`learnFilterOption learnExcludeOption ${activeFilters.includes(`e:${e}`) ? "active" : ""}`}
+                    onClick={() => toggleFilter(`e:${e}`)}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -660,14 +789,10 @@ export default function Learn() {
                 >
                   <div className="learnRecipeImgWrap">
                     <img
-                      className="learnRecipeImg"
-                      src={getRecipeImageUrl(r) || ""}
+                      className={`learnRecipeImg ${!r.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
+                      src={getRecipeImageUrl(r)}
                       alt={r.title}
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) parent.classList.add("fallback");
-                      }}
+                      onError={handleRecipeImageError}
                     />
                   </div>
 
@@ -689,6 +814,16 @@ export default function Learn() {
                       <div className="learnRecipeTags">
                         {r.dietary_tags.map((tag) => (
                           <span key={tag} className="learnRecipeTag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {r.equipment_tags && r.equipment_tags.length > 0 && (
+                      <div className="learnRecipeTags">
+                        {r.equipment_tags.map((tag) => (
+                          <span key={tag} className="learnRecipeTag learnEquipmentTag">
                             {tag}
                           </span>
                         ))}
@@ -755,14 +890,10 @@ export default function Learn() {
                 >
                   <div className="learnRecipeImgWrap">
                     <img
-                      className="learnRecipeImg"
-                      src={getRecipeImageUrl(r) || ""}
+                      className={`learnRecipeImg ${!r.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
+                      src={getRecipeImageUrl(r)}
                       alt={r.title}
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) parent.classList.add("fallback");
-                      }}
+                      onError={handleRecipeImageError}
                     />
                   </div>
 
@@ -896,6 +1027,17 @@ export default function Learn() {
                   </div>
                 )}
 
+              {selectedRecipe.equipment_tags &&
+                selectedRecipe.equipment_tags.length > 0 && (
+                  <div className="learnModalTags">
+                    {selectedRecipe.equipment_tags.map((tag) => (
+                      <span key={tag} className="learnModalTag learnEquipmentTag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
               <div className="learnModalMeta">
                 <span>⏱ {selectedRecipe.minutes || "—"} mins</span>
                 <span>🍽 {selectedRecipe.serving_size || "—"} servings</span>
@@ -908,15 +1050,14 @@ export default function Learn() {
                 </span>
               </div>
 
-              {selectedRecipe.image_filename && (
-                <div className="learnModalImgWrap">
-                  <img
-                    src={getRecipeImageUrl(selectedRecipe)}
-                    alt={selectedRecipe.title}
-                    className="learnModalImg"
-                  />
-                </div>
-              )}
+              <div className="learnModalImgWrap">
+                <img
+                  src={getRecipeImageUrl(selectedRecipe)}
+                  alt={selectedRecipe.title}
+                  className={`learnModalImg ${!selectedRecipe.image_filename ? "learnRecipeImgPlaceholder" : ""}`}
+                  onError={handleRecipeImageError}
+                />
+              </div>
 
               <section className="learnModalSection">
                 <div className="learnIngredientsHeader">

@@ -238,6 +238,14 @@
   border-color: #2f69a8;
 }
 
+.learnFilterOption.learnExcludeOption.active {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #ef4444;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
 /* ===== BODY ===== */
 .learnBody {
   flex: 1;
@@ -372,6 +380,12 @@
   display: block;
 }
 
+.learnRecipeImg.learnRecipeImgPlaceholder {
+  object-fit: contain;
+  padding: 10px;
+  background: #f3f4f6;
+}
+
 .learnRecipeMid {
   display: flex;
   flex-direction: column;
@@ -419,6 +433,11 @@
 .learnCuisineTag {
   background: #fef3c7;
   color: #92400e;
+}
+
+.learnEquipmentTag {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .learnRecipeNote {
@@ -593,6 +612,11 @@
   color: #92400e;
 }
 
+.learnModalTag.learnEquipmentTag {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .learnModalMeta {
   display: flex;
   flex-wrap: wrap;
@@ -617,6 +641,12 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.learnModalImg.learnRecipeImgPlaceholder {
+  object-fit: contain;
+  padding: 16px;
+  background: #f3f4f6;
 }
 
 .learnModalSection {

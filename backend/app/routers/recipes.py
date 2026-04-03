@@ -46,9 +46,10 @@ MEAL_CSV_FILES = [
 ]
 DIET_FLAGS_FILE = "Recipe.Database.Including.Dietary.Flags.2.27.csv"
 CUISINE_FILE = "Cuisine.Analysis.Recipe.csv"
+EQUIPMENT_FILE = "Equipment.Analysis.Recipe.csv"
 
-# Manual overrides for recipes whose titles don't fuzzy-match their image filenames
 IMAGE_OVERRIDES = {
+    "polloalaplanchaorgriddledchickenwithhomemademojomarinade": "Pollo.A.La.Plancha.DINNER.jpg",
     "caribbeangrilledshrimpplantainskillet": "Caribbean.Style.Shrimp.Plantain.Skillet.DINNER.jpg",
     "greekbeefsouvlakiwithtzatziki": "Greek.Beef.Souvlaki.Tzatiziki.DINNER.jpg",
     "italianturkeybologneseoverwholewheatpasta": "Italian.Turkey.Bolognese.DINNER.jpg",
@@ -242,7 +243,6 @@ def _load_diet_flags():
         reader = csv.DictReader(f)
         for row in reader:
             cat = (row.get("Meal Type") or "").strip()
-            # Normalize "Breakfast Recipes" → "Breakfast" etc.
             cat = cat.replace(" Recipes", "")
             title = (row.get("Recipe") or "").strip()
             key = (cat, title)
@@ -276,6 +276,39 @@ def _load_cuisine_data():
     return cuisine_by_title
 
 
+def _load_equipment_data():
+    path = CSV_DIR / EQUIPMENT_FILE
+    if not path.is_file():
+        return {}
+
+    equipment_by_key = {}
+    non_tag_columns = {"Recipe Title", "Category", "Matched Phrases (evidence)"}
+
+    with _open_csv(path) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            title = (row.get("Recipe Title") or "").strip()
+            cat = (row.get("Category") or "").strip()
+            cat = cat.replace(" Recipes", "")
+            if not title or not cat:
+                continue
+
+            tags = []
+            for column_name, raw_value in row.items():
+                if not column_name:
+                    continue
+                column_name = column_name.strip()
+                if column_name in non_tag_columns:
+                    continue
+                value = (raw_value or "").strip().lower()
+                if value == "true":
+                    tags.append(column_name)
+
+            equipment_by_key[(cat, title)] = tags
+
+    return equipment_by_key
+
+
 def _get_dietary_tags(flags_row):
     tags = []
     if flags_row is None:
@@ -304,6 +337,7 @@ def _build_recipes_with_flags(user_restrictions=None):
     recipes = _load_recipe_rows()
     flags = _load_diet_flags()
     cuisine_data = _load_cuisine_data()
+    equipment_data = _load_equipment_data()
     out = []
     for r in recipes:
         key = (r["category"], r["title"])
@@ -314,8 +348,10 @@ def _build_recipes_with_flags(user_restrictions=None):
         dietary_tags = _get_dietary_tags(flags_row)
         image_filename = _find_image(r["slug"])
         cuisine_info = cuisine_data.get(r["title"], {})
+        equipment_tags = equipment_data.get(key, [])
         recipe_out = dict(r)
         recipe_out["dietary_tags"] = dietary_tags
+        recipe_out["equipment_tags"] = equipment_tags
         recipe_out["image_filename"] = image_filename
         recipe_out["cuisine"] = cuisine_info.get("primary_cuisine", "")
         recipe_out["cuisine_also_tagged"] = cuisine_info.get("also_tagged", "")
