@@ -1356,3 +1356,638 @@
     min-height: 62px;
   }
 }
+/* WATER TRACKER */
+
+.waterTapCard {
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  margin: 12px 0;
+}
+
+.waterTapHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.waterTapTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.waterTapSubtitle {
+  margin: 3px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.waterTapEditBtn {
+  border: 2px solid var(--border);
+  background: #fff;
+  color: #1b3554;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.waterTapTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.waterTapStats {
+  display: grid;
+  gap: 4px;
+}
+
+.waterTapNow {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.waterTapMeta {
+  font-size: 13px;
+  font-weight: 800;
+  color: #53657d;
+}
+
+.waterBottleBtn {
+  min-width: 140px;
+  min-height: 92px;
+  border-radius: 18px;
+  border: 2px solid #cfe3fb;
+  background: linear-gradient(180deg, #f8fcff 0%, #eaf5ff 100%);
+  color: #1b3554;
+  cursor: pointer;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 16px rgba(47, 123, 220, 0.08);
+}
+
+.waterBottleBtn:hover {
+  transform: translateY(-1px);
+}
+
+.waterBottleIcon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.waterBottleText {
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.1;
+}
+
+.waterBottleOz {
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.85;
+}
+
+.waterMarkerRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.waterMiniDrop {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 2px solid #d9e8f8;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  opacity: 0.38;
+  transition: 0.18s ease;
+}
+
+.waterMiniDrop.filled {
+  opacity: 1;
+  background: #dbeeff;
+  border-color: #7db7f5;
+  transform: translateY(-1px);
+}
+
+.waterTapActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.waterTapSecondaryBtn {
+  border: 2px solid var(--border);
+  background: #fff;
+  color: #1b3554;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.waterTapEditPanel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2ecf8;
+  display: grid;
+  gap: 10px;
+}
+
+.waterTapField {
+  display: grid;
+  gap: 6px;
+}
+
+.waterTapField span {
+  font-size: 13px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.waterTapField input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .waterTapTopRow {
+    align-items: stretch;
+  }
+
+  .waterBottleBtn {
+    width: 100%;
+  }
+
+  .waterMiniDrop {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+}
+/* TRACKER TABS */
+
+.trackerShell {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 14px;
+  margin: 14px 0;
+}
+
+.trackerTabsRail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trackerTabBtn {
+  border: 2px solid #d9e7f7;
+  background: #f8fbff;
+  color: #1b3554;
+  border-radius: 22px;
+  min-height: 104px;
+  padding: 12px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 1000;
+  transition: 0.18s ease;
+}
+
+.trackerTabBtn.active {
+  background: linear-gradient(180deg, #edf7ff 0%, #dff0ff 100%);
+  border-color: #8fc4fb;
+  box-shadow: 0 8px 20px rgba(84, 146, 210, 0.14);
+}
+
+.trackerTabIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.trackerTabText {
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.trackerPanel {
+  min-width: 0;
+}
+
+.trackerCard {
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 24px rgba(75, 127, 180, 0.08);
+}
+
+.trackerCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.trackerEyebrow {
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #79a8d7;
+  margin-bottom: 3px;
+}
+
+.trackerTitle {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.05;
+  font-weight: 1000;
+  color: #1b3554;
+}
+
+.trackerSubtitle {
+  margin: 5px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.trackerGhostBtn,
+.trackerPrimaryBtn {
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.trackerGhostBtn {
+  border: 2px solid #d9e7f7;
+  background: #fff;
+  color: #1b3554;
+}
+
+.trackerPrimaryBtn {
+  border: 2px solid #bfe0ff;
+  background: linear-gradient(180deg, #eef8ff 0%, #dceeff 100%);
+  color: #1b3554;
+}
+
+.trackerProgress {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: #e8f3ff;
+  overflow: hidden;
+  border: 1px solid #d7e9ff;
+  margin: 12px 0 10px;
+}
+
+.trackerProgressFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.waterProgressCute {
+  background: linear-gradient(90deg, #9edfff 0%, #62c6ff 50%, #3c89e8 100%);
+}
+
+.trackerMiniRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.trackerMiniPill {
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: #eff7ff;
+  border: 1px solid #d7eaff;
+  font-size: 12px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.trackerEditGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.trackerField {
+  display: grid;
+  gap: 6px;
+}
+
+.trackerField span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1b3554;
+}
+
+.trackerField input,
+.trackerField select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid #d9e7f7;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+}
+
+/* WATER */
+
+.waterCuteCard {
+  padding: 14px 16px;
+}
+
+.waterCuteSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.waterCuteBig {
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 1000;
+  color: #163458;
+}
+
+.waterCuteBig span {
+  font-size: 15px;
+  font-weight: 900;
+  color: #6280a0;
+}
+
+.waterCuteMeta {
+  margin-top: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #637a96;
+}
+
+.waterBottleMini {
+  width: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.waterBottleMiniCap {
+  width: 20px;
+  height: 8px;
+  border-radius: 8px 8px 2px 2px;
+  background: #b7daf7;
+  margin-bottom: 2px;
+}
+
+.waterBottleMiniBody {
+  position: relative;
+  width: 46px;
+  height: 90px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #cfe3fb;
+  background: #eef7ff;
+}
+
+.waterBottleMiniFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #bdeaff 0%, #6ecbff 45%, #418fe9 100%);
+  border-radius: 12px 12px 14px 14px;
+  transition: height 0.25s ease;
+}
+
+.waterCuteActions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.trackerBottomRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* WEIGHT */
+
+.weightCuteCard {
+  background: linear-gradient(180deg, #ffffff 0%, #fff9fd 100%);
+}
+
+.weightTopStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.weightMiniStat {
+  border: 1px solid #f0ddeb;
+  background: #fff7fb;
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.weightMiniStat span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #8b6f84;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.weightMiniStat strong {
+  font-size: 20px;
+  color: #6b3158;
+}
+
+.weightInputRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.weightField input {
+  min-height: 44px;
+}
+
+.weightNotifCard {
+  border: 1px solid #edd9e9;
+  background: #fff7fc;
+  border-radius: 18px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.weightNotifTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.weightNotifTitle {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #6b3158;
+}
+
+.weightNotifText {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8e7286;
+}
+
+.weightGraphCard {
+  border: 1px solid #edd9e9;
+  background: #fff;
+  border-radius: 20px;
+  padding: 14px;
+}
+
+.weightGraphTitle {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #6b3158;
+  margin-bottom: 12px;
+}
+
+.weightEmpty {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8e7286;
+}
+
+.weightGraph {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 180px;
+}
+
+.weightBarWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.weightPointValue {
+  font-size: 12px;
+  font-weight: 900;
+  color: #6b3158;
+}
+
+.weightBarTrack {
+  width: 100%;
+  max-width: 34px;
+  height: 110px;
+  border-radius: 999px;
+  background: #f7e9f1;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #efdbe6;
+}
+
+.weightBarFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffcde7 0%, #f48db8 55%, #cf5b92 100%);
+}
+
+.weightBarDate {
+  font-size: 11px;
+  font-weight: 800;
+  color: #8c7085;
+  text-align: center;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .trackerEditGrid,
+  .weightTopStats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .trackerShell {
+    grid-template-columns: 1fr;
+  }
+
+  .trackerTabsRail {
+    flex-direction: row;
+  }
+
+  .trackerTabBtn {
+    min-height: 72px;
+    flex: 1;
+  }
+
+  .waterCuteActions,
+  .weightInputRow {
+    grid-template-columns: 1fr;
+  }
+
+  .weightGraph {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

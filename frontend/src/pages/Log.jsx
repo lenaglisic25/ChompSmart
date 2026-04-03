@@ -26,10 +26,6 @@ function ozToLiters(oz) {
   return Number(oz || 0) * 0.0295735;
 }
 
-function litersToOz(liters) {
-  return Number(liters || 0) * 33.814;
-}
-
 function getWaterStorageKey(email, date) {
   return `chompsmart_water_${email}_${date}`;
 }
@@ -67,6 +63,69 @@ function loadWaterForDay(email, date) {
 
 function saveWaterForDay(email, date, payload) {
   localStorage.setItem(getWaterStorageKey(email, date), JSON.stringify(payload));
+}
+
+function getWeightStorageKey(email) {
+  return `chompsmart_weight_${email}`;
+}
+
+function loadWeightEntries(email) {
+  try {
+    const raw = localStorage.getItem(getWeightStorageKey(email));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWeightEntries(email, entries) {
+  localStorage.setItem(getWeightStorageKey(email), JSON.stringify(entries));
+}
+
+function getTrackerSettingsKey(email) {
+  return `chompsmart_tracker_settings_${email}`;
+}
+
+function loadTrackerSettings(email) {
+  try {
+    const raw = localStorage.getItem(getTrackerSettingsKey(email));
+    if (!raw) {
+      return {
+        reminderEnabled: false,
+        reminderFrequency: "daily",
+        lastReminderAt: 0,
+      };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      reminderEnabled: Boolean(parsed.reminderEnabled),
+      reminderFrequency: parsed.reminderFrequency || "daily",
+      lastReminderAt: Number(parsed.lastReminderAt) || 0,
+    };
+  } catch {
+    return {
+      reminderEnabled: false,
+      reminderFrequency: "daily",
+      lastReminderAt: 0,
+    };
+  }
+}
+
+function saveTrackerSettings(email, settings) {
+  localStorage.setItem(getTrackerSettingsKey(email), JSON.stringify(settings));
+}
+
+function frequencyToMs(freq) {
+  if (freq === "twice_daily") return 12 * 60 * 60 * 1000;
+  if (freq === "weekly") return 7 * 24 * 60 * 60 * 1000;
+  return 24 * 60 * 60 * 1000;
+}
+
+function formatWeightDate(dateStr) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function Ring({ title, subtitle, current, goal, mode = "goal" }) {
@@ -311,7 +370,35 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
   );
 }
 
-function WaterTracker({
+function TrackerTabs({ activeTab, setActiveTab, children }) {
+  return (
+    <section className="trackerShell">
+      <div className="trackerTabsRail">
+        <button
+          type="button"
+          className={`trackerTabBtn ${activeTab === "water" ? "active" : ""}`}
+          onClick={() => setActiveTab("water")}
+        >
+          <span className="trackerTabIcon">💧</span>
+          <span className="trackerTabText">Water</span>
+        </button>
+
+        <button
+          type="button"
+          className={`trackerTabBtn ${activeTab === "weight" ? "active" : ""}`}
+          onClick={() => setActiveTab("weight")}
+        >
+          <span className="trackerTabIcon">⚖️</span>
+          <span className="trackerTabText">Weight</span>
+        </button>
+      </div>
+
+      <div className="trackerPanel">{children}</div>
+    </section>
+  );
+}
+
+function WaterTrackerCompact({
   waterGoalOz,
   setWaterGoalOz,
   cupOz,
@@ -325,58 +412,63 @@ function WaterTracker({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const progress = pct(waterOz, waterGoalOz);
-  const markers = Array.from({ length: 8 }, (_, i) => i);
-  const filledCount = Math.round(progress * 8);
   const remainingOz = Math.max(0, waterGoalOz - waterOz);
-  const cupsLeft = cupOz > 0 ? Math.ceil(remainingOz / cupOz) : 0;
-  const bottlesLeft = bottleOz > 0 ? (remainingOz / bottleOz).toFixed(1) : "0";
+  const bottleFill = waterGoalOz > 0 ? Math.min(100, (waterOz / waterGoalOz) * 100) : 0;
 
   return (
-    <section className="waterCard">
-      <div className="waterHeader">
+    <section className="trackerCard waterCuteCard">
+      <div className="trackerCardTop">
         <div>
-          <h2 className="waterTitle">Water Tracker</h2>
-          <p className="waterSubtitle">Tap your cup or bottle to add water to today’s goal.</p>
+          <div className="trackerEyebrow">Hydration</div>
+          <h2 className="trackerTitle">Water Tracker</h2>
+          <p className="trackerSubtitle">Smaller, cleaner, and easier to tap.</p>
         </div>
 
         <button
           type="button"
-          className="waterEditBtn"
+          className="trackerGhostBtn"
           onClick={() => setIsEditing((v) => !v)}
         >
           {isEditing ? "Done" : "Edit"}
         </button>
       </div>
 
-      <div className="waterTopRow">
-        <div className="waterGoalBlock">
-          <div className="waterBigNumber">
+      <div className="waterCuteSummary">
+        <div className="waterCuteStat">
+          <div className="waterCuteBig">
             {Math.round(waterOz)} <span>oz</span>
           </div>
-          <div className="waterGoalText">Goal: {Math.round(waterGoalOz)} oz daily</div>
+          <div className="waterCuteMeta">Goal {Math.round(waterGoalOz)} oz</div>
         </div>
 
-        <div className="waterProgressBlock">
-          <div className="waterProgressTrack">
-            <div className="waterProgressFill" style={{ width: `${Math.min(progress * 100, 100)}%` }} />
-          </div>
-          <div className="waterProgressLabel">
-            {Math.round(waterOz)} / {Math.round(waterGoalOz)} oz
+        <div className="waterBottleMini">
+          <div className="waterBottleMiniCap" />
+          <div className="waterBottleMiniBody">
+            <div
+              className="waterBottleMiniFill"
+              style={{ height: `${Math.max(8, bottleFill)}%` }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="waterMarkers" aria-hidden="true">
-        {markers.map((idx) => (
-          <div key={idx} className={`waterMarker ${idx < filledCount ? "filled" : ""}`}>
-            💧
-          </div>
-        ))}
+      <div className="trackerProgress">
+        <div
+          className="trackerProgressFill waterProgressCute"
+          style={{ width: `${Math.min(progress * 100, 100)}%` }}
+        />
+      </div>
+
+      <div className="trackerMiniRow">
+        <div className="trackerMiniPill">{Math.round(waterOz)} / {Math.round(waterGoalOz)} oz</div>
+        <div className="trackerMiniPill">
+          {remainingOz > 0 ? `${Math.round(remainingOz)} oz left` : "Goal reached"}
+        </div>
       </div>
 
       {isEditing && (
-        <div className="waterEditPanel">
-          <label className="waterEditField">
+        <div className="trackerEditGrid">
+          <label className="trackerField">
             <span>Daily goal (oz)</span>
             <input
               type="number"
@@ -386,8 +478,8 @@ function WaterTracker({
             />
           </label>
 
-          <label className="waterEditField">
-            <span>Default cup (oz)</span>
+          <label className="trackerField">
+            <span>Cup size (oz)</span>
             <input
               type="number"
               min="1"
@@ -396,8 +488,8 @@ function WaterTracker({
             />
           </label>
 
-          <label className="waterEditField">
-            <span>Default bottle (oz)</span>
+          <label className="trackerField">
+            <span>Bottle size (oz)</span>
             <input
               type="number"
               min="1"
@@ -408,31 +500,205 @@ function WaterTracker({
         </div>
       )}
 
-      <div className="waterActions">
-        <button type="button" className="waterActionPrimary" onClick={() => addWater(cupOz, "cup")}>
+      <div className="waterCuteActions">
+        <button
+          type="button"
+          className="trackerPrimaryBtn"
+          onClick={() => addWater(cupOz, "cup")}
+        >
           + Cup ({cupOz} oz)
         </button>
 
-        <button type="button" className="waterActionPrimary" onClick={() => addWater(bottleOz, "bottle")}>
+        <button
+          type="button"
+          className="trackerPrimaryBtn"
+          onClick={() => addWater(bottleOz, "bottle")}
+        >
           + Bottle ({bottleOz} oz)
-        </button>
-
-        <button type="button" className="waterActionSecondary" onClick={undoWater}>
-          Undo
-        </button>
-
-        <button type="button" className="waterActionSecondary" onClick={resetWater}>
-          Reset
         </button>
       </div>
 
-      <div className="waterHelperRow">
-        <div className="waterHelperPill">
-          {remainingOz > 0 ? `${cupsLeft} cup${cupsLeft === 1 ? "" : "s"} left` : "Goal reached"}
+      <div className="trackerBottomRow">
+        <button type="button" className="trackerGhostBtn" onClick={undoWater}>
+          Undo
+        </button>
+        <button type="button" className="trackerGhostBtn" onClick={resetWater}>
+          Reset
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function WeightTracker({
+  formattedDate,
+  weightEntries,
+  setWeightEntries,
+  reminderEnabled,
+  setReminderEnabled,
+  reminderFrequency,
+  setReminderFrequency,
+}) {
+  const todaysEntry = weightEntries.find((entry) => entry.date === formattedDate);
+  const [inputWeight, setInputWeight] = useState(todaysEntry?.weight ?? "");
+
+  useEffect(() => {
+    const today = weightEntries.find((entry) => entry.date === formattedDate);
+    setInputWeight(today?.weight ?? "");
+  }, [formattedDate, weightEntries]);
+
+  async function requestReminderPermission() {
+    if (!("Notification" in window)) {
+      alert("This browser does not support notifications.");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setReminderEnabled(true);
+    }
+  }
+
+  function saveTodayWeight() {
+    const value = Number(inputWeight);
+    if (!value || value <= 0) return;
+
+    setWeightEntries((prev) => {
+      const filtered = prev.filter((entry) => entry.date !== formattedDate);
+      const next = [...filtered, { date: formattedDate, weight: value }].sort((a, b) =>
+        a.date.localeCompare(b.date)
+      );
+      return next;
+    });
+  }
+
+  function deleteTodayWeight() {
+    setWeightEntries((prev) => prev.filter((entry) => entry.date !== formattedDate));
+    setInputWeight("");
+  }
+
+  const sorted = [...weightEntries].sort((a, b) => a.date.localeCompare(b.date));
+  const recent = sorted.slice(-7);
+
+  const minWeight = recent.length ? Math.min(...recent.map((d) => d.weight)) : 0;
+  const maxWeight = recent.length ? Math.max(...recent.map((d) => d.weight)) : 0;
+  const range = Math.max(1, maxWeight - minWeight);
+
+  return (
+    <section className="trackerCard weightCuteCard">
+      <div className="trackerCardTop">
+        <div>
+          <div className="trackerEyebrow">Progress</div>
+          <h2 className="trackerTitle">Weight Tracker</h2>
+          <p className="trackerSubtitle">Enter today’s weight and watch the trend build.</p>
         </div>
-        <div className="waterHelperPill">
-          {remainingOz > 0 ? `${bottlesLeft} bottle${Number(bottlesLeft) === 1 ? "" : "s"} left` : "Nice job"}
+      </div>
+
+      <div className="weightTopStats">
+        <div className="weightMiniStat">
+          <span>Today</span>
+          <strong>{todaysEntry ? `${todaysEntry.weight}` : "—"}</strong>
         </div>
+        <div className="weightMiniStat">
+          <span>Entries</span>
+          <strong>{weightEntries.length}</strong>
+        </div>
+        <div className="weightMiniStat">
+          <span>Frequency</span>
+          <strong>
+            {reminderFrequency === "twice_daily"
+              ? "2x day"
+              : reminderFrequency === "weekly"
+              ? "Weekly"
+              : "Daily"}
+          </strong>
+        </div>
+      </div>
+
+      <div className="weightInputRow">
+        <label className="trackerField weightField">
+          <span>Today’s weight</span>
+          <input
+            type="number"
+            step="0.1"
+            min="1"
+            placeholder="Enter weight"
+            value={inputWeight}
+            onChange={(e) => setInputWeight(e.target.value)}
+          />
+        </label>
+
+        <button type="button" className="trackerPrimaryBtn" onClick={saveTodayWeight}>
+          Save
+        </button>
+      </div>
+
+      <div className="weightNotifCard">
+        <div className="weightNotifTop">
+          <div>
+            <div className="weightNotifTitle">Daily notifications</div>
+            <div className="weightNotifText">Change frequency whenever you want.</div>
+          </div>
+
+          {!reminderEnabled ? (
+            <button type="button" className="trackerGhostBtn" onClick={requestReminderPermission}>
+              Enable
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="trackerGhostBtn"
+              onClick={() => setReminderEnabled(false)}
+            >
+              Off
+            </button>
+          )}
+        </div>
+
+        <label className="trackerField">
+          <span>Reminder frequency</span>
+          <select
+            value={reminderFrequency}
+            onChange={(e) => setReminderFrequency(e.target.value)}
+          >
+            <option value="daily">Daily</option>
+            <option value="twice_daily">Twice daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="weightGraphCard">
+        <div className="weightGraphTitle">Recent trend</div>
+
+        {recent.length === 0 ? (
+          <div className="weightEmpty">No weight entries yet.</div>
+        ) : (
+          <div className="weightGraph">
+            {recent.map((point) => {
+              const normalized = range === 0 ? 55 : 20 + ((point.weight - minWeight) / range) * 80;
+
+              return (
+                <div className="weightBarWrap" key={point.date}>
+                  <div className="weightPointValue">{point.weight}</div>
+                  <div className="weightBarTrack">
+                    <div
+                      className="weightBarFill"
+                      style={{ height: `${normalized}%` }}
+                    />
+                  </div>
+                  <div className="weightBarDate">{formatWeightDate(point.date)}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="trackerBottomRow">
+        <button type="button" className="trackerGhostBtn" onClick={deleteTodayWeight}>
+          Delete today
+        </button>
       </div>
     </section>
   );
@@ -531,6 +797,12 @@ export default function Log() {
   const [waterOz, setWaterOz] = useState(0);
   const [waterHistory, setWaterHistory] = useState([]);
 
+  const [activeTrackerTab, setActiveTrackerTab] = useState("water");
+  const [weightEntries, setWeightEntries] = useState([]);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState("daily");
+  const [lastReminderAt, setLastReminderAt] = useState(0);
+
   useEffect(() => {
     if (!email || !formattedDate) return;
     const saved = loadWaterForDay(email, formattedDate);
@@ -551,6 +823,53 @@ export default function Log() {
       history: waterHistory,
     });
   }, [email, formattedDate, waterGoalOz, cupOz, bottleOz, waterOz, waterHistory]);
+
+  useEffect(() => {
+    if (!email) return;
+    setWeightEntries(loadWeightEntries(email));
+
+    const trackerSettings = loadTrackerSettings(email);
+    setReminderEnabled(trackerSettings.reminderEnabled);
+    setReminderFrequency(trackerSettings.reminderFrequency);
+    setLastReminderAt(trackerSettings.lastReminderAt);
+  }, [email]);
+
+  useEffect(() => {
+    if (!email) return;
+    saveWeightEntries(email, weightEntries);
+  }, [email, weightEntries]);
+
+  useEffect(() => {
+    if (!email) return;
+    saveTrackerSettings(email, {
+      reminderEnabled,
+      reminderFrequency,
+      lastReminderAt,
+    });
+  }, [email, reminderEnabled, reminderFrequency, lastReminderAt]);
+
+  useEffect(() => {
+    if (!reminderEnabled) return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const checkReminder = () => {
+      const now = Date.now();
+      const neededGap = frequencyToMs(reminderFrequency);
+
+      if (!lastReminderAt || now - lastReminderAt >= neededGap) {
+        new Notification("ChompSmart reminder", {
+          body: "Time to log your weight for today 💙",
+        });
+        setLastReminderAt(now);
+      }
+    };
+
+    checkReminder();
+    const interval = window.setInterval(checkReminder, 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [reminderEnabled, reminderFrequency, lastReminderAt]);
 
   function addWater(amount, type) {
     const oz = Math.max(0, Number(amount) || 0);
@@ -842,18 +1161,32 @@ export default function Log() {
           />
         </div>
 
-        <WaterTracker
-          waterGoalOz={waterGoalOz}
-          setWaterGoalOz={setWaterGoalOz}
-          cupOz={cupOz}
-          setCupOz={setCupOz}
-          bottleOz={bottleOz}
-          setBottleOz={setBottleOz}
-          waterOz={waterOz}
-          addWater={addWater}
-          undoWater={undoWater}
-          resetWater={resetWater}
-        />
+        <TrackerTabs activeTab={activeTrackerTab} setActiveTab={setActiveTrackerTab}>
+          {activeTrackerTab === "water" ? (
+            <WaterTrackerCompact
+              waterGoalOz={waterGoalOz}
+              setWaterGoalOz={setWaterGoalOz}
+              cupOz={cupOz}
+              setCupOz={setCupOz}
+              bottleOz={bottleOz}
+              setBottleOz={setBottleOz}
+              waterOz={waterOz}
+              addWater={addWater}
+              undoWater={undoWater}
+              resetWater={resetWater}
+            />
+          ) : (
+            <WeightTracker
+              formattedDate={formattedDate}
+              weightEntries={weightEntries}
+              setWeightEntries={setWeightEntries}
+              reminderEnabled={reminderEnabled}
+              setReminderEnabled={setReminderEnabled}
+              reminderFrequency={reminderFrequency}
+              setReminderFrequency={setReminderFrequency}
+            />
+          )}
+        </TrackerTabs>
 
         <div className="logResetRow">
           <button onClick={handleClearAll} className="logResetBtn" type="button">
@@ -1047,7 +1380,7 @@ export default function Log() {
                   <span>{scaledNutrient(selectedForModal.food.carbohydrates ?? selectedForModal.food.macros?.carbs, servingMultiplier)}g</span>
                 </div>
                 <div className="logModalNutrientRow">
-                  <span>Fat</span>
+                  <span>Fats</span>
                   <span>{scaledNutrient(selectedForModal.food.fat ?? selectedForModal.food.macros?.fats, servingMultiplier)}g</span>
                 </div>
                 <div className="logModalNutrientRow">
@@ -1061,33 +1394,26 @@ export default function Log() {
               </div>
 
               <div className="logModalServing">
-                <label className="logModalServingLabel" htmlFor="serving-multiplier">
-                  Serving size
-                </label>
+                <label className="logModalServingLabel">Serving amount</label>
                 <select
-                  id="serving-multiplier"
                   className="logModalServingSelect"
                   value={servingMultiplier}
                   onChange={(e) => setServingMultiplier(Number(e.target.value))}
                 >
-                  {SERVING_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt} serving{opt !== 1 ? "s" : ""}
+                  {SERVING_OPTIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}x
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="logModalActions">
-                <button
-                  type="button"
-                  className="logModalCancel"
-                  onClick={() => setSelectedForModal(null)}
-                >
+                <button type="button" className="logModalCancel" onClick={() => setSelectedForModal(null)}>
                   Cancel
                 </button>
                 <button type="button" className="logModalAdd" onClick={confirmAddFromModal}>
-                  Add Food
+                  Add
                 </button>
               </div>
             </div>
