@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Profile.css";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
+
 const OPTIONS = {
   race: [
     "White",
@@ -186,6 +189,23 @@ const ACTIVITY_POINTS = {
   },
 };
 
+const BADGE_ICONS = {
+  "First Week Milestone": "🌟",
+  "Love to Learn": "📚",
+  "Curious Chef": "👩‍🍳",
+  "First Log of the Day": "🥄",
+  "3-Day Consistency": "📅",
+  "Building a Balanced Plate": "🥗",
+  "Sodium Smart Swap": "🧂",
+  "Fiber Boost": "🌾",
+  "Hydration Hero": "💧",
+};
+
+const CATEGORY_LABELS = {
+  engagement: "Engagement & Motivation",
+  nutrition: "Nutrition Tracking Goals",
+};
+
 function getActivitySummary(form) {
   const score =
     (ACTIVITY_POINTS.dayMovement[form.dayMovement] ?? 0) +
@@ -305,6 +325,17 @@ function normalizeProfile(data) {
   };
 }
 
+function formatDate(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function Section({ title, children }) {
   return (
     <section className="psSection">
@@ -412,6 +443,248 @@ function RadioGroup({ label, value, onChange, options, required = false }) {
   );
 }
 
+function BadgesPanel({ userEmail }) {
+  const [allBadges, setAllBadges] = useState([]);
+  const [earnedBadges, setEarnedBadges] = useState([]);
+  const [popupBadges, setPopupBadges] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [loadingBadges, setLoadingBadges] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+
+  const earnedMap = useMemo(() => {
+    const map = new Map();
+    earnedBadges.forEach((badge) => {
+      map.set(badge.badge_name, badge);
+    });
+    return map;
+  }, [earnedBadges]);
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    loadBadges();
+    checkUnnotified();
+
+    const interval = setInterval(() => {
+      checkUnnotified();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [userEmail]);
+
+  async function loadBadges() {
+    try {
+      setLoadingBadges(true);
+
+      const [allRes, earnedRes] = await Promise.all([
+        fetch(`${API_BASE}/badges/`),
+        fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}`),
+      ]);
+
+      if (!allRes.ok || !earnedRes.ok) {
+        throw new Error("Failed to load badges");
+      }
+
+      const all = await allRes.json();
+      const earned = await earnedRes.json();
+
+      setAllBadges(Array.isArray(all) ? all : []);
+      setEarnedBadges(Array.isArray(earned) ? earned : []);
+    } catch (err) {
+      console.error("Failed to load badges:", err);
+    } finally {
+      setLoadingBadges(false);
+    }
+  }
+
+  async function checkUnnotified() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/unnotified`
+      );
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setPopupBadges(data);
+        setShowPopup(true);
+        loadBadges();
+      }
+    } catch (err) {
+      console.error("Failed to check unnotified badges:", err);
+    }
+  }
+
+  async function dismissPopup() {
+    try {
+      await fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/notified`, {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Failed to mark badges notified:", err);
+    } finally {
+      setPopupBadges([]);
+      setShowPopup(false);
+      loadBadges();
+    }
+  }
+
+  const groupedBadges = useMemo(() => {
+    const grouped = { engagement: [], nutrition: [] };
+    allBadges.forEach((badge) => {
+      const category = (badge.category || "nutrition").toLowerCase();
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(badge);
+    });
+    return grouped;
+  }, [allBadges]);
+
+  const totalEarned = earnedBadges.length;
+  const totalBadges = allBadges.length;
+  const progressPercent = totalBadges ? Math.round((totalEarned / totalBadges) * 100) : 0;
+
+  return (
+    <>
+      <aside className="psBadgesCard">
+        <div className="psBadgesHeader">
+          <div>
+            <h2 className="psBadgesTitle">Achievement Badges</h2>
+            <p className="psBadgesSubtext">Celebrate healthy habits and progress</p>
+          </div>
+
+          <div className="psBadgesCounter">
+            <div className="psBadgesCounterNum">
+              {totalEarned}/{totalBadges}
+            </div>
+            <div className="psBadgesCounterLabel">Unlocked</div>
+          </div>
+        </div>
+
+        <div className="psBadgesProgressWrap">
+          <div className="psBadgesProgressTop">
+            <span>Progress</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <div className="psBadgesProgressBar">
+            <div className="psBadgesProgressFill" style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
+
+        <div className="psBadgesTabs">
+          <button
+            type="button"
+            className={`psBadgesTab ${activeTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className={`psBadgesTab ${activeTab === "earned" ? "active" : ""}`}
+            onClick={() => setActiveTab("earned")}
+          >
+            Earned
+          </button>
+          <button
+            type="button"
+            className={`psBadgesTab ${activeTab === "locked" ? "active" : ""}`}
+            onClick={() => setActiveTab("locked")}
+          >
+            Locked
+          </button>
+        </div>
+
+        {loadingBadges ? (
+          <div className="psBadgesEmpty">Loading badges...</div>
+        ) : (
+          <div className="psBadgesSections">
+            {Object.entries(groupedBadges).map(([category, badges]) => {
+              const filtered = badges.filter((badge) => {
+                const isEarned = earnedMap.has(badge.name);
+                if (activeTab === "earned") return isEarned;
+                if (activeTab === "locked") return !isEarned;
+                return true;
+              });
+
+              if (!filtered.length) return null;
+
+              return (
+                <div key={category} className="psBadgesSection">
+                  <div className="psBadgesSectionTitle">
+                    {CATEGORY_LABELS[category] || category}
+                  </div>
+
+                  <div className="psBadgesGrid">
+                    {filtered.map((badge) => {
+                      const earned = earnedMap.get(badge.name);
+                      const isEarned = Boolean(earned);
+
+                      return (
+                        <div
+                          key={badge.name}
+                          className={`psBadgeTile ${isEarned ? "earned" : "locked"}`}
+                        >
+                          <div className="psBadgeIcon">
+                            {BADGE_ICONS[badge.name] || "🏅"}
+                          </div>
+
+                          <div className="psBadgeBody">
+                            <div className="psBadgeTopRow">
+                              <div className="psBadgeName">{badge.name}</div>
+                              {isEarned && <span className="psBadgePill">Unlocked</span>}
+                            </div>
+
+                            <div className="psBadgeDesc">{badge.description}</div>
+
+                            <div className="psBadgeMeta">
+                              {isEarned ? `Earned ${formatDate(earned.earned_at)}` : "Keep going"}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {!allBadges.length && <div className="psBadgesEmpty">No badges yet.</div>}
+          </div>
+        )}
+      </aside>
+
+      {showPopup && popupBadges.length > 0 && (
+        <div className="psBadgePopupOverlay">
+          <div className="psBadgePopup">
+            <div className="psBadgePopupSparkle">✨</div>
+            <h3 className="psBadgePopupTitle">New Badge Unlocked!</h3>
+
+            <div className="psBadgePopupList">
+              {popupBadges.map((badge) => (
+                <div key={badge.badge_name} className="psBadgePopupItem">
+                  <div className="psBadgePopupIcon">
+                    {BADGE_ICONS[badge.badge_name] || "🏅"}
+                  </div>
+                  <div>
+                    <div className="psBadgePopupName">{badge.badge_name}</div>
+                    <div className="psBadgePopupDate">
+                      Earned {formatDate(badge.earned_at)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" className="psBadgePopupBtn" onClick={dismissPopup}>
+              Awesome
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -430,8 +703,8 @@ export default function Profile() {
   const [providers, setProviders] = useState([]);
 
   useEffect(() => {
-    if (isSetup) {
-      fetch("http://localhost:8000/providers/list")
+    if (location.pathname === "/setup-profile") {
+      fetch(`${API_BASE}/providers/list`)
         .then((res) => res.json())
         .then((data) => {
           setProviders(data);
@@ -447,18 +720,40 @@ export default function Profile() {
     if (!currentUserEmail || isSetup) return;
 
     setLoading(true);
-    fetch(`http://localhost:8000/profile/${currentUserEmail}`)
+    fetch(`${API_BASE}/profile/${currentUserEmail}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const normalized = normalizeProfile(data);
         if (normalized) {
           const { email: _email, password, ...rest } = normalized;
-          setForm((prev) => ({ ...prev, ...rest, password }));
+          setForm((prev) => ({
+            ...prev,
+            ...rest,
+            email: currentUserEmail,
+            password,
+          }));
         }
       })
       .catch((err) => console.error("Profile fetch failed:", err))
       .finally(() => setLoading(false));
   }, [currentUserEmail, isSetup]);
+
+  useEffect(() => {
+    if (!currentUserEmail) return;
+
+    const storageKey = `app_open_count_${currentUserEmail}`;
+    const currentCount = Number(localStorage.getItem(storageKey) || "0") + 1;
+    localStorage.setItem(storageKey, String(currentCount));
+
+    fetch(`${API_BASE}/badges/trigger/app-open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_email: currentUserEmail,
+        app_open_count: currentCount,
+      }),
+    }).catch((err) => console.error("App open badge trigger failed:", err));
+  }, [currentUserEmail]);
 
   const showRaceOther = Array.isArray(form.race) && form.race.includes("Other");
   const showHealthOther =
@@ -630,8 +925,8 @@ export default function Profile() {
 
     setLoading(true);
     try {
-      if (isManualSetup) {
-        const userResponse = await fetch("http://localhost:8000/users/create", {
+      if (isSetup) {
+        const userResponse = await fetch(`${API_BASE}/users/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -651,7 +946,7 @@ export default function Profile() {
         }
       }
 
-      const response = await fetch("http://localhost:8000/profile/", {
+      const response = await fetch(`${API_BASE}/profile/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dbPayload),
@@ -666,7 +961,16 @@ export default function Profile() {
       }
 
       if (isSetup) {
+        localStorage.setItem("userType", "patient");
         localStorage.setItem("currentUserEmail", userEmail);
+        localStorage.removeItem("currentProviderEmail");
+
+        if (form.providerEmail) {
+          localStorage.setItem("myProviderEmail", form.providerEmail);
+          const selected = providers.find((p) => p.email === form.providerEmail);
+          localStorage.setItem("myProviderName", selected?.name || "My Provider");
+        }
+
         navigate("/app");
       } else {
         alert("Profile saved successfully.");
@@ -681,335 +985,329 @@ export default function Profile() {
 
   return (
     <div className="psPage">
-      <form className="psForm" onSubmit={onSubmit}>
-        <h1 className="psTitle">
-          {!isSetup
-            ? "User Profile"
-            : "ChompSmart User Profile Set-Up"}
-        </h1>
+      <div className="psLayout">
+        <form className="psForm" onSubmit={onSubmit}>
+          <h1 className="psTitle">
+            {location.pathname !== "/setup-profile"
+              ? "User Profile"
+              : "ChompSmart User Profile Set-Up"}
+          </h1>
 
-        <p className="psRequiredNote">
-          Fields marked with * are required for nutrition calculations.
-        </p>
+          <p className="psRequiredNote">
+            Fields marked with * are required for nutrition calculations.
+          </p>
 
-        {loading && <div style={{ marginBottom: 12, fontWeight: 600 }}>Loading profile...</div>}
+          {loading && <div className="psLoadingText">Loading profile...</div>}
 
-        <Section title="Account">
-          {isManualSetup && (
-            <>
-              <TextField
-                label="Email"
-                value={form.email}
-                onChange={(v) => update("email", v)}
-                placeholder="you@example.com"
-              />
+          <Section title="Account">
+            {location.pathname === "/setup-profile" ? (
+              <>
+                <TextField
+                  label="Email"
+                  value={form.email}
+                  onChange={(v) => update("email", v)}
+                  placeholder="you@example.com"
+                />
 
-              <TextField
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={(v) => update("password", v)}
-                placeholder="Enter password"
-              />
-            </>
-          )}
+                <TextField
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={(v) => update("password", v)}
+                  placeholder="Enter password"
+                />
 
-          {isSetup && (
-            <div className="psField">
-              <label className="psLabel">Choose your Healthcare Provider</label>
-              <select
-                className="psSelect"
-                value={form.providerEmail}
-                onChange={(e) => update("providerEmail", e.target.value)}
-                required
-              >
-                <option value="" disabled>
-                  Select a Provider
-                </option>
-                {providers.map((p) => (
-                  <option key={p.email} value={p.email}>
-                    {p.name} ({p.email})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {/* Display read-only view for existing users viewing their profile */}
-          {!isSetup && (
-            <>
-              <div className="psField">
-                <label className="psLabel">Email</label>
-                <div style={{ padding: "8px 12px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
-                  {form.email}
+                <div className="psField">
+                  <label className="psLabel">Choose your Healthcare Provider</label>
+                  <select
+                    className="psSelect"
+                    value={form.providerEmail}
+                    onChange={(e) => update("providerEmail", e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select a Provider
+                    </option>
+                    {providers.map((p) => (
+                      <option key={p.email} value={p.email}>
+                        {p.name} ({p.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-
-              <div className="psField">
-                <label className="psLabel">Password</label>
-                <div style={{ padding: "8px 12px", backgroundColor: "#f5f5f5", borderRadius: "4px" }}>
-                  ••••••••
+              </>
+            ) : (
+              <>
+                <div className="psField">
+                  <label className="psLabel">Email</label>
+                  <div className="psReadOnlyBox">{currentUserEmail}</div>
                 </div>
+
+                <div className="psField">
+                  <label className="psLabel">Password</label>
+                  <div className="psReadOnlyBox">••••••••</div>
+                </div>
+              </>
+            )}
+          </Section>
+
+          <Section title="Personal Basics">
+            <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
+
+            <TextField
+              label="Birthday"
+              value={form.birthday}
+              onChange={(v) => update("birthday", v)}
+              placeholder="MM/DD/YYYY"
+              required
+            />
+
+            <TextField
+              label="Home Address"
+              value={form.homeAddress}
+              onChange={(v) => update("homeAddress", v)}
+              placeholder="Street address, city, state, zip code"
+            />
+
+            <TextField
+              label="Height"
+              value={form.height}
+              onChange={(v) => update("height", v)}
+              placeholder={`Feet and inches (e.g., 5'7")`}
+              required
+            />
+
+            <TextField
+              label="Weight"
+              value={form.weight}
+              onChange={(v) => update("weight", v)}
+              placeholder="lbs (e.g., 150)"
+              required
+            />
+
+            <SelectField
+              label="Weight Goals"
+              value={form.weightGoal}
+              onChange={(v) => update("weightGoal", v)}
+              options={OPTIONS.weightGoals}
+              required
+            />
+
+            <CheckboxGroup
+              label="Race (select all that apply)"
+              values={form.race}
+              onToggle={(o) => update("race", toggleInArray(form.race, o))}
+              options={OPTIONS.race}
+            />
+
+            {showRaceOther && (
+              <TextField
+                label="Race (Other) - please specify"
+                value={form.raceOtherText}
+                onChange={(v) => update("raceOtherText", v)}
+              />
+            )}
+
+            <SelectField
+              label="Ethnicity"
+              value={form.ethnicity}
+              onChange={(v) => update("ethnicity", v)}
+              options={OPTIONS.ethnicity}
+            />
+
+            <SelectField
+              label="Sex Assigned at Birth"
+              value={form.sexAtBirth}
+              onChange={(v) => update("sexAtBirth", v)}
+              options={OPTIONS.sexAtBirth}
+              required
+            />
+          </Section>
+
+          <Section title="Health & Medicine">
+            <CheckboxGroup
+              label="Which health conditions do you have? (select all that apply)"
+              values={form.healthConditions}
+              onToggle={(o) => update("healthConditions", toggleInArray(form.healthConditions, o))}
+              options={OPTIONS.healthConditions}
+            />
+
+            {showHealthOther && (
+              <TextField
+                label="Health Condition (Other) - please specify"
+                value={form.healthConditionsOtherText}
+                onChange={(v) => update("healthConditionsOtherText", v)}
+              />
+            )}
+
+            <TextAreaField
+              label="Medications"
+              value={form.medications}
+              onChange={(v) => update("medications", v)}
+              placeholder="List any medications you take"
+            />
+
+            <TextAreaField
+              label="Medication Allergies"
+              value={form.medAllergies}
+              onChange={(v) => update("medAllergies", v)}
+              placeholder="List any medication allergies"
+            />
+          </Section>
+
+          <Section title="Physical Activity">
+            <RadioGroup
+              label="How much do you move during the day?"
+              value={form.dayMovement}
+              onChange={(v) => update("dayMovement", v)}
+              options={OPTIONS.dayMovement}
+              required
+            />
+
+            <RadioGroup
+              label="How much do you exercise on most days?"
+              value={form.dailyExercise}
+              onChange={(v) => update("dailyExercise", v)}
+              options={OPTIONS.dailyExercise}
+              required
+            />
+
+            <RadioGroup
+              label="How many minutes each week do you do moderate exercise?"
+              value={form.moderateMinutesWeekly}
+              onChange={(v) => update("moderateMinutesWeekly", v)}
+              options={OPTIONS.moderateMinutesWeekly}
+              required
+            />
+
+            <RadioGroup
+              label="How many minutes each week do you do hard activities?"
+              value={form.vigorousMinutesWeekly}
+              onChange={(v) => update("vigorousMinutesWeekly", v)}
+              options={OPTIONS.vigorousMinutesWeekly}
+              required
+            />
+
+            <div className="psActivitySummary">
+              <div className="psLabel psActivitySummaryTitle">Activity Summary</div>
+              <div className="psActivityRow">
+                <strong>Total Score:</strong> {activitySummary.score}
               </div>
-            </>
-          )}
-        </Section>
-
-        <Section title="Personal Basics">
-          <TextField label="Name" value={form.name} onChange={(v) => update("name", v)} />
-
-          <TextField
-          label="Birthday"
-          type="date"
-          value={form.birthday}
-          onChange={(v) => update("birthday", v)}
-          placeholder="MM/DD/YYYY"
-            required
-          />
-
-          <TextField
-            label="Home Address"
-            value={form.homeAddress}
-            onChange={(v) => update("homeAddress", v)}
-            placeholder="Street address, city, state, zip code"
-          />
-
-          <TextField
-            label="Height"
-            value={form.height}
-            onChange={(v) => update("height", v)}
-            placeholder={`Feet and inches (e.g., 5'7")`}
-            required
-          />
-
-          <TextField
-            label="Weight"
-            value={form.weight}
-            onChange={(v) => update("weight", v)}
-            placeholder="lbs (e.g., 150)"
-            required
-          />
-
-          <SelectField
-            label="Weight Goals"
-            value={form.weightGoal}
-            onChange={(v) => update("weightGoal", v)}
-            options={OPTIONS.weightGoals}
-            required
-          />
-
-          <CheckboxGroup
-            label="Race (select all that apply)"
-            values={form.race}
-            onToggle={(o) => update("race", toggleInArray(form.race, o))}
-            options={OPTIONS.race}
-          />
-
-          {showRaceOther && (
-            <TextField
-              label="Race (Other) - please specify"
-              value={form.raceOtherText}
-              onChange={(v) => update("raceOtherText", v)}
-            />
-          )}
-
-          <SelectField
-            label="Ethnicity"
-            value={form.ethnicity}
-            onChange={(v) => update("ethnicity", v)}
-            options={OPTIONS.ethnicity}
-          />
-
-          <SelectField
-            label="Sex Assigned at Birth"
-            value={form.sexAtBirth}
-            onChange={(v) => update("sexAtBirth", v)}
-            options={OPTIONS.sexAtBirth}
-            required
-          />
-        </Section>
-
-        <Section title="Health & Medicine">
-          <CheckboxGroup
-            label="Which health conditions do you have? (select all that apply)"
-            values={form.healthConditions}
-            onToggle={(o) => update("healthConditions", toggleInArray(form.healthConditions, o))}
-            options={OPTIONS.healthConditions}
-          />
-
-          {showHealthOther && (
-            <TextField
-              label="Health Condition (Other) - please specify"
-              value={form.healthConditionsOtherText}
-              onChange={(v) => update("healthConditionsOtherText", v)}
-            />
-          )}
-
-          <TextAreaField
-            label="Medications"
-            value={form.medications}
-            onChange={(v) => update("medications", v)}
-            placeholder="List any medications you take"
-          />
-
-          <TextAreaField
-            label="Medication Allergies"
-            value={form.medAllergies}
-            onChange={(v) => update("medAllergies", v)}
-            placeholder="List any medication allergies"
-          />
-        </Section>
-
-        <Section title="Physical Activity">
-          <RadioGroup
-            label="How much do you move during the day?"
-            value={form.dayMovement}
-            onChange={(v) => update("dayMovement", v)}
-            options={OPTIONS.dayMovement}
-            required
-          />
-
-          <RadioGroup
-            label="How much do you exercise on most days?"
-            value={form.dailyExercise}
-            onChange={(v) => update("dailyExercise", v)}
-            options={OPTIONS.dailyExercise}
-            required
-          />
-
-          <RadioGroup
-            label="How many minutes each week do you do moderate exercise?"
-            value={form.moderateMinutesWeekly}
-            onChange={(v) => update("moderateMinutesWeekly", v)}
-            options={OPTIONS.moderateMinutesWeekly}
-            required
-          />
-
-          <RadioGroup
-            label="How many minutes each week do you do hard activities?"
-            value={form.vigorousMinutesWeekly}
-            onChange={(v) => update("vigorousMinutesWeekly", v)}
-            options={OPTIONS.vigorousMinutesWeekly}
-            required
-          />
-
-          <div
-            className="psField"
-            style={{
-              border: "2px solid #d9e7f7",
-              borderRadius: "10px",
-              padding: "12px",
-              background: "#f8fbff",
-            }}
-          >
-            <div className="psLabel" style={{ marginBottom: 8 }}>
-              Activity Summary
+              <div className="psActivityRow">
+                <strong>Category:</strong> {activitySummary.category}
+              </div>
+              <div className="psActivityRow">
+                <strong>Activity Factor:</strong> {activitySummary.activityFactor}
+              </div>
             </div>
-            <div style={{ fontWeight: 700, color: "#1b3554" }}>
-              Total Score: {activitySummary.score}
-            </div>
-            <div style={{ marginTop: 4 }}>Category: {activitySummary.category}</div>
-            <div style={{ marginTop: 4 }}>Activity Factor: {activitySummary.activityFactor}</div>
-          </div>
-        </Section>
+          </Section>
 
-        <Section title="Family & Home">
-          <SelectField
-            label="How many people live in your household?"
-            value={form.householdSize}
-            onChange={(v) => update("householdSize", v)}
-            options={OPTIONS.householdSizes}
-          />
-
-          <CheckboxGroup
-            label="Which age groups live in your household? (select all that apply)"
-            values={form.householdAgeGroups}
-            onToggle={(o) => update("householdAgeGroups", toggleInArray(form.householdAgeGroups, o))}
-            options={OPTIONS.householdAges}
-          />
-        </Section>
-
-        <Section title="Food Preferences">
-          <CheckboxGroup
-            label="Dietary Restrictions (select all that apply)"
-            values={form.dietaryRestrictions}
-            onToggle={(o) => update("dietaryRestrictions", toggleInArray(form.dietaryRestrictions, o))}
-            options={OPTIONS.dietaryRestrictions}
-          />
-
-          <CheckboxGroup
-            label="Preferred Cuisine Styles (select all that apply)"
-            values={form.cuisineStyles}
-            onToggle={(o) => update("cuisineStyles", toggleInArray(form.cuisineStyles, o))}
-            options={OPTIONS.cuisineStyles}
-          />
-
-          <CheckboxGroup
-            label="Preferred Meal Types (select all that apply)"
-            values={form.mealTypes}
-            onToggle={(o) => update("mealTypes", toggleInArray(form.mealTypes, o))}
-            options={OPTIONS.mealTypes}
-          />
-        </Section>
-
-        <Section title="Cooking & Kitchen">
-          <RadioGroup
-            label="Cooking Skill"
-            value={form.cookingSkill}
-            onChange={(v) => update("cookingSkill", v)}
-            options={OPTIONS.cookingSkill}
-          />
-
-          <CheckboxGroup
-            label="Cooking Methods You Use (select all that apply)"
-            values={form.cookingMethods}
-            onToggle={(o) => update("cookingMethods", toggleInArray(form.cookingMethods, o))}
-            options={OPTIONS.cookingMethods}
-          />
-
-          <CheckboxGroup
-            label="Kitchen Equipment Available (select all that apply)"
-            values={form.kitchenEquipment}
-            onToggle={(o) => update("kitchenEquipment", toggleInArray(form.kitchenEquipment, o))}
-            options={OPTIONS.kitchenEquipment}
-          />
-        </Section>
-
-        <Section title="Budget & Grocery Access">
-          <RadioGroup
-            label="Weekly Grocery Budget"
-            value={form.groceryBudget}
-            onChange={(v) => update("groceryBudget", v)}
-            options={OPTIONS.groceryBudget}
-          />
-
-          <CheckboxGroup
-            label="Food Assistance Programs Used (select all that apply)"
-            values={form.foodHelpPrograms}
-            onToggle={(o) => update("foodHelpPrograms", toggleInArray(form.foodHelpPrograms, o))}
-            options={OPTIONS.foodHelp}
-          />
-
-          {showFoodHelpOther && (
-            <TextField
-              label="Food Assistance (Other) - please specify"
-              value={form.foodHelpOtherText}
-              onChange={(v) => update("foodHelpOtherText", v)}
+          <Section title="Family & Home">
+            <SelectField
+              label="How many people live in your household?"
+              value={form.householdSize}
+              onChange={(v) => update("householdSize", v)}
+              options={OPTIONS.householdSizes}
             />
-          )}
 
-          <CheckboxGroup
-            label="Where do you usually shop for groceries? (select all that apply)"
-            values={form.groceryStores}
-            onToggle={(o) => update("groceryStores", toggleInArray(form.groceryStores, o))}
-            options={OPTIONS.groceryStores}
-          />
-        </Section>
+            <CheckboxGroup
+              label="Which age groups live in your household? (select all that apply)"
+              values={form.householdAgeGroups}
+              onToggle={(o) => update("householdAgeGroups", toggleInArray(form.householdAgeGroups, o))}
+              options={OPTIONS.householdAges}
+            />
+          </Section>
 
-        <button className="psSaveBtn" type="submit" disabled={loading}>
-          {loading ? "Saving..." : isSetup ? "Create Account" : "Save Profile"}
-        </button>
-      </form>
+          <Section title="Food Preferences">
+            <CheckboxGroup
+              label="Dietary Restrictions (select all that apply)"
+              values={form.dietaryRestrictions}
+              onToggle={(o) => update("dietaryRestrictions", toggleInArray(form.dietaryRestrictions, o))}
+              options={OPTIONS.dietaryRestrictions}
+            />
+
+            <CheckboxGroup
+              label="Preferred Cuisine Styles (select all that apply)"
+              values={form.cuisineStyles}
+              onToggle={(o) => update("cuisineStyles", toggleInArray(form.cuisineStyles, o))}
+              options={OPTIONS.cuisineStyles}
+            />
+
+            <CheckboxGroup
+              label="Preferred Meal Types (select all that apply)"
+              values={form.mealTypes}
+              onToggle={(o) => update("mealTypes", toggleInArray(form.mealTypes, o))}
+              options={OPTIONS.mealTypes}
+            />
+          </Section>
+
+          <Section title="Cooking & Kitchen">
+            <RadioGroup
+              label="Cooking Skill"
+              value={form.cookingSkill}
+              onChange={(v) => update("cookingSkill", v)}
+              options={OPTIONS.cookingSkill}
+            />
+
+            <CheckboxGroup
+              label="Cooking Methods You Use (select all that apply)"
+              values={form.cookingMethods}
+              onToggle={(o) => update("cookingMethods", toggleInArray(form.cookingMethods, o))}
+              options={OPTIONS.cookingMethods}
+            />
+
+            <CheckboxGroup
+              label="Kitchen Equipment Available (select all that apply)"
+              values={form.kitchenEquipment}
+              onToggle={(o) => update("kitchenEquipment", toggleInArray(form.kitchenEquipment, o))}
+              options={OPTIONS.kitchenEquipment}
+            />
+          </Section>
+
+          <Section title="Budget & Grocery Access">
+            <RadioGroup
+              label="Weekly Grocery Budget"
+              value={form.groceryBudget}
+              onChange={(v) => update("groceryBudget", v)}
+              options={OPTIONS.groceryBudget}
+            />
+
+            <CheckboxGroup
+              label="Food Assistance Programs Used (select all that apply)"
+              values={form.foodHelpPrograms}
+              onToggle={(o) => update("foodHelpPrograms", toggleInArray(form.foodHelpPrograms, o))}
+              options={OPTIONS.foodHelp}
+            />
+
+            {showFoodHelpOther && (
+              <TextField
+                label="Food Assistance (Other) - please specify"
+                value={form.foodHelpOtherText}
+                onChange={(v) => update("foodHelpOtherText", v)}
+              />
+            )}
+
+            <CheckboxGroup
+              label="Where do you usually shop for groceries? (select all that apply)"
+              values={form.groceryStores}
+              onToggle={(o) => update("groceryStores", toggleInArray(form.groceryStores, o))}
+              options={OPTIONS.groceryStores}
+            />
+          </Section>
+
+          <button className="psSaveBtn" type="submit" disabled={loading}>
+            {loading
+              ? "Saving..."
+              : location.pathname === "/setup-profile"
+              ? "Create Account"
+              : "Save Profile"}
+          </button>
+        </form>
+
+        {location.pathname !== "/setup-profile" && currentUserEmail && (
+          <BadgesPanel userEmail={currentUserEmail} />
+        )}
+      </div>
     </div>
   );
 }

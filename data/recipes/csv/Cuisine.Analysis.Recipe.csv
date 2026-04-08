@@ -2,6 +2,7 @@ Title,Meal,Primary Cuisine,Also Tagged,Categories
 Apple Cinnamon Pancakes,Breakfast Recipes,American,,['American']
 Classic Banana-Oat Breakast Bowl,Breakfast Recipes,American,,['American']
 Egg & Spinach Sandwich,Breakfast Recipes,American,,['American']
+English Muffin Breakfast Pizzas,Breakfast Recipes,American,,['American']
 Mixed-Vegetable Breakfast Burrito,Breakfast Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
 Peanut Butter Banana Smoothie,Breakfast Recipes,American,,['American']
 Simple Fruit & Yogurt Bowl,Breakfast Recipes,American,,['American']
@@ -9,6 +10,7 @@ Spinach & Egg Scramble,Breakfast Recipes,American,,['American']
 Tomato & Cheese Breakfast Toast,Breakfast Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
 Veggie Egg Muffins,Breakfast Recipes,American,,['American']
 Yogurt Berry Parfait,Breakfast Recipes,American,,['American']
+Air Fryer Chicken Nuggets,Lunch Recipes,American,,['American']
 Black-Bean Chili,Lunch Recipes,Mexican & Tex-Mex,,['Mexican & Tex-Mex']
 Chicken-Broccoli Stir-Fry,Lunch Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
 Creamy Chickpea Veggie Wrap,Lunch Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
@@ -30,8 +32,10 @@ Lean Beef Burgers,Dinner Recipes,American,,['American']
 Lentil & Veggie Stuffed Bell Peppers,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
 Meatloaf,Dinner Recipes,American,,['American']
 One-Pot Chicken Parmesan Pasta,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
+Pollo a la Plancha or Griddled Chicken with Homemade Mojo Marinade,Dinner Recipes,Cuban & Latin American,,['Cuban & Latin American']
 Shrimp & Collard-Green Skillet,Dinner Recipes,Southern & barbecue,Seafood,"['Southern & barbecue', 'Seafood']"
 Spicy Southwest Baked Salmon with Sweet Potato and Grains,Dinner Recipes,Mexican & Tex-Mex,Seafood,"['Mexican & Tex-Mex', 'Seafood']"
+Three Sisters Stew,Dinner Recipes,Native American,,['Native American']
 Turkish Pork Kebabs with Yogurt-Cucumber Salad,Dinner Recipes,"Mediterranean (Greek, Italian, Turkish)",,"['Mediterranean (Greek, Italian, Turkish)']"
 Vegetarian Egg Roll in a Bowl,Dinner Recipes,"Asian (Chinese, Vietnamese, Korean, etc.)",,"['Asian (Chinese, Vietnamese, Korean, etc.)']"
 Apple-Cinnamon Oat Cookies,Dessert Recipes,American,,['American']

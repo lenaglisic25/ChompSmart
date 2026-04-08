@@ -1,0 +1,47 @@
+Recipe Title,Category,Air Fryer,Food Processor,Pressure Cooker / Instant Pot,Toaster Oven,Rice Cooker,Stand Mixer,Slow Cooker,Blender,Cutting Board,Knives (explicit mention),Oven (conventional),Pots & Pans,Microwave,Refrigerator / Fridge,Stove / Range / Stovetop,Matched Phrases (evidence)
+Apple Cinnamon Pancakes,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Classic Banana-Oat Breakast Bowl,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pot'
+Egg & Spinach Sandwich,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+English Muffin Breakfast Pizzas,Breakfast Recipes,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Toaster Oven: 'toaster oven'; Oven (conventional): 'oven'
+Mixed-Vegetable Breakfast Burrito,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Peanut Butter Banana Smoothie,Breakfast Recipes,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Food Processor: 'food processor'; Blender: 'blender'
+Simple Fruit & Yogurt Bowl,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Spinach & Egg Scramble,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pan'
+Tomato & Cheese Breakfast Toast,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Veggie Egg Muffins,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'
+Yogurt Berry Parfait,Breakfast Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Apple-Cinnamon Oat Cookies,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'
+Banana-Oat Bars,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'
+Banana-Peanut-Butter Yogurt Parfait,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Blueberry-Banana Smoothie,Dessert Recipes,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Food Processor: 'foor processor'; Blender: 'blender'
+Mixed Fruit Salad,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Peach-Cinnamon Rice Cake,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Strawberry-Banana Frozen Cups,Dessert Recipes,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Yogurt-Berry Shortcake,Dessert Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'
+Beef & Vegetable Skillet,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Pots & Pans: 'skillet'; Stove / Range / Stovetop: 'stove'
+Caribbean Grilled Shrimp & Plantain Skillet,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Pots & Pans: 'skillet'; Stove / Range / Stovetop: 'stove'
+Egg Roll in a Bowl,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pan'
+Greek Beef Souvlaki with Tzatziki,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,Pots & Pans: 'pan'; Refrigerator / Fridge: 'fridge'
+Hearty Turkey & Cabbage Stew,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Pots & Pans: 'pot'; Stove / Range / Stovetop: 'stove'
+Italian Turkey Bolognese over Whole-Wheat Pasta,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pot'
+Latin-American Chicken & Black-Bean Tacos,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,Pots & Pans: 'skillet'; Microwave: 'microwave'
+Lean Beef Burgers,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,Oven (conventional): 'oven'; Pots & Pans: 'pan'; Stove / Range / Stovetop: 'stove'
+Lentil & Veggie Stuffed Bell Peppers,Dinner Recipes,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,Pressure Cooker / Instant Pot: 'pressure cooker'; Oven (conventional): 'oven'; Pots & Pans: 'pot'; Stove / Range / Stovetop: 'stove'
+Meatloaf,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'; Pots & Pans: 'pan'
+One-Pot Chicken Parmesan Pasta,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Pots & Pans: 'pot'; Stove / Range / Stovetop: 'stove'
+Pollo a la Plancha or Griddled Chicken with Homemade Mojo Marinade,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Cutting Board: 'cutting board'; Pots & Pans: 'skillet'; Stove / Range / Stovetop: 'stove'
+Shrimp & Collard-Green Skillet,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Spicy Southwest Baked Salmon with Sweet Potato and Grains,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,Oven (conventional): 'oven'
+Three Sisters Stew,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Slow Cooker: 'slow cooker'; Pots & Pans: 'pot'; Stove / Range / Stovetop: 'stove'
+Turkish Pork Kebabs with Yogurt-Cucumber Salad,Dinner Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pan'
+Air-Fryer Chicken Nuggets,Lunch Recipes,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Air Fryer: 'air-fryer'
+Black-Bean Chili,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,Slow Cooker: 'slow-cooker'; Pots & Pans: 'pot'; Stove / Range / Stovetop: 'stove'
+Chicken-Broccoli Stir-Fry,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'pan'
+Creamy Chickpea Veggie Wrap,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+Lentil Soup,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,Slow Cooker: 'slow-cooker'; Stove / Range / Stovetop: 'stove'
+Mexican-Style Bean Tacos,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Salmon Avocado Wrap,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Thai-Style Tofu Veggie Rice Bowl,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Tuna & Herb Pita,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,Pots & Pans: 'skillet'; Microwave: 'microwave'
+Tuna & Sweet-Pea Rice Bowl,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Pots & Pans: 'skillet'
+Turkey & Rice Bowl,Lunch Recipes,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,Slow Cooker: 'slow-cooker'; Pots & Pans: 'pan'
