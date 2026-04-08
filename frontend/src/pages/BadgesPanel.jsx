@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./BadgesPanel.css";
+import { apiFetch } from "../components/api";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
 
 const BADGE_ICONS = {
   "First Week Milestone": "🌟",
@@ -67,22 +68,18 @@ export default function BadgesPanel({ userEmail }) {
       setError("");
 
       const [definitionsRes, earnedRes] = await Promise.all([
-        fetch(`${API_BASE}/badges/`),
-        fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}`),
+        apiFetch("/badges/"),
+        apiFetch(`/badges/user/${encodeURIComponent(userEmail)}`),
       ]);
 
-      if (!definitionsRes.ok) {
-        throw new Error("Failed to load badge definitions.");
-      }
-      if (!earnedRes.ok) {
-        throw new Error("Failed to load earned badges.");
-      }
+      if (!definitionsRes.ok) throw new Error("Failed to load badge definitions.");
+      if (!earnedRes.ok) throw new Error("Failed to load earned badges.");
 
       const definitions = await definitionsRes.json();
       const earned = await earnedRes.json();
 
-      setAllBadges(definitions);
-      setEarnedBadges(earned);
+      setAllBadges(Array.isArray(definitions) ? definitions : []);
+      setEarnedBadges(Array.isArray(earned) ? earned : []);
     } catch (err) {
       console.error(err);
       setError("Could not load badges.");
@@ -93,9 +90,7 @@ export default function BadgesPanel({ userEmail }) {
 
   async function checkNewBadges() {
     try {
-      const res = await fetch(
-        `${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/unnotified`
-      );
+      const res = await apiFetch(`/badges/user/${encodeURIComponent(userEmail)}/unnotified`);
       if (!res.ok) return;
 
       const newBadges = await res.json();
@@ -112,7 +107,7 @@ export default function BadgesPanel({ userEmail }) {
 
   async function dismissPopup() {
     try {
-      await fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/notified`, {
+      await apiFetch(`/badges/user/${encodeURIComponent(userEmail)}/notified`, {
         method: "POST",
       });
     } catch (err) {

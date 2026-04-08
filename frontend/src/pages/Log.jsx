@@ -720,11 +720,17 @@ const MEAL_LABELS = {
   snacks: "Snacks",
 };
 
-async function searchFood(query) {
+// handle search requests better
+async function searchFood(query, signal) {
   if (!query.trim()) return [];
-  const res = await fetch(`http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`, { signal });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    if (err.name === "AbortError") return null;
+    return [];
+  }
 }
 
 async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
@@ -1061,19 +1067,45 @@ export default function Log() {
 
   const suggestionSection = getSectionForEmptySuggestion(meals);
 
-  useEffect(() => {
-    const currentQuery = expandedSection ? (inputValues[expandedSection] || "").trim() : "";
-    if (!currentQuery) {
-      setSearchResults([]);
-      return;
-    }
+const searchCounterRef = useRef(0);
+const inflightControllerRef = useRef(null);
 
-    setSearchLoading(true);
-    searchFood(currentQuery)
-      .then((list) => setSearchResults(list || []))
-      .catch(() => setSearchResults([]))
-      .finally(() => setSearchLoading(false));
-  }, [expandedSection, inputValues]);
+useEffect(() => {
+  const rawInput = expandedSection ? (inputValues[expandedSection] || "") : "";
+
+  if (!rawInput.trim()) {
+    setSearchResults([]);
+    setSearchLoading(false);
+    return;
+  }
+
+  setSearchLoading(true);
+  const myCount = ++searchCounterRef.current;
+
+  const timeoutId = setTimeout(() => {
+    if (inflightControllerRef.current) {
+      inflightControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    inflightControllerRef.current = controller;
+
+    searchFood(rawInput, controller.signal)
+      .then((list) => {
+        if (list === null || searchCounterRef.current !== myCount) return;
+        setSearchResults(list);
+        setSearchLoading(false);
+      })
+      .catch(() => {
+        if (searchCounterRef.current !== myCount) return;
+        setSearchResults([]);
+        setSearchLoading(false);
+      });
+  }, 300);
+
+  return () => {
+    clearTimeout(timeoutId);
+  };
+}, [expandedSection, inputValues[expandedSection]]);
 
   function toggleExpand(mealKey) {
     setExpandedSection((prev) => (prev === mealKey ? null : mealKey));
@@ -1267,7 +1299,7 @@ export default function Log() {
                             >
                               {food.description}
                               <span className="logSearchDropdownCals">
-                                {Math.round(Number(food.calories || 0))} cal
+                                {Math.round(Number(food.macros?.calories ?? food.calories ?? 0))} cal
                               </span>
                             </li>
                           ))}
@@ -1377,7 +1409,7 @@ export default function Log() {
               <div className="logModalNutrients">
                 <div className="logModalNutrientRow">
                   <span>Calories</span>
-                  <span>{scaledNutrient(selectedForModal.food.calories, servingMultiplier)}</span>
+                  <span>{scaledNutrient(selectedForModal.food.calories ?? selectedForModal.food.macros?.calories, servingMultiplier)}</span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Protein</span>

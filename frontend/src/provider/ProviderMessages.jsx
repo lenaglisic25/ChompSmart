@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "../components/api";
 import "./ProviderMessages.css";
 
 function getCurrentTimeLabel() {
@@ -33,7 +34,7 @@ export default function ProviderMessages() {
       if (!email) return;
 
       try {
-        const res = await fetch(`http://localhost:8000/providers/patients?email=${email}`);
+        const res = await apiFetch("/providers/patients");
         if (!res.ok) throw new Error("Failed to fetch patients");
 
         const dbPatients = await res.json();

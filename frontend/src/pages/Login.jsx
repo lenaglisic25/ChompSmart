@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
 import "./Login.css";
 import logo from "../assets/Chomp Smart Logo Transparent.png";
+import { apiFetch } from "../components/api";
 
 const GOOGLE_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -16,7 +16,6 @@ export default function Login() {
 
   const isValidEmail = (s) => /\S+@\S+\.\S+/.test(s);
 
-  // Helper to handle the navigation and storage logic for both login types
   const handleAuthSuccess = (data) => {
     localStorage.setItem("userType", data.userType);
 
@@ -33,8 +32,7 @@ export default function Login() {
         localStorage.setItem("myProviderEmail", data.provider_email);
       }
       localStorage.setItem("myProviderName", data.provider_name || "My Provider");
-      
-      // If it's a brand new Google user, send to setup
+
       if (data.is_first_login) {
         navigate("/setup-profile");
       } else {
@@ -51,14 +49,11 @@ export default function Login() {
     if (!isValidEmail(e)) return alert("Please enter a valid email.");
     if (!p) return alert("Please enter a password.");
 
-    const endpoint = isProvider
-      ? "http://localhost:8000/providers/login"
-      : "http://localhost:8000/users/login";
+    const endpoint = isProvider ? "/providers/login" : "/users/login";
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: e, password: p }),
       });
 
@@ -73,8 +68,7 @@ export default function Login() {
         }
       }
 
-      const data = JSON.parse(raw);
-      handleAuthSuccess(data);
+      handleAuthSuccess(JSON.parse(raw));
     } catch (err) {
       console.error(err);
       alert(`Error logging in: ${err.message}`);
@@ -82,21 +76,14 @@ export default function Login() {
   };
 
   const onGoogleSuccess = async (credentialResponse) => {
-    const decoded = jwtDecode(credentialResponse.credential);
-    
     try {
-      const res = await fetch("http://localhost:8000/users/google-login", {
+      const res = await apiFetch("/users/google-login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          token: credentialResponse.credential,
-          email: decoded.email,
-          name: decoded.name 
-        }),
+        body: JSON.stringify({ token: credentialResponse.credential }),
       });
 
       if (!res.ok) throw new Error("Google authentication failed.");
-      
+
       const data = await res.json();
       handleAuthSuccess(data);
     } catch (err) {
@@ -132,7 +119,7 @@ export default function Login() {
               className={`rolePill ${!isProvider ? "active" : ""}`}
               onClick={() => setIsProvider(false)}
             >
-              I’m a Patient
+              I'm a Patient
             </button>
             <button
               type="button"

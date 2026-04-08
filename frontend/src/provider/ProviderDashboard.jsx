@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../components/api";
 import "./ProviderDashboard.css";
 import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
 import { mockPanelAnalytics, mockPatient } from "./mockProviderData";
@@ -61,7 +62,7 @@ export default function ProviderDashboard() {
 
   useEffect(() => {
     if (!providerEmail) return;
-    fetch(`http://localhost:8000/providers/patients?email=${providerEmail}`)
+    apiFetch("/providers/patients")
       .then((res) => res.json())
       .then((data) => {
         setPatients(data);
@@ -148,7 +149,7 @@ export default function ProviderDashboard() {
           </div>
 
           <div className="providerSnapshotGrid">
-            <SnapshotItem label="Weight" value={`${patient.weightKg} kg`} />
+            <SnapshotItem label="Weight" value={`${patient.weightKg} lb`} />
             <SnapshotItem label="BMI" value={patient.bmi} />
             <SnapshotItem label="Last Sync" value={patient.lastSync} />
             <SnapshotItem label="Next Appointment" value={patient.nextAppointment} />

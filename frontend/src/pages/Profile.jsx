@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Profile.css";
+import { apiFetch } from "../components/api";  
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
@@ -475,10 +476,9 @@ function BadgesPanel({ userEmail }) {
   async function loadBadges() {
     try {
       setLoadingBadges(true);
-
       const [allRes, earnedRes] = await Promise.all([
-        fetch(`${API_BASE}/badges/`),
-        fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}`),
+        apiFetch("/badges/"),
+        apiFetch(`/badges/user/${encodeURIComponent(userEmail)}`),
       ]);
 
       if (!allRes.ok || !earnedRes.ok) {
@@ -499,9 +499,7 @@ function BadgesPanel({ userEmail }) {
 
   async function checkUnnotified() {
     try {
-      const res = await fetch(
-        `${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/unnotified`
-      );
+      const res = await apiFetch(`/badges/user/${encodeURIComponent(userEmail)}/unnotified`);
       if (!res.ok) return;
 
       const data = await res.json();
@@ -517,8 +515,9 @@ function BadgesPanel({ userEmail }) {
 
   async function dismissPopup() {
     try {
-      await fetch(`${API_BASE}/badges/user/${encodeURIComponent(userEmail)}/notified`, {
+      await apiFetch(`/badges/user/${encodeURIComponent(userEmail)}/notified`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
     } catch (err) {
       console.error("Failed to mark badges notified:", err);
@@ -667,16 +666,14 @@ function BadgesPanel({ userEmail }) {
                   </div>
                   <div>
                     <div className="psBadgePopupName">{badge.badge_name}</div>
-                    <div className="psBadgePopupDate">
-                      Earned {formatDate(badge.earned_at)}
-                    </div>
+                    <div className="psBadgePopupDesc">Keep up the great work!</div>
                   </div>
                 </div>
               ))}
             </div>
 
             <button type="button" className="psBadgePopupBtn" onClick={dismissPopup}>
-              Awesome
+              Awesome!
             </button>
           </div>
         </div>
@@ -691,9 +688,8 @@ export default function Profile() {
 
   const currentUserEmail = localStorage.getItem("currentUserEmail") || "";
   
-  // Logic to determine which path they are on
   const isSetup = location.pathname === "/setup-profile";
-  const isManualSetup = isSetup && !currentUserEmail; // Hit setup without logging in first
+  const isManualSetup = isSetup && !currentUserEmail;
 
   const [form, setForm] = useState({
     ...DEFAULT_FORM,
@@ -704,7 +700,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (location.pathname === "/setup-profile") {
-      fetch(`${API_BASE}/providers/list`)
+      apiFetch("/providers/list")
         .then((res) => res.json())
         .then((data) => {
           setProviders(data);
@@ -720,17 +716,16 @@ export default function Profile() {
     if (!currentUserEmail || isSetup) return;
 
     setLoading(true);
-    fetch(`${API_BASE}/profile/${currentUserEmail}`)
+    apiFetch(`/profile/${encodeURIComponent(currentUserEmail)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const normalized = normalizeProfile(data);
         if (normalized) {
-          const { email: _email, password, ...rest } = normalized;
+          const { email: _email, password: _password, ...rest } = normalized;
           setForm((prev) => ({
             ...prev,
             ...rest,
             email: currentUserEmail,
-            password,
           }));
         }
       })
@@ -745,7 +740,7 @@ export default function Profile() {
     const currentCount = Number(localStorage.getItem(storageKey) || "0") + 1;
     localStorage.setItem(storageKey, String(currentCount));
 
-    fetch(`${API_BASE}/badges/trigger/app-open`, {
+    apiFetch("/badges/trigger/app-open", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -805,10 +800,7 @@ export default function Profile() {
 
       steps_range: form.dayMovement || null,
       active_days_per_week: form.dailyExercise || null,
-      movement_types:
-        form.moderateMinutesWeekly || form.vigorousMinutesWeekly
-          ? [form.moderateMinutesWeekly, form.vigorousMinutesWeekly].filter(Boolean)
-          : null,
+      movement_types: [form.moderateMinutesWeekly || null, form.vigorousMinutesWeekly || null],
 
       household_size: form.householdSize ? Number(form.householdSize) : null,
       household_age_groups:
@@ -926,7 +918,7 @@ export default function Profile() {
     setLoading(true);
     try {
       if (isSetup) {
-        const userResponse = await fetch(`${API_BASE}/users/create`, {
+        const userResponse = await apiFetch("/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -939,14 +931,13 @@ export default function Profile() {
 
         if (!userResponse.ok) {
           const raw = await userResponse.text();
-          console.error("Error creating user:", raw);
           alert(`Error creating account: ${raw}`);
           setLoading(false);
           return;
         }
       }
 
-      const response = await fetch(`${API_BASE}/profile/`, {
+      const response = await apiFetch("/profile/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dbPayload),
@@ -954,7 +945,6 @@ export default function Profile() {
 
       if (!response.ok) {
         const raw = await response.text();
-        console.error("Error saving profile:", raw);
         alert(`Error saving profile: ${raw}`);
         setLoading(false);
         return;
@@ -1007,6 +997,7 @@ export default function Profile() {
                   value={form.email}
                   onChange={(v) => update("email", v)}
                   placeholder="you@example.com"
+                  required
                 />
 
                 <TextField
@@ -1015,6 +1006,7 @@ export default function Profile() {
                   value={form.password}
                   onChange={(v) => update("password", v)}
                   placeholder="Enter password"
+                  required
                 />
 
                 <div className="psField">
@@ -1023,14 +1015,11 @@ export default function Profile() {
                     className="psSelect"
                     value={form.providerEmail}
                     onChange={(e) => update("providerEmail", e.target.value)}
-                    required
                   >
-                    <option value="" disabled>
-                      Select a Provider
-                    </option>
+                    <option value="" disabled>Select a Provider</option>
                     {providers.map((p) => (
                       <option key={p.email} value={p.email}>
-                        {p.name} ({p.email})
+                        {p.name}
                       </option>
                     ))}
                   </select>

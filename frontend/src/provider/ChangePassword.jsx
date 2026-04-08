@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../components/api";
 import "../pages/Login.css";
 import logo from "../assets/Chomp Smart Logo Transparent.png";
 
@@ -24,10 +25,9 @@ export default function ChangePassword() {
     if (password.length < 8) return alert("Password must be at least 8 characters long.");
 
     try {
-      const res = await fetch("http://localhost:8000/providers/change-password", {
+      const res = await apiFetch("/providers/change-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, new_password: password }),
+        body: JSON.stringify({ new_password: password }),
       });
 
       const raw = await res.text();

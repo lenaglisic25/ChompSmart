@@ -1,33 +1,49 @@
 import os
 import httpx
 
+def _strip_plural(text: str) -> str:
+    t = text.lower().strip()
+    if t.endswith('s') and not t.endswith('ss') and not t.endswith('us'):
+        return t[:-1]
+    return t
 
 async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
     usda_key = os.getenv("USDA_API_KEY")
-    if not usda_key:
-        return []
+    if not usda_key: return []
 
+    query = query.strip()
     url = "https://api.nal.usda.gov/fdc/v1/foods/search"
 
-    async with httpx.AsyncClient() as client:
-        r = await client.get(
-            url,
-            params={
-                "api_key": usda_key,
-                "query": query,
-                "pageSize": 20,
-                "dataType": ["Branded", "Survey (FNDDS)"],
-            },
-            timeout=12,
-        )
+    async def fetch_data(search_term):
+        async with httpx.AsyncClient() as client:
+            if " " in search_term.strip():
+                data_types = ["Branded", "Survey (FNDDS)", "Foundation", "SR Legacy"]
+            else:
+                data_types = ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
+                
+            r = await client.get(
+                url,
+                params={
+                    "api_key": usda_key,
+                    "query": search_term,
+                    "pageSize": 50, 
+                    "dataType": data_types,
+                },
+                timeout=10,
+            )
+            return r.json().get("foods", []) if r.status_code == 200 else []
 
-    if r.status_code != 200:
+    raw_foods = await fetch_data(query)
+    if not raw_foods and query.strip().lower().endswith('s'):
+        singular_query = _strip_plural(query)
+        if singular_query != query.lower().strip():
+            raw_foods = await fetch_data(singular_query)
+
+    if not raw_foods:
         return []
 
-    data = r.json()
     foods = []
-
-    for f in data.get("foods", []):
+    for f in raw_foods:
         n_map = {n.get("nutrientId"): n.get("value", 0) for n in f.get("foodNutrients", [])}
 
         total_fat = n_map.get(1004) or (
@@ -42,7 +58,7 @@ async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
             "servingSize": f.get("servingSize"),
             "servingUnit": f.get("servingSizeUnit", "g"),
             "macros": {
-                "calories": n_map.get(1008, 0),
+                "calories": n_map.get(1008) or n_map.get(2047) or n_map.get(2048, 0),
                 "carbs": n_map.get(1005, 0),
                 "protein": n_map.get(1003, 0),
                 "fats": round(total_fat, 2),
@@ -61,6 +77,34 @@ async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
         if key and key not in seen:
             seen.add(key)
             unique_foods.append(food)
+
+    # sort by relevance for a more optimized search
+    query_lower = query.lower().strip()
+    q_base = _strip_plural(query_lower)
+
+    def sort_score(food):
+        food_desc = food["description"].lower()
+        brand = food.get("brand", "").lower()
+
+        primary_name = food_desc.split(',')[0].strip()
+        p_base = _strip_plural(primary_name)
+
+        score = 5
+
+        if p_base == q_base and brand == "generic":
+            score = -2 if ("raw" in food_desc or "fresh" in food_desc) else -1
+        elif " " in query_lower and query_lower in brand:
+            score = 0
+        elif p_base == q_base:
+            score = 1 if "plain" in food_desc else 2
+        elif food_desc.startswith(q_base):
+            score = 3
+        elif q_base in food_desc:
+            score = 4
+
+        return (score, len(food_desc), food_desc)
+
+    unique_foods.sort(key=sort_score)
 
     return unique_foods[:limit]
 

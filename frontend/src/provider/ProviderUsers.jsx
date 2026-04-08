@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../components/api";
 import "./ProviderUsers.css";
 
 const BARRIER_OPTIONS = [
@@ -86,7 +87,7 @@ export default function ProviderUsers() {
 
   useEffect(() => {
     if (!providerEmail) return;
-    fetch(`http://localhost:8000/providers/patients?email=${providerEmail}`)
+    apiFetch("/providers/patients")
       .then((res) => res.json())
       .then((data) => {
         const mapped = data.map((u) => ({
