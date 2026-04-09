@@ -918,15 +918,22 @@ export default function Profile() {
     setLoading(true);
     try {
       if (isSetup) {
-        const userResponse = await apiFetch("/auth/register", {
+        const endpoint = isManualSetup ? "/users/register" : "/users/google-profile-setup";
+        const payload = {
+          email: userEmail,
+          name: form.name || "",
+          provider_email: form.providerEmail,
+        };
+        
+        // Only include password for manual setup
+        if (isManualSetup) {
+          payload.password = form.password;
+        }
+        
+        const userResponse = await apiFetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: userEmail,
-            password: form.password,
-            name: form.name || "",
-            provider_email: form.providerEmail,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!userResponse.ok) {
@@ -1000,14 +1007,16 @@ export default function Profile() {
                   required
                 />
 
-                <TextField
-                  label="Password"
-                  type="password"
-                  value={form.password}
-                  onChange={(v) => update("password", v)}
-                  placeholder="Enter password"
-                  required
-                />
+                {isManualSetup && (
+                  <TextField
+                    label="Password"
+                    type="password"
+                    value={form.password}
+                    onChange={(v) => update("password", v)}
+                    placeholder="Enter password"
+                    required
+                  />
+                )}
 
                 <div className="psField">
                   <label className="psLabel">Choose your Healthcare Provider</label>

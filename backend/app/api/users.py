@@ -143,6 +143,28 @@ async def google_login(payload: GoogleLoginPayload, response: Response, db: Sess
     }
 
 
+@router.post("/google-profile-setup")
+async def google_profile_setup(user_data: UserCreate, db: Session = Depends(get_db)):
+    """
+    Complete profile setup for Google auth first-time users.
+    Called after user has authenticate via Google OAuth.
+    User record already exists with password=None.
+    """
+    email = user_data.email.lower().strip()
+    user = db.query(UserModel).filter(UserModel.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    
+    # Update provider assignment and name
+    if user_data.provider_email:
+        user.provider_email = user_data.provider_email
+    if user_data.name:
+        user.name = user_data.name
+    
+    db.commit()
+    return {"message": "Profile setup completed."}
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     if not user_data.password or not user_data.password.strip():

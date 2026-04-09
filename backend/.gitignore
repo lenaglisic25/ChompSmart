@@ -3,5 +3,5 @@
 __pycache__/
 .venv/
 *.sqlite
-backend/admin/admin_audit.log
+admin_audit.log
 scripts/.gitkeep
