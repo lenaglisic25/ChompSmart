@@ -13,7 +13,6 @@ from app.database import get_db
 from app.models.provider import Provider
 from app.models.user import UserModel
 from app.schemas.user import UserCreate, User as UserSchema
-from app.utils.mailer import send_welcome_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -126,10 +125,6 @@ async def google_login(payload: GoogleLoginPayload, response: Response, db: Sess
         db.add(user)
         db.commit()
         db.refresh(user)
-        try:
-            await send_welcome_email(email)
-        except Exception as exc:
-            print(f"[mailer] Welcome email failed for {email}: {exc}")
 
     provider_name = "My Provider"
     if user.provider_email:
@@ -164,10 +159,6 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         user_type="patient",
     ))
     db.commit()
-    try:
-        await send_welcome_email(email)
-    except Exception as exc:
-        print(f"[mailer] Welcome email failed for {email}: {exc}")
     return {"message": "Account created successfully."}
 
 
