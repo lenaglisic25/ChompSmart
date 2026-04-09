@@ -28,24 +28,6 @@ export default function ProviderAnalyticsDrawer({ open, onClose, analytics }) {
         </div>
 
         <section className="providerDrawerSection">
-          <h3>Risk Overview</h3>
-          <div className="providerRiskGrid">
-            <div className="providerRiskCard high">
-              <div className="providerRiskValue">{analytics.riskCounts.high}</div>
-              <div className="providerRiskLabel">High Risk</div>
-            </div>
-            <div className="providerRiskCard medium">
-              <div className="providerRiskValue">{analytics.riskCounts.moderate}</div>
-              <div className="providerRiskLabel">Moderate</div>
-            </div>
-            <div className="providerRiskCard low">
-              <div className="providerRiskValue">{analytics.riskCounts.low}</div>
-              <div className="providerRiskLabel">Low</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="providerDrawerSection">
           <h3>Follow-Up Queue</h3>
           <div className="providerDrawerMetric">
             {analytics.followUpQueue} patients need follow-up

@@ -54,9 +54,12 @@ export default function ProviderDashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [patients, setPatients] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState("");
+  const [showNotePopup, setShowNotePopup] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [lastInteractionTimes, setLastInteractionTimes] = useState({});
   
   // Added missing state for the nutrient view toggle
-  const [nutrientView, setNutrientView] = useState("daily");
+  const [_nutrientView, _setNutrientView] = useState("daily");
 
   const providerEmail = localStorage.getItem("currentProviderEmail") || localStorage.getItem("currentUserEmail");
 
@@ -69,6 +72,24 @@ export default function ProviderDashboard() {
         if (data.length > 0) {
           setSelectedEmail(data[0].email);
         }
+        
+        // Fetch last message timestamps for all patients
+        const timesMap = {};
+        Promise.all(
+          data.map((patient) =>
+            apiFetch(`/messages/?patient_email=${encodeURIComponent(patient.email)}`)
+              .then((res) => res.json())
+              .then((messages) => {
+                if (Array.isArray(messages) && messages.length > 0) {
+                  const lastMsg = messages[messages.length - 1];
+                  timesMap[patient.email] = lastMsg.time;
+                }
+              })
+              .catch(() => {})
+          )
+        ).then(() => {
+          setLastInteractionTimes(timesMap);
+        });
       })
       .catch(() => {});
   }, [providerEmail]);
@@ -89,7 +110,6 @@ export default function ProviderDashboard() {
       .slice(0, 5);
 
     return {
-      riskCounts: { high: 0, moderate: patients.length, low: 0 },
       followUpQueue: patients.length,
       avgEngagementLogsPerWeek: 3.2,
       topBarriers: topBarriers.length > 0 ? topBarriers : mockPanelAnalytics.topBarriers,
@@ -101,6 +121,46 @@ export default function ProviderDashboard() {
     const p = patients.find((x) => x.email === selectedEmail);
     if (!p) return mockPatient;
 
+    const timeStr = lastInteractionTimes[selectedEmail];
+    let lastSync = "Never";
+    
+    if (timeStr) {
+      try {
+        let lastMessageTime = new Date(timeStr);
+        
+        if (!/^\d{4}-/.test(timeStr) && /^\d{1,2}:\d{2}/.test(timeStr)) {
+          const today = new Date();
+          const timeParts = timeStr.match(/(\d{1,2}):(\d{2})/);
+          if (timeParts) {
+            lastMessageTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(timeParts[1]), parseInt(timeParts[2]));
+          }
+        }
+        
+        if (!isNaN(lastMessageTime.getTime())) {
+          const now = new Date();
+          const diffMs = now - lastMessageTime;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+
+          if (diffMins < 1) {
+            lastSync = "Now";
+          } else if (diffMins < 60) {
+            lastSync = `${diffMins}m ago`;
+          } else if (diffHours < 24) {
+            lastSync = `${diffHours}h ago`;
+          } else if (diffDays < 7) {
+            lastSync = `${diffDays}d ago`;
+          } else {
+            lastSync = lastMessageTime.toLocaleDateString();
+          }
+        }
+      } catch (error) {
+        console.debug("Failed to parse last message time:", error);
+        lastSync = timeStr;
+      }
+    }
+
     return {
       ...mockPatient,
       id: p.email,
@@ -111,8 +171,9 @@ export default function ProviderDashboard() {
       providerNotes: p.profile?.provider_notes || "",
       adherence: p.adherence || mockPatient.adherence,
       progress: p.progress || mockPatient.progress,
+      lastSync: lastSync,
     };
-  }, [patients, selectedEmail]);
+  }, [patients, selectedEmail, lastInteractionTimes]);
 
   const handleMessageClick = () => {
     if (patient.id) {
@@ -121,6 +182,31 @@ export default function ProviderDashboard() {
       navigate("/provider/messages");
     }
   };
+
+  const handleViewProfile = () => {
+    if (patient.id) {
+      navigate(`/provider/users?email=${encodeURIComponent(patient.id)}`);
+    }
+  };
+
+  async function handleAddNote() {
+    if (!noteText.trim() || !patient.id) return;
+    
+    try {
+      await apiFetch("/profile/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_email: patient.id,
+          provider_notes: noteText
+        })
+      });
+      setNoteText("");
+      setShowNotePopup(false);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   return (
     <>
@@ -159,8 +245,11 @@ export default function ProviderDashboard() {
             <button type="button" className="providerQuickBtn" onClick={handleMessageClick}>
               Message
             </button>
-            <button type="button" className="providerQuickBtn primary">
-              Set Goal
+            <button type="button" className="providerQuickBtn" onClick={handleViewProfile}>
+              View Profile
+            </button>
+            <button type="button" className="providerQuickBtn" onClick={() => setShowNotePopup(true)}>
+              Add Note
             </button>
             <button
               type="button"
@@ -315,6 +404,45 @@ export default function ProviderDashboard() {
         onClose={() => setDrawerOpen(false)}
         analytics={analytics}
       />
+
+      {showNotePopup && (
+        <div className="providerNotePopupOverlay" onClick={() => setShowNotePopup(false)}>
+          <div className="providerNotePopup" onClick={(e) => e.stopPropagation()}>
+            <div className="providerNotePopupHeader">
+              <h3>Add Note to {patient.name}</h3>
+              <button
+                type="button"
+                className="providerNotePopupClose"
+                onClick={() => setShowNotePopup(false)}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              className="providerNotePopupTextarea"
+              placeholder="Write your note here..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div className="providerNotePopupActions">
+              <button
+                type="button"
+                className="providerNotePopupCancel"
+                onClick={() => setShowNotePopup(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="providerNotePopupSave"
+                onClick={handleAddNote}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

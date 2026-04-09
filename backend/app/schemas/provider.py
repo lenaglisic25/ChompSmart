@@ -13,5 +13,4 @@ class ProviderResponse(BaseModel):
         from_attributes = True
 
 class PasswordUpdate(BaseModel):
-    email: EmailStr
     new_password: str

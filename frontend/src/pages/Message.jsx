@@ -1,7 +1,9 @@
+// Message.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useFavorites } from "../context/FavoritesContext";
 import { useGrocery } from "../grocery/GroceryContext";
+import { apiFetch } from "../components/api";
 import "./Message.css";
 
 const chompyGreetings = [
@@ -28,7 +30,6 @@ function nowTime() {
   return `${hh}:${mm}`;
 }
 
-// (yavna) Handle  file compression
 async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -50,7 +51,8 @@ async function compressImage(dataUrl, quality = 0.6, maxWidth = 800) {
     img.src = dataUrl;
   });
 }
-//
+
+const MAX_MESSAGE_LENGTH = 2000;
 
 export default function Message() {
   const email = localStorage.getItem("currentUserEmail") || "guest";
@@ -92,26 +94,33 @@ export default function Message() {
   const [text, setText] = useState("");
   // (yavna) added simple typing indicator for ai loading
   const [typing, setTyping] = useState(false);
+  const [unreadCount, setUnreadCount] = useState({ chompy: 0, doctor: 0 });
+  const [doctorThreadCleared, setDoctorThreadCleared] = useState(false);
 
   const [threads, setThreads] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.doctor && parsed.doctor[0] && parsed.doctor[0].name !== providerName) {
-           parsed.doctor = starterThreads.doctor;
+        if (parsed.doctor) {
+          parsed.doctor = starterThreads.doctor;
         }
         return parsed;
       }
-    } catch {}
+    } catch (err) {
+      console.error(err);
+    }
     return starterThreads;
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(threads));
-    } catch {}
-  }, [threads, storageKey]);
+      const chompyOnly = { chompy: threads.chompy };
+      localStorage.setItem(storageKey, JSON.stringify(chompyOnly));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [threads.chompy, storageKey]);
 
   const listRef = useRef(null);
   const messages = activeThread ? threads?.[activeThread] || [] : [];
@@ -132,8 +141,9 @@ export default function Message() {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
-    } catch {}
-
+    } catch (err) {
+      console.debug(err);
+    }
     setCameraStream(null);
     setIsCameraOpen(false);
   }
@@ -171,7 +181,7 @@ export default function Message() {
       try {
         await video.play();
       } catch (e) {
-        console.error("video.play() failed:", e);
+        console.error(e);
       }
     };
 
@@ -241,7 +251,7 @@ export default function Message() {
       try {
         const compressedImage = await compressImage(dataUrl);
 
-        const res = await fetch("http://localhost:8000/chat/upload", {
+        const res = await apiFetch("/chat/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -269,7 +279,7 @@ export default function Message() {
           }));
         }
       } catch (err) {
-        console.error("Image upload failed:", err);
+        console.error(err);
       } finally {
         setTyping(false);
       }
@@ -289,12 +299,12 @@ export default function Message() {
   }, [view, activeThread, messages.length, typing]);
 
   useEffect(() => {
-    if (activeThread === "doctor" && providerEmail) {
-      fetch(`http://localhost:8000/messages/${email}/${providerEmail}`)
+    if (providerEmail && !doctorThreadCleared) {
+      apiFetch(`/messages/?provider_email=${encodeURIComponent(providerEmail)}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            const formatted = data.map(m => ({
+            let formatted = data.map(m => ({
               id: String(m.id),
               from: m.sender === "patient" ? "me" : "staff",
               name: m.sender === "patient" ? "You" : providerName,
@@ -302,18 +312,55 @@ export default function Message() {
               time: m.time,
               body: m.text,
             }));
-            setThreads(prev => ({ ...prev, doctor: formatted }));
+
+            const clearedUntilId = localStorage.getItem(`doctor_cleared_until_${email}`);
+            if (clearedUntilId) {
+              const idx = formatted.findIndex(m => m.id === clearedUntilId);
+              if (idx !== -1) {
+                formatted = formatted.slice(idx + 1);
+              }
+            }
+
+            setThreads(prev => ({ ...prev, doctor: formatted.length > 0 ? formatted : starterThreads.doctor }));
+
+            let unreadCount = 0;
+            const readUntilId = localStorage.getItem(`doctor_read_until_${email}`);
+            
+            if (activeThread === "doctor") {
+              if (formatted.length > 0) {
+                localStorage.setItem(`doctor_read_until_${email}`, formatted[formatted.length - 1].id);
+              }
+            } else {
+              for (let i = formatted.length - 1; i >= 0; i--) {
+                if (formatted[i].id === readUntilId) break;
+                if (formatted[i].from === "staff") {
+                  unreadCount++;
+                } else if (formatted[i].from === "me") {
+                  break;
+                }
+              }
+            }
+            
+            setUnreadCount(prev => ({ ...prev, doctor: unreadCount }));
           } else {
             setThreads(prev => ({ ...prev, doctor: starterThreads.doctor }));
+            setUnreadCount(prev => ({ ...prev, doctor: 0 }));
           }
         })
         .catch(console.error);
     }
-  }, [activeThread, email, providerEmail, providerName, starterThreads.doctor]);
+  }, [activeThread, providerEmail, providerName, starterThreads.doctor, doctorThreadCleared, email]);
 
   function openChat(threadKey) {
     setActiveThread(threadKey);
     setView("chat");
+    if (threadKey === "doctor") {
+      setUnreadCount(prev => ({ ...prev, doctor: 0 }));
+      const lastMsg = threads.doctor?.[threads.doctor.length - 1];
+      if (lastMsg && lastMsg.id && lastMsg.id !== "d1") {
+        localStorage.setItem(`doctor_read_until_${email}`, lastMsg.id);
+      }
+    }
   }
 
   function backToInbox() {
@@ -328,6 +375,11 @@ export default function Message() {
   async function sendMessage() {
     const trimmed = text.trim();
     if (!trimmed || !activeThread) return;
+
+    if (trimmed.length > MAX_MESSAGE_LENGTH) {
+      alert(`Message is too long. Please keep it under ${MAX_MESSAGE_LENGTH} characters.`);
+      return;
+    }
 
     const newMsg = {
       id: `${Date.now()}`,
@@ -348,13 +400,11 @@ export default function Message() {
 
     if (activeThread === "doctor" && providerEmail) {
       try {
-        fetch("http://localhost:8000/messages/", {
+        apiFetch("/messages/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            patient_email: email,
             provider_email: providerEmail,
-            sender: "patient",
             text: trimmed,
             time: nowTime()
           })
@@ -362,6 +412,7 @@ export default function Message() {
       } catch (err) {
         console.error(err);
       }
+      setDoctorThreadCleared(false);
     }
 
     if (activeThread === "chompy") {
@@ -377,7 +428,7 @@ export default function Message() {
             ? items.map(i => ({ name: i.name, purchased: i.purchased })) 
             : [];
 
-        const res = await fetch("http://localhost:8000/chat/message", {
+        const res = await apiFetch("/chat/message", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -427,10 +478,21 @@ export default function Message() {
     if (!activeThread) return;
     if (!window.confirm("Clear this chat?")) return;
     
-    setThreads((prev) => {
-      let defaultThread = starterThreads[activeThread];
-      if (activeThread === "chompy") {
-        defaultThread = [
+    if (activeThread === "doctor") {
+      const lastMsg = threads.doctor?.[threads.doctor.length - 1];
+      if (lastMsg && lastMsg.id && lastMsg.id !== "d1") {
+        localStorage.setItem(`doctor_cleared_until_${email}`, lastMsg.id);
+      }
+      setThreads((prev) => ({
+        ...prev,
+        doctor: starterThreads.doctor,
+      }));
+      setUnreadCount(prev => ({ ...prev, doctor: 0 }));
+      setDoctorThreadCleared(true);
+    } else {
+      setThreads((prev) => ({
+        ...prev,
+        chompy: [
           {
             id: `c_${Date.now()}`,
             from: "bot",
@@ -439,13 +501,9 @@ export default function Message() {
             time: nowTime(),
             body: getRandomGreeting(),
           },
-        ];
-      }
-      return {
-        ...prev,
-        [activeThread]: defaultThread,
-      };
-    });
+        ],
+      }));
+    }
   }
 
   function previewOf(threadKey) {
@@ -476,7 +534,12 @@ export default function Message() {
               👨‍⚕️
             </div>
             <div className="msgInboxText">
-              <div className="msgInboxName">{providerName}</div>
+              <div className="msgInboxName">
+                {providerName}
+                {unreadCount.doctor > 0 && (
+                  <span className="msgUnreadBadge">{unreadCount.doctor}</span>
+                )}
+              </div>
               <div className="msgInboxPreview">{previewOf("doctor")}</div>
             </div>
           </div>
@@ -527,7 +590,6 @@ export default function Message() {
           </div>
         ))}
 
-        {/* (yavna) simple typing indicator to show chatbot is generating a response*/}
         {typing && (
           <div className="msgRow other">
             <div className="msgAvatar gator">🐊</div>
@@ -550,6 +612,7 @@ export default function Message() {
             if (e.key === "Enter") sendMessage();
           }}
           disabled={typing}
+          maxLength={MAX_MESSAGE_LENGTH}
         />
 
         <input

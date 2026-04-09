@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../components/api";
 import "./ProviderMessages.css";
 
@@ -23,59 +24,93 @@ function MessageBubble({ sender, text, time }) {
 }
 
 export default function ProviderMessages() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [draft, setDraft] = useState("");
+  const [showNotePopup, setShowNotePopup] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  
+  const [clearedChats, setClearedChats] = useState(() => {
+    return JSON.parse(localStorage.getItem("provider_cleared_chats") || "{}");
+  });
+
+  const [patientStatuses, setPatientStatuses] = useState(() => {
+    return JSON.parse(localStorage.getItem("provider_patient_statuses") || "{}");
+  });
 
   useEffect(() => {
     const fetchPatients = async () => {
-      const email = localStorage.getItem("currentProviderEmail");
-      if (!email) return;
-
       try {
         const res = await apiFetch("/providers/patients");
         if (!res.ok) throw new Error("Failed to fetch patients");
 
         const dbPatients = await res.json();
 
-        const formattedConvos = dbPatients.map((user) => ({
-          id: user.email,
-          patientEmail: user.email,
-          patientName: user.name || user.email, 
-          preview: "No messages yet.",
-          lastTime: "--",
-          unread: 0,
-          status: "New Patient",
-          messages: [],
-        }));
-
-        if (formattedConvos.length > 0) {
-          const firstConv = formattedConvos[0];
-          setSelectedId(firstConv.id);
-          
-          try {
-            const msgRes = await fetch(`http://localhost:8000/messages/${firstConv.patientEmail}/${email}`);
-            const msgData = await msgRes.json();
-            
-            if (Array.isArray(msgData) && msgData.length > 0) {
-              const formattedMsgs = msgData.map(m => ({
-                id: String(m.id),
-                sender: m.sender,
-                text: m.text,
-                time: m.time
-              }));
-              
-              formattedConvos[0].messages = formattedMsgs;
-              formattedConvos[0].preview = formattedMsgs[formattedMsgs.length - 1].text;
-              formattedConvos[0].lastTime = formattedMsgs[formattedMsgs.length - 1].time;
+        const convosWithMessages = await Promise.all(
+          dbPatients.map(async (user) => {
+            let formatted = [];
+            try {
+              const msgRes = await apiFetch(`/messages/?patient_email=${encodeURIComponent(user.email)}`);
+              if (msgRes.ok) {
+                const data = await msgRes.json();
+                if (Array.isArray(data)) {
+                  formatted = data.map((m) => ({
+                    id: String(m.id),
+                    sender: m.sender,
+                    text: m.text,
+                    time: m.time,
+                  }));
+                }
+              }
+            } catch (err) {
+              console.error(err);
             }
-          } catch (err) {
-            console.error(err);
-          }
-        }
 
-        setConversations(formattedConvos);
+            const clearedUntilId = clearedChats[user.email];
+            if (clearedUntilId) {
+              const idx = formatted.findIndex((m) => m.id === clearedUntilId);
+              if (idx !== -1) {
+                formatted = formatted.slice(idx + 1);
+              }
+            }
+
+            const hasMessages = formatted.length > 0;
+            const lastMsg = hasMessages ? formatted[formatted.length - 1] : null;
+
+            let status = patientStatuses[user.email] || "New Patient";
+            let unread = 0;
+
+            if (lastMsg && lastMsg.sender === "patient") {
+              status = "New Message";
+              for (let i = formatted.length - 1; i >= 0; i--) {
+                if (formatted[i].sender === "patient") unread++;
+                else break;
+              }
+            }
+
+            return {
+              id: user.email,
+              patientEmail: user.email,
+              patientName: user.name || user.email,
+              preview: hasMessages ? lastMsg.text : "No messages yet.",
+              lastTime: hasMessages ? lastMsg.time : "--",
+              unread: unread,
+              status: status,
+              messages: formatted,
+            };
+          })
+        );
+
+        setConversations(convosWithMessages);
+        
+        if (convosWithMessages.length > 0) {
+          setSelectedId(convosWithMessages[0].id);
+          setConversations((prev) =>
+            prev.map((item, idx) => (idx === 0 ? { ...item, unread: 0 } : item))
+          );
+        }
       } catch (error) {
         console.error("Error fetching database patients:", error);
       }
@@ -104,43 +139,58 @@ export default function ProviderMessages() {
   async function handleSelectConversation(id) {
     setSelectedId(id);
     
-    const conv = conversations.find(c => c.id === id);
-    const providerEmail = localStorage.getItem("currentProviderEmail");
+    setConversations((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, unread: 0 } : item
+      )
+    );
     
-    if (conv && conv.patientEmail && providerEmail) {
-      try {
-        const res = await fetch(`http://localhost:8000/messages/${conv.patientEmail}/${providerEmail}`);
-        const data = await res.json();
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+    
+    try {
+      const res = await apiFetch(`/messages/?patient_email=${encodeURIComponent(conv.patientEmail)}`);
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        let formatted = data.map(m => ({
+          id: String(m.id),
+          sender: m.sender,
+          text: m.text,
+          time: m.time
+        }));
         
-        if (Array.isArray(data)) {
-          const formatted = data.map(m => ({
-            id: String(m.id),
-            sender: m.sender,
-            text: m.text,
-            time: m.time
-          }));
-          
-          setConversations((prev) =>
-            prev.map((item) =>
-              item.id === id ? { 
-                ...item, 
-                unread: 0, 
-                messages: formatted,
-                preview: formatted.length > 0 ? formatted[formatted.length - 1].text : "No messages yet.",
-                lastTime: formatted.length > 0 ? formatted[formatted.length - 1].time : "--"
-              } : item
-            )
-          );
+        const clearedUntilId = clearedChats[id];
+        if (clearedUntilId) {
+           const idx = formatted.findIndex(m => m.id === clearedUntilId);
+           if (idx !== -1) {
+              formatted = formatted.slice(idx + 1);
+           }
         }
-      } catch (err) {
-        console.error(err);
+        
+        const hasMessages = formatted.length > 0;
+        const lastMsg = hasMessages ? formatted[formatted.length - 1] : null;
+        let status = patientStatuses[id] || "New Patient";
+
+        if (lastMsg && lastMsg.sender === "patient") {
+          status = "New Message";
+        }
+
+        setConversations((prev) =>
+          prev.map((item) =>
+            item.id === id ? { 
+              ...item, 
+              messages: formatted,
+              preview: hasMessages ? lastMsg.text : "No messages yet.",
+              lastTime: hasMessages ? lastMsg.time : "--",
+              status: status,
+              unread: 0 
+            } : item
+          )
+        );
       }
-    } else {
-      setConversations((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, unread: 0 } : item
-        )
-      );
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -149,16 +199,13 @@ export default function ProviderMessages() {
     if (!clean || !selectedConversation) return;
 
     const now = getCurrentTimeLabel();
-    const providerEmail = localStorage.getItem("currentProviderEmail");
 
     try {
-      await fetch("http://localhost:8000/messages/", {
+      await apiFetch("/messages/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patient_email: selectedConversation.patientEmail,
-          provider_email: providerEmail,
-          sender: "provider",
           text: clean,
           time: now
         })
@@ -166,6 +213,10 @@ export default function ProviderMessages() {
     } catch (err) {
       console.error(err);
     }
+
+    const newStatuses = { ...patientStatuses, [selectedConversation.id]: "Replied" };
+    setPatientStatuses(newStatuses);
+    localStorage.setItem("provider_patient_statuses", JSON.stringify(newStatuses));
 
     setConversations((prev) =>
       prev.map((conv) =>
@@ -188,6 +239,7 @@ export default function ProviderMessages() {
           : conv
       )
     );
+    
     setDraft("");
   }
 
@@ -197,6 +249,17 @@ export default function ProviderMessages() {
 
   function handleClearConversation() {
     if (!selectedConversation) return;
+
+    const lastMsg = selectedConversation.messages[selectedConversation.messages.length - 1];
+    if (lastMsg) {
+       const newCleared = { ...clearedChats, [selectedConversation.id]: lastMsg.id };
+       setClearedChats(newCleared);
+       localStorage.setItem("provider_cleared_chats", JSON.stringify(newCleared));
+    }
+
+    const newStatuses = { ...patientStatuses, [selectedConversation.id]: "Cleared" };
+    setPatientStatuses(newStatuses);
+    localStorage.setItem("provider_patient_statuses", JSON.stringify(newStatuses));
 
     setConversations((prev) =>
       prev.map((conv) =>
@@ -212,7 +275,32 @@ export default function ProviderMessages() {
           : conv
       )
     );
+    
     setDraft("");
+  }
+
+  function handleViewProfile() {
+    if (!selectedConversation) return;
+    navigate(`/provider/users?email=${encodeURIComponent(selectedConversation.patientEmail)}`);
+  }
+
+  async function handleAddNote() {
+    if (!selectedConversation || !noteText.trim()) return;
+    
+    try {
+      await apiFetch("/profile/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_email: selectedConversation.patientEmail,
+          provider_notes: noteText
+        })
+      });
+      setNoteText("");
+      setShowNotePopup(false);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   return (
@@ -277,8 +365,8 @@ export default function ProviderMessages() {
               </div>
 
               <div className="providerChatHeaderActions">
-                <button type="button">View Profile</button>
-                <button type="button">Add Note</button>
+                <button type="button" onClick={handleViewProfile}>View Profile</button>
+                <button type="button" onClick={() => setShowNotePopup(true)}>Add Note</button>
                 <button
                   type="button"
                   className="providerChatClearConversation"
@@ -338,6 +426,45 @@ export default function ProviderMessages() {
           </div>
         )}
       </section>
+
+      {showNotePopup && (
+        <div className="providerNotePopupOverlay" onClick={() => setShowNotePopup(false)}>
+          <div className="providerNotePopup" onClick={(e) => e.stopPropagation()}>
+            <div className="providerNotePopupHeader">
+              <h3>Add Note to {selectedConversation?.patientName}</h3>
+              <button
+                type="button"
+                className="providerNotePopupClose"
+                onClick={() => setShowNotePopup(false)}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              className="providerNotePopupTextarea"
+              placeholder="Write your note here..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div className="providerNotePopupActions">
+              <button
+                type="button"
+                className="providerNotePopupCancel"
+                onClick={() => setShowNotePopup(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="providerNotePopupSave"
+                onClick={handleAddNote}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
