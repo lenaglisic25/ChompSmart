@@ -121,6 +121,7 @@ export default function Login() {
             >
               I'm a Patient
             </button>
+
             <button
               type="button"
               className={`rolePill ${isProvider ? "active" : ""}`}
@@ -180,28 +181,35 @@ export default function Login() {
             </button>
 
             {!isProvider && (
-              <div style={{ marginTop: "15px", display: "flex", justifyContent: "center" }}>
-                <GoogleLogin
-                  onSuccess={onGoogleSuccess}
-                  onError={() => alert("Google Login Failed")}
-                  theme="outline"
-                  shape="rectangular"
-                  width="100%"
-                />
-              </div>
-            )}
+              <>
+                <button
+                  type="button"
+                  className="loginButton loginButtonSecondary"
+                  onClick={() => {
+                    localStorage.removeItem("currentUserEmail");
+                    navigate("/setup-profile");
+                  }}
+                >
+                  Create Patient Account
+                </button>
 
-            {!isProvider && (
-              <button
-                type="button"
-                className="loginButton loginButtonSecondary"
-                onClick={() => {
-                  localStorage.removeItem("currentUserEmail");
-                  navigate("/setup-profile");
-                }}
-              >
-                Create Patient Account
-              </button>
+                <div className="loginDivider">
+                  <span>or continue with</span>
+                </div>
+
+                <div className="googleLoginSection">
+                  <div className="googleLoginButtonShell">
+                    <GoogleLogin
+                      onSuccess={onGoogleSuccess}
+                      onError={() => alert("Google Login Failed")}
+                      theme="outline"
+                      size="large"
+                      text="signin_with"
+                      width="100%"
+                    />
+                  </div>
+                </div>
+              </>
             )}
           </form>
         </div>

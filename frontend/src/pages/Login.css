@@ -168,8 +168,54 @@
 }
 
 .loginButtonSecondary {
-  margin-top: 10px;
+  margin-top: 12px;
   background: #eef7ff;
+}
+
+.loginDivider {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7c90;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.loginDivider span {
+  position: relative;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.googleLoginSection {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.googleLoginWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 2px;
+}
+
+.googleLoginWrapper > div {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+}
+
+.googleLoginWrapper iframe {
+  max-width: 360px !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  border-radius: 999px !important;
 }
 
 .copyright {
@@ -252,12 +298,28 @@
     font-size: 16px;
   }
 
+  .loginDivider {
+    margin-top: 18px;
+    font-size: 12px;
+  }
+
+  .googleLoginSection {
+    margin-top: 6px;
+  }
+
+  .googleLoginWrapper > div {
+    max-width: 100%;
+  }
+
+  .googleLoginWrapper iframe {
+    max-width: 100% !important;
+  }
+
   .copyright {
     font-size: 11px;
     padding: 10px 6px;
   }
 }
-
 
 /* Very small phones */
 @media (max-width: 420px) {
@@ -302,8 +364,43 @@
     font-size: 15px;
   }
 
+  .googleLoginWrapper iframe {
+    min-height: 42px !important;
+  }
+
   .copyright {
     font-size: 10px;
     line-height: 1.35;
   }
+}
+.googleLoginSection {
+  margin-top: 8px;
+  width: 100%;
+}
+
+
+.googleLoginButtonShell {
+  width: 100%;
+}
+
+
+.googleLoginButtonShell > div {
+  width: 100% !important;
+}
+
+
+.googleLoginButtonShell iframe {
+  width: 100% !important;
+  height: 56px !important;
+  border-radius: 999px !important;
+}
+
+
+.googleLoginButtonShell {
+  border-radius: 999px;
+  overflow: hidden;
+}
+.googleLoginButtonShell {
+  border: 2px solid #20344d;
+  background: #ffffff;
 }
