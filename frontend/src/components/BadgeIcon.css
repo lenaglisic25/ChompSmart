@@ -1,0 +1,43 @@
+.badgeArtWrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.badgeArtImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(15, 23, 42, 0.14));
+}
+
+.badgeArtImg--popup {
+  filter: drop-shadow(0 3px 12px rgba(15, 23, 42, 0.18));
+}
+
+.badgeArtImg--locked {
+  filter: grayscale(0.88) brightness(0.97) opacity(0.92)
+    drop-shadow(0 2px 6px rgba(15, 23, 42, 0.1));
+}
+
+.badgeArtImg--locked.badgeArtImg--popup {
+  filter: grayscale(0.88) brightness(0.97) opacity(0.92)
+    drop-shadow(0 3px 10px rgba(15, 23, 42, 0.14));
+}
+
+.badgeArtFallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.35em;
+  line-height: 1;
+}
+
+.badgeArtFallback--popup {
+  font-size: 1.6em;
+}

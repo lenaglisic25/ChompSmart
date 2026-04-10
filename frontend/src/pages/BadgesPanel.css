@@ -150,14 +150,12 @@
 }
 
 .badgeIcon {
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   font-size: 1.55rem;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(140, 145, 174, 0.15);
+  background: transparent;
 }
 
 .badgeContent {
@@ -270,13 +268,12 @@
 }
 
 .badgePopupIcon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 96px;
+  height: 96px;
   display: grid;
   place-items: center;
   font-size: 1.35rem;
-  background: #ffffff;
+  background: transparent;
 }
 
 .badgePopupName {
@@ -328,8 +325,13 @@
   }
 
   .badgeIcon {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     font-size: 1.35rem;
+  }
+
+  .badgePopupIcon {
+    width: 80px;
+    height: 80px;
   }
 }
