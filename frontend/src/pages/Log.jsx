@@ -189,8 +189,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
     };
 
     fetchProfile();
-    
-    // Poll for profile changes every 30 seconds
+
     const interval = setInterval(fetchProfile, 30000);
     return () => clearInterval(interval);
   }, [userEmail, refreshKey]);
@@ -198,27 +197,80 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
   useEffect(() => {
     if (!userEmail || !formattedDate) return;
 
-    fetch(`http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        let list = [];
+    async function fetchDashboardMetrics() {
+      try {
+        const todayRes = await fetch(
+          `http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`
+        );
+        const todayData = todayRes.ok ? await todayRes.json() : [];
 
-        if (Array.isArray(data)) {
-          list = data;
-        } else if (typeof data === "object" && data !== null) {
-          list = Object.values(data).flat();
+        let todayList = [];
+        if (Array.isArray(todayData)) {
+          todayList = todayData;
+        } else if (todayData && typeof todayData === "object") {
+          todayList = Object.values(todayData).flat();
         }
 
-        const totalCals = list.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
-        const totalProt = list.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
-        const totalCarbs = list.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
-        const totalFats = list.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
-        const totalFluids = list.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
-        const totalFiber = list.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
-        const totalSodium = list.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0);
+        const totalCals = todayList.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
+        const totalProt = todayList.reduce((acc, item) => acc + (Number(item.protein) || 0), 0);
+        const totalCarbs = todayList.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0);
+        const totalFats = todayList.reduce((acc, item) => acc + (Number(item.fats) || 0), 0);
+        const totalFluids = todayList.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
+        const totalFiber = todayList.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
+        const totalSodium = todayList.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0);
 
-        setMetrics((prev) => ({
-          ...prev,
+        const baseDate = new Date(`${formattedDate}T12:00:00`);
+
+        const last7Dates = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(baseDate);
+          d.setDate(baseDate.getDate() - i);
+          return d.toLocaleDateString("en-CA");
+        });
+
+        const dailyResponses = await Promise.all(
+          last7Dates.map((date) =>
+            fetch(
+              `http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${date}`
+            )
+              .then((res) => (res.ok ? res.json() : []))
+              .catch(() => [])
+          )
+        );
+
+        const dailyTotals = dailyResponses.map((data, index) => {
+          let list = [];
+
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && typeof data === "object") {
+            list = Object.values(data).flat();
+          }
+
+          const calories = list.reduce((acc, item) => acc + (Number(item.calories) || 0), 0);
+
+          return {
+            date: last7Dates[index],
+            hasMeals: list.length > 0,
+            calories,
+          };
+        });
+
+        let streakDays = 0;
+        for (const day of dailyTotals) {
+          if (day.hasMeals) {
+            streakDays += 1;
+          } else {
+            break;
+          }
+        }
+
+        const daysWithMeals = dailyTotals.filter((day) => day.hasMeals);
+        const weeklyAvgCalories =
+          daysWithMeals.length > 0
+            ? daysWithMeals.reduce((sum, day) => sum + day.calories, 0) / daysWithMeals.length
+            : 0;
+
+        setMetrics({
           calories: totalCals,
           protein: totalProt,
           carbs: totalCarbs,
@@ -226,9 +278,15 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
           fiber: totalFiber,
           sodiumMg: totalSodium,
           fluidsL: totalFluids,
-        }));
-      })
-      .catch((err) => console.error("Metrics fetch failed:", err));
+          streakDays,
+          weeklyAvgCalories,
+        });
+      } catch (err) {
+        console.error("Metrics fetch failed:", err);
+      }
+    }
+
+    fetchDashboardMetrics();
   }, [userEmail, refreshKey, formattedDate]);
 
   const goals = {
@@ -720,11 +778,13 @@ const MEAL_LABELS = {
   snacks: "Snacks",
 };
 
-// handle search requests better
 async function searchFood(query, signal) {
   if (!query.trim()) return [];
   try {
-    const res = await fetch(`http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`, { signal });
+    const res = await fetch(
+      `http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`,
+      { signal }
+    );
     if (!res.ok) return [];
     return await res.json();
   } catch (err) {
@@ -766,9 +826,12 @@ async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
 
 async function clearBackendMeals(targetDate) {
   const email = localStorage.getItem("currentUserEmail");
-  await fetch(`http://localhost:8000/meals/reset?user_email=${email}&target_date=${targetDate}`, {
-    method: "DELETE",
-  });
+  await fetch(
+    `http://localhost:8000/meals/reset?user_email=${email}&target_date=${targetDate}`,
+    {
+      method: "DELETE",
+    }
+  );
 }
 
 function getSectionForEmptySuggestion(meals) {
@@ -1067,45 +1130,46 @@ export default function Log() {
 
   const suggestionSection = getSectionForEmptySuggestion(meals);
 
-const searchCounterRef = useRef(0);
-const inflightControllerRef = useRef(null);
+  const searchCounterRef = useRef(0);
+  const inflightControllerRef = useRef(null);
 
-useEffect(() => {
-  const rawInput = expandedSection ? (inputValues[expandedSection] || "") : "";
+  useEffect(() => {
+    const rawInput = expandedSection ? inputValues[expandedSection] || "" : "";
 
-  if (!rawInput.trim()) {
-    setSearchResults([]);
-    setSearchLoading(false);
-    return;
-  }
-
-  setSearchLoading(true);
-  const myCount = ++searchCounterRef.current;
-
-  const timeoutId = setTimeout(() => {
-    if (inflightControllerRef.current) {
-      inflightControllerRef.current.abort();
+    if (!rawInput.trim()) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
     }
-    const controller = new AbortController();
-    inflightControllerRef.current = controller;
 
-    searchFood(rawInput, controller.signal)
-      .then((list) => {
-        if (list === null || searchCounterRef.current !== myCount) return;
-        setSearchResults(list);
-        setSearchLoading(false);
-      })
-      .catch(() => {
-        if (searchCounterRef.current !== myCount) return;
-        setSearchResults([]);
-        setSearchLoading(false);
-      });
-  }, 300);
+    setSearchLoading(true);
+    const myCount = ++searchCounterRef.current;
 
-  return () => {
-    clearTimeout(timeoutId);
-  };
-}, [expandedSection, inputValues[expandedSection]]);
+    const timeoutId = setTimeout(() => {
+      if (inflightControllerRef.current) {
+        inflightControllerRef.current.abort();
+      }
+
+      const controller = new AbortController();
+      inflightControllerRef.current = controller;
+
+      searchFood(rawInput, controller.signal)
+        .then((list) => {
+          if (list === null || searchCounterRef.current !== myCount) return;
+          setSearchResults(list);
+          setSearchLoading(false);
+        })
+        .catch(() => {
+          if (searchCounterRef.current !== myCount) return;
+          setSearchResults([]);
+          setSearchLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [expandedSection, inputValues]);
 
   function toggleExpand(mealKey) {
     setExpandedSection((prev) => (prev === mealKey ? null : mealKey));
@@ -1153,7 +1217,11 @@ useEffect(() => {
   }
 
   async function handleClearAll() {
-    if (!window.confirm(`Are you sure you want to clear your meal log for ${currentDate.toLocaleDateString()}?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to clear your meal log for ${currentDate.toLocaleDateString()}?`
+      )
+    ) {
       return;
     }
 
@@ -1409,27 +1477,57 @@ useEffect(() => {
               <div className="logModalNutrients">
                 <div className="logModalNutrientRow">
                   <span>Calories</span>
-                  <span>{scaledNutrient(selectedForModal.food.calories ?? selectedForModal.food.macros?.calories, servingMultiplier)}</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.calories ?? selectedForModal.food.macros?.calories,
+                      servingMultiplier
+                    )}
+                  </span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Protein</span>
-                  <span>{scaledNutrient(selectedForModal.food.protein ?? selectedForModal.food.macros?.protein, servingMultiplier)}g</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.protein ?? selectedForModal.food.macros?.protein,
+                      servingMultiplier
+                    )}g
+                  </span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Carbs</span>
-                  <span>{scaledNutrient(selectedForModal.food.carbohydrates ?? selectedForModal.food.macros?.carbs, servingMultiplier)}g</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.carbohydrates ?? selectedForModal.food.macros?.carbs,
+                      servingMultiplier
+                    )}g
+                  </span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Fats</span>
-                  <span>{scaledNutrient(selectedForModal.food.fat ?? selectedForModal.food.macros?.fats, servingMultiplier)}g</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.fat ?? selectedForModal.food.macros?.fats,
+                      servingMultiplier
+                    )}g
+                  </span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Fiber</span>
-                  <span>{scaledNutrient(selectedForModal.food.fiber ?? selectedForModal.food.extras?.fiber, servingMultiplier)}g</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.fiber ?? selectedForModal.food.extras?.fiber,
+                      servingMultiplier
+                    )}g
+                  </span>
                 </div>
                 <div className="logModalNutrientRow">
                   <span>Sodium</span>
-                  <span>{scaledNutrient(selectedForModal.food.sodium ?? selectedForModal.food.extras?.sodium, servingMultiplier)}mg</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.sodium ?? selectedForModal.food.extras?.sodium,
+                      servingMultiplier
+                    )}mg
+                  </span>
                 </div>
               </div>
 
