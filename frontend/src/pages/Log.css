@@ -1991,3 +1991,38 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+.logDateBar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  margin: 6px 0 10px;
+}
+.logDateActions {
+  display: flex;
+  gap: 8px;
+}
+
+.logDateActions:first-child {
+  justify-self: start;
+}
+
+.logDateActions:last-child {
+  justify-self: end;
+}
+
+.logDateTitle {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 1000;
+  color: #1b3554;
+}
+@media (max-width: 600px) {
+  .logDateBtn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .logDateTitle {
+    font-size: 1rem;
+  }
+}
