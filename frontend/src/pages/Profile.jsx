@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Profile.css";
-import { apiFetch } from "../components/api";  
+import { apiFetch } from "../components/api";
+import BadgeIcon from "../components/BadgeIcon";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
@@ -188,18 +189,6 @@ const ACTIVITY_POINTS = {
     "60-120 minutes.": 2,
     "More than 120 minutes.": 3,
   },
-};
-
-const BADGE_ICONS = {
-  "First Week Milestone": "🌟",
-  "Love to Learn": "📚",
-  "Curious Chef": "👩‍🍳",
-  "First Log of the Day": "🥄",
-  "3-Day Consistency": "📅",
-  "Building a Balanced Plate": "🥗",
-  "Sodium Smart Swap": "🧂",
-  "Fiber Boost": "🌾",
-  "Hydration Hero": "💧",
 };
 
 const CATEGORY_LABELS = {
@@ -624,7 +613,11 @@ function BadgesPanel({ userEmail }) {
                           className={`psBadgeTile ${isEarned ? "earned" : "locked"}`}
                         >
                           <div className="psBadgeIcon">
-                            {BADGE_ICONS[badge.name] || "🏅"}
+                            <BadgeIcon
+                              badgeName={badge.name}
+                              variant="shelf"
+                              locked={!isEarned}
+                            />
                           </div>
 
                           <div className="psBadgeBody">
@@ -662,7 +655,7 @@ function BadgesPanel({ userEmail }) {
               {popupBadges.map((badge) => (
                 <div key={badge.badge_name} className="psBadgePopupItem">
                   <div className="psBadgePopupIcon">
-                    {BADGE_ICONS[badge.badge_name] || "🏅"}
+                    <BadgeIcon badgeName={badge.badge_name} variant="popup" />
                   </div>
                   <div>
                     <div className="psBadgePopupName">{badge.badge_name}</div>

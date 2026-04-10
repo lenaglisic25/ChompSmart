@@ -1,21 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./BadgesPanel.css";
 import { apiFetch } from "../components/api";
+import BadgeIcon from "../components/BadgeIcon";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:8000";
-
-const BADGE_ICONS = {
-  "First Week Milestone": "🌟",
-  "Love to Learn": "📚",
-  "Curious Chef": "👩‍🍳",
-  "First Log of the Day": "🥄",
-  "3-Day Consistency": "📅",
-  "Building a Balanced Plate": "🥗",
-  "Sodium Smart Swap": "🧂",
-  "Fiber Boost": "🌾",
-  "Hydration Hero": "💧",
-};
 
 const CATEGORY_LABELS = {
   engagement: "Engagement & Motivation",
@@ -223,7 +212,11 @@ export default function BadgesPanel({ userEmail }) {
                         >
                           <div className="badgeIconWrap">
                             <div className="badgeIcon">
-                              {BADGE_ICONS[badge.name] || "🏅"}
+                              <BadgeIcon
+                                badgeName={badge.name}
+                                variant="shelf"
+                                locked={!isEarned}
+                              />
                             </div>
                           </div>
 
@@ -266,7 +259,7 @@ export default function BadgesPanel({ userEmail }) {
               {popupBadges.map((badge) => (
                 <div key={badge.badge_name} className="badgePopupItem">
                   <div className="badgePopupIcon">
-                    {BADGE_ICONS[badge.badge_name] || "🏅"}
+                    <BadgeIcon badgeName={badge.badge_name} variant="popup" />
                   </div>
                   <div>
                     <div className="badgePopupName">{badge.badge_name}</div>
