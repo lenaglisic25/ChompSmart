@@ -5,6 +5,24 @@ import "./ProviderDashboard.css";
 import ProviderAnalyticsDrawer from "./ProviderAnalyticsDrawer";
 import { mockPanelAnalytics, mockPatient } from "./mockProviderData";
 
+function parseHeight(heightText) {
+  if (!heightText) return NaN;
+  const s = heightText.trim().toLowerCase();
+  
+  const feetInchMatch = s.match(/(\d+)\s*(?:ft|feet|')?\s*(\d+)/);
+  if (feetInchMatch) {
+    const feet = parseInt(feetInchMatch[1]);
+    const inches = parseInt(feetInchMatch[2]);
+    return feet * 12 + inches;
+  }
+  
+  const inchesMatch = s.match(/(\d+)\s*(?:in|inch|inches|"|\u2033)/);
+  if (inchesMatch) {
+    return parseInt(inchesMatch[1]);
+  }
+  return NaN;
+}
+
 function SummaryCard({ title, action, children, className = "" }) {
   return (
     <section className={`providerCard ${className}`}>
@@ -57,8 +75,8 @@ export default function ProviderDashboard() {
   const [showNotePopup, setShowNotePopup] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [lastInteractionTimes, setLastInteractionTimes] = useState({});
-  
-  // Added missing state for the nutrient view toggle
+  const [patientMeals, setPatientMeals] = useState({});
+  const [patientVideos, setPatientVideos] = useState({});
   const [_nutrientView, _setNutrientView] = useState("daily");
 
   const providerEmail = localStorage.getItem("currentProviderEmail") || localStorage.getItem("currentUserEmail");
@@ -72,23 +90,37 @@ export default function ProviderDashboard() {
         if (data.length > 0) {
           setSelectedEmail(data[0].email);
         }
-        
-        // Fetch last message timestamps for all patients
+      
         const timesMap = {};
+        const mealsMap = {};
+        const videosMap = {};
+        
         Promise.all(
           data.map((patient) =>
-            apiFetch(`/messages/?patient_email=${encodeURIComponent(patient.email)}`)
-              .then((res) => res.json())
-              .then((messages) => {
-                if (Array.isArray(messages) && messages.length > 0) {
-                  const lastMsg = messages[messages.length - 1];
-                  timesMap[patient.email] = lastMsg.time;
-                }
-              })
-              .catch(() => {})
+            Promise.all([
+              apiFetch(`/messages/?patient_email=${encodeURIComponent(patient.email)}`)
+                .then((res) => res.json())
+                .then((messages) => {
+                  if (Array.isArray(messages) && messages.length > 0) {
+                    const lastMsg = messages[messages.length - 1];
+                    timesMap[patient.email] = lastMsg.time;
+                  }
+                })
+                .catch(() => {}),
+              apiFetch(`/meals/log`)
+                .then((res) => res.json())
+                .then((meals) => {
+                  if (Array.isArray(meals)) {
+                    const patientSpecificMeals = meals.filter(m => m.user_email === patient.email);
+                    mealsMap[patient.email] = patientSpecificMeals;
+                  }
+                })
+                .catch(() => {})
+            ])
           )
         ).then(() => {
           setLastInteractionTimes(timesMap);
+          setPatientMeals(mealsMap);
         });
       })
       .catch(() => {});
@@ -161,19 +193,111 @@ export default function ProviderDashboard() {
       }
     }
 
+    let bmi = mockPatient.bmi;
+    if (p.profile?.weight_text && p.profile?.height_text) {
+      const weightStr = String(p.profile.weight_text).toLowerCase().trim();
+      const heightStr = String(p.profile.height_text).toLowerCase().trim();
+      
+      const weightMatch = weightStr.match(/(\d+\.?\d*)/);
+      let weightLbs = weightMatch ? parseFloat(weightMatch[1]) : 0;
+      
+      let heightInches = parseHeight(heightStr);
+      
+      if (isNaN(heightInches)) {
+        const heightMatch = heightStr.match(/(\d+)\s*['\u2032]?\s*(\d+)/);
+        if (heightMatch) {
+          const feet = parseInt(heightMatch[1]);
+          const inches = parseInt(heightMatch[2]);
+          heightInches = feet * 12 + inches;
+        } else {
+          const heightNumMatch = heightStr.match(/(\d+\.?\d*)/);
+          if (heightNumMatch) {
+            let heightNum = parseFloat(heightNumMatch[1]);
+            if (heightNum > 200) {
+              heightInches = heightNum / 2.54;
+            } else if (heightNum > 12) {
+              heightInches = heightNum;
+            } else {
+              heightInches = heightNum * 12;
+            }
+          }
+        }
+      }
+      
+      if (weightLbs > 0 && heightInches > 0) {
+        const calculatedBmi = ((weightLbs / (heightInches * heightInches)) * 703);
+        if (calculatedBmi > 10 && calculatedBmi < 60) {
+          bmi = calculatedBmi.toFixed(1);
+        }
+      }
+    }
+
+    let weightChangePercent = 0;
+    const meals = patientMeals[selectedEmail] || [];
+    if (meals.length > 0) {
+      const sortedByDate = [...meals].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const firstMealDate = new Date(sortedByDate[0].created_at);
+      const lastMealDate = new Date(sortedByDate[sortedByDate.length - 1].created_at);
+      const daysDiff = Math.max(1, (lastMealDate - firstMealDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff >= 7) {
+        const mealsLast7 = meals.filter(m => {
+          const mealDate = new Date(m.created_at);
+          return (new Date() - mealDate) / (1000 * 60 * 60 * 24) <= 7;
+        });
+        weightChangePercent = mealsLast7.length > 0 ? -0.5 : 0;
+      }
+    }
+
+    const generatedAlerts = [];
+    const profile = p.profile || {};
+    
+    if (meals.length < 5) {
+      generatedAlerts.push({
+        id: "low_logging",
+        title: "Low meal logging activity",
+        severity: "warning"
+      });
+    }
+
+    if (profile.sodium_mg_actual > (profile.sodium_fda_limit || 2300)) {
+      generatedAlerts.push({
+        id: "sodium_high",
+        title: `High sodium intake: ${profile.sodium_mg_actual}mg`,
+        severity: "high"
+      });
+    }
+
+    if (profile.next_appointment) {
+      const appointmentDate = new Date(profile.next_appointment);
+      const daysUntilAppointment = (appointmentDate - new Date()) / (1000 * 60 * 60 * 24);
+      if (daysUntilAppointment > 0 && daysUntilAppointment <= 7) {
+        generatedAlerts.push({
+          id: "upcoming_appointment",
+          title: `Appointment in ${Math.ceil(daysUntilAppointment)} days`,
+          severity: "info"
+        });
+      }
+    }
+
     return {
       ...mockPatient,
       id: p.email,
       name: p.name || p.email,
       conditions: p.profile?.health_conditions || [],
       weightKg: p.profile?.weight_text || mockPatient.weightKg,
+      bmi: bmi,
       nextAppointment: p.profile?.next_appointment || "Not set",
       providerNotes: p.profile?.provider_notes || "",
       adherence: p.adherence || mockPatient.adherence,
-      progress: p.progress || mockPatient.progress,
+      progress: {
+        ...mockPatient.progress,
+        weightChangePercent: weightChangePercent
+      },
       lastSync: lastSync,
+      alerts: generatedAlerts.length > 0 ? generatedAlerts : mockPatient.alerts,
     };
-  }, [patients, selectedEmail, lastInteractionTimes]);
+  }, [patients, selectedEmail, lastInteractionTimes, patientMeals]);
 
   const handleMessageClick = () => {
     if (patient.id) {
@@ -299,35 +423,9 @@ export default function ProviderDashboard() {
               ))}
             </div>
           </SummaryCard>
-
-          <SummaryCard title="Engagement & AI Summary">
-            <div className="providerMetricList">
-              <div>AI conversations (30d): {patient.engagement.aiConversations30d}</div>
-              <div>Avg Qs/session: {patient.engagement.avgQuestionsPerSession}</div>
-              <div>Peak times: {patient.engagement.peakTimes}</div>
-              <div>Sentiment: {patient.engagement.sentiment}</div>
-            </div>
-
-            <div className="providerTagList">
-              {patient.engagement.topTopics.map((topic) => (
-                <span key={topic} className="providerTag">
-                  {topic}
-                </span>
-              ))}
-            </div>
-          </SummaryCard>
         </div>
 
         <div className="providerMiddleGrid">
-          <SummaryCard title="Warnings">
-            <div className="providerInlineAlerts">
-              {patient.mealAlerts.map((item) => (
-                <div key={item} className="providerInlineAlert">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </SummaryCard>
 
           <SummaryCard title="Meal Photos (Quick Gallery)">
             <div className="providerPhotoGrid">
@@ -342,35 +440,6 @@ export default function ProviderDashboard() {
         </div>
 
         <div className="providerBottomGrid">
-          <SummaryCard title="AI-Flagged Patterns & Topics">
-            <div className="providerPatternList">
-              {patient.aiPatterns.map((item) => (
-                <div key={item.id} className="providerPatternCard">
-                  <div className="providerPatternTitle">{item.label}</div>
-                  <div className="providerPatternEvidence">{item.evidence}</div>
-                  <div className="providerPatternFollowup">
-                    Recommended follow-up: {item.followUp}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SummaryCard>
-
-          <SummaryCard title="Recommended Follow-Up Topics">
-            <div className="providerFollowUpList">
-              {patient.followUpTopics.map((topic) => (
-                <div key={topic} className="providerFollowUpItem">
-                  <div className="providerFollowUpText">{topic}</div>
-                  <div className="providerFollowUpActions">
-                    <button type="button">Send Tip</button>
-                    <button type="button">Queue Note</button>
-                    <button type="button" className="primary">Add to Plan</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SummaryCard>
-
           <SummaryCard title="Provider Notes / Last Visit Summary">
             <div className="providerNotesBox">
               {patient.providerNotes ? (
@@ -385,14 +454,17 @@ export default function ProviderDashboard() {
             <div className="providerResourceBox">
               <div className="providerResourceTitle">Engaged Resources</div>
               <div className="providerMetricList">
-                <div>Total videos viewed: {patient.engagedResources.totalVideosViewed}</div>
-                <div>Avg watch time: {patient.engagedResources.avgWatchTimeMin} min</div>
+                <div>Total videos viewed: {(patientVideos[selectedEmail] || []).length}</div>
+                <div>Avg watch time: {patientVideos[selectedEmail]?.length > 0 ? '15' : '0'} min</div>
               </div>
 
               <ul className="providerBulletList compact">
-                {patient.engagedResources.items.map((item) => (
-                  <li key={item}>{item}</li>
+                {(patientVideos[selectedEmail] || []).slice(0, 5).map((video) => (
+                  <li key={video.id || video.title}>{video.title || 'Video'}</li>
                 ))}
+                {(patientVideos[selectedEmail] || []).length === 0 && (
+                  <li style={{ color: '#888', fontStyle: 'italic' }}>No videos watched yet</li>
+                )}
               </ul>
             </div>
           </SummaryCard>

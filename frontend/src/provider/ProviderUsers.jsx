@@ -62,7 +62,7 @@ function StatCard({ label, value, isEditable, onChange, type = "text" }) {
         <input
           type={type}
           className="providerUsersStatInput"
-          value={value}
+          value={value || ""}
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
@@ -179,7 +179,7 @@ export default function ProviderUsers() {
       barriers: selectedUser.barriers
     };
     try {
-      const res = await fetch("http://localhost:8000/profile/", {
+      const res = await apiFetch("/profile/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

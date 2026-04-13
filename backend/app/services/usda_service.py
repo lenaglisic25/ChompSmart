@@ -1,6 +1,8 @@
 import os
 import httpx
 
+_http_client = httpx.AsyncClient(timeout=10.0)
+
 def _strip_plural(text: str) -> str:
     t = text.lower().strip()
     if t.endswith('s') and not t.endswith('ss') and not t.endswith('us'):
@@ -15,23 +17,24 @@ async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
     url = "https://api.nal.usda.gov/fdc/v1/foods/search"
 
     async def fetch_data(search_term):
-        async with httpx.AsyncClient() as client:
-            if " " in search_term.strip():
-                data_types = ["Branded", "Survey (FNDDS)", "Foundation", "SR Legacy"]
-            else:
-                data_types = ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
-                
-            r = await client.get(
+        if " " in search_term.strip():
+            data_types = ["Branded", "Survey (FNDDS)", "Foundation", "SR Legacy"]
+        else:
+            data_types = ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
+            
+        try:
+            r = await _http_client.get(
                 url,
                 params={
                     "api_key": usda_key,
                     "query": search_term,
                     "pageSize": 50, 
                     "dataType": data_types,
-                },
-                timeout=10,
+                }
             )
             return r.json().get("foods", []) if r.status_code == 200 else []
+        except Exception:
+            return []
 
     raw_foods = await fetch_data(query)
     if not raw_foods and query.strip().lower().endswith('s'):
@@ -78,7 +81,6 @@ async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
             seen.add(key)
             unique_foods.append(food)
 
-    # sort by relevance for a more optimized search
     query_lower = query.lower().strip()
     q_base = _strip_plural(query_lower)
 
@@ -107,7 +109,6 @@ async def usda_search_foods(query: str, limit: int = 7) -> list[dict]:
     unique_foods.sort(key=sort_score)
 
     return unique_foods[:limit]
-
 
 def build_usda_context(foods: list[dict]) -> str:
     if not foods:

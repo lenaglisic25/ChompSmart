@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./Log.css";
+import { apiFetch } from "../components/api";
 
 function clamp01(x) {
   return Math.max(0, Math.min(1, x));
@@ -180,7 +181,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
     if (!userEmail) return;
 
     const fetchProfile = () => {
-      fetch(`http://localhost:8000/profile/${encodeURIComponent(userEmail)}?t=${Date.now()}`)
+      apiFetch(`/profile/${encodeURIComponent(userEmail)}?t=${Date.now()}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data != null) setProfile(data);
@@ -199,8 +200,8 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
 
     async function fetchDashboardMetrics() {
       try {
-        const todayRes = await fetch(
-          `http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`
+        const todayRes = await apiFetch(
+          `/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`
         );
         const todayData = todayRes.ok ? await todayRes.json() : [];
 
@@ -229,8 +230,8 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
 
         const dailyResponses = await Promise.all(
           last7Dates.map((date) =>
-            fetch(
-              `http://localhost:8000/meals/daily/${encodeURIComponent(userEmail)}?target_date=${date}`
+            apiFetch(
+              `/meals/daily/${encodeURIComponent(userEmail)}?target_date=${date}`
             )
               .then((res) => (res.ok ? res.json() : []))
               .catch(() => [])
@@ -778,21 +779,6 @@ const MEAL_LABELS = {
   snacks: "Snacks",
 };
 
-async function searchFood(query, signal) {
-  if (!query.trim()) return [];
-  try {
-    const res = await fetch(
-      `http://localhost:8000/usda/search?query=${encodeURIComponent(query.trim())}`,
-      { signal }
-    );
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (err) {
-    if (err.name === "AbortError") return null;
-    return [];
-  }
-}
-
 async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
   const email = localStorage.getItem("currentUserEmail");
   const mult = Number(servingMultiplier) || 1;
@@ -804,7 +790,7 @@ async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
   const fiber = food.extras?.fiber ?? food.fiber ?? 0;
   const sodium = food.extras?.sodium ?? food.sodium ?? 0;
 
-  const response = await fetch("http://localhost:8000/meals/log", {
+  const response = await apiFetch("/meals/log", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -826,8 +812,8 @@ async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
 
 async function clearBackendMeals(targetDate) {
   const email = localStorage.getItem("currentUserEmail");
-  await fetch(
-    `http://localhost:8000/meals/reset?user_email=${email}&target_date=${targetDate}`,
+  await apiFetch(
+    `/meals/reset?user_email=${email}&target_date=${targetDate}`,
     {
       method: "DELETE",
     }
@@ -973,7 +959,7 @@ export default function Log() {
   useEffect(() => {
     if (!email || !formattedDate) return;
 
-    fetch(`http://localhost:8000/meals/daily/${encodeURIComponent(email)}?target_date=${formattedDate}`)
+    apiFetch(`/meals/daily/${encodeURIComponent(email)}?target_date=${formattedDate}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
@@ -1130,9 +1116,6 @@ export default function Log() {
 
   const suggestionSection = getSectionForEmptySuggestion(meals);
 
-  const searchCounterRef = useRef(0);
-  const inflightControllerRef = useRef(null);
-
   useEffect(() => {
     const rawInput = expandedSection ? inputValues[expandedSection] || "" : "";
 
@@ -1143,31 +1126,30 @@ export default function Log() {
     }
 
     setSearchLoading(true);
-    const myCount = ++searchCounterRef.current;
+    const controller = new AbortController();
 
-    const timeoutId = setTimeout(() => {
-      if (inflightControllerRef.current) {
-        inflightControllerRef.current.abort();
-      }
-
-      const controller = new AbortController();
-      inflightControllerRef.current = controller;
-
-      searchFood(rawInput, controller.signal)
-        .then((list) => {
-          if (list === null || searchCounterRef.current !== myCount) return;
-          setSearchResults(list);
-          setSearchLoading(false);
-        })
-        .catch(() => {
-          if (searchCounterRef.current !== myCount) return;
-          setSearchResults([]);
-          setSearchLoading(false);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await apiFetch(`/usda/search?query=${encodeURIComponent(rawInput.trim())}`, {
+          signal: controller.signal,
         });
+        if (!res.ok) throw new Error("Search failed");
+        const data = await res.json();
+        setSearchResults(data);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setSearchResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchLoading(false);
+        }
+      }
     }, 300);
 
     return () => {
       clearTimeout(timeoutId);
+      controller.abort();
     };
   }, [expandedSection, inputValues]);
 
@@ -1207,7 +1189,7 @@ export default function Log() {
     }
 
     try {
-      await fetch(`http://localhost:8000/meals/${itemToRemove.id}`, {
+      await apiFetch(`/meals/${itemToRemove.id}`, {
         method: "DELETE",
       });
       setRefreshKey((k) => k + 1);

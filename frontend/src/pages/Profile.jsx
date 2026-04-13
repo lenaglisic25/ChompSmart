@@ -201,6 +201,7 @@ function getActivityOption(fieldName, score) {
   const field = ACTIVITY_POINTS[fieldName];
   if (!field) return "";
   for (const [option, value] of Object.entries(field)) {
+    if (value === score) return option;
   }
   return "";
 }
