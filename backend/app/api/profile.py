@@ -66,7 +66,8 @@ def create_or_update_profile(profile: profile_schema.ProfileCreate, db: Session 
                 birthday_text=new_profile.birthday_text,
                 height_text=new_profile.height_text,
                 weight_text=new_profile.weight_text,
-                # New 4-question activity scoring
+                # New 4-question activity scoring (total score 0-12)
+                activity_score=new_profile.activity_score,
                 daily_movement=new_profile.activity_daily_movement,
                 exercise_intensity=new_profile.activity_exercise_intensity,
                 moderate_minutes_weekly=new_profile.activity_moderate_minutes,
@@ -151,7 +152,8 @@ def get_profile_tdee(user_email: str, db: Session = Depends(get_db)):
             height_text=profile.height_text,
             weight_text=profile.weight_text,
             weight_goal=profile.weight_goal,
-            # New 4-question activity scoring
+            # New 4-question activity scoring (total score 0-12)
+            activity_score=profile.activity_score,
             daily_movement=profile.activity_daily_movement,
             exercise_intensity=profile.activity_exercise_intensity,
             moderate_minutes_weekly=profile.activity_moderate_minutes,

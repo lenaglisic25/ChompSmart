@@ -196,6 +196,15 @@ const CATEGORY_LABELS = {
   nutrition: "Nutrition Tracking Goals",
 };
 
+function getActivityOption(fieldName, score) {
+  if (score === null || score === undefined) return "";
+  const field = ACTIVITY_POINTS[fieldName];
+  if (!field) return "";
+  for (const [option, value] of Object.entries(field)) {
+  }
+  return "";
+}
+
 function getActivitySummary(form) {
   const score =
     (ACTIVITY_POINTS.dayMovement[form.dayMovement] ?? 0) +
@@ -288,14 +297,26 @@ function normalizeProfile(data) {
     medications: data.medications_text ?? "",
     medAllergies: data.med_allergies_text ?? "",
 
-    dayMovement: data.day_movement ?? data.steps_range ?? "",
-    dailyExercise: data.daily_exercise ?? data.active_days_per_week ?? "",
+    dayMovement:
+      getActivityOption("dayMovement", data.activity_daily_movement) ||
+      data.day_movement ||
+      data.steps_range ||
+      "",
+    dailyExercise:
+      getActivityOption("dailyExercise", data.activity_exercise_intensity) ||
+      data.daily_exercise ||
+      data.active_days_per_week ||
+      "",
     moderateMinutesWeekly:
-      data.moderate_minutes_weekly ??
-      (Array.isArray(data.movement_types) ? data.movement_types[0] ?? "" : ""),
+      getActivityOption("moderateMinutesWeekly", data.activity_moderate_minutes) ||
+      data.moderate_minutes_weekly ||
+      (Array.isArray(data.movement_types) ? data.movement_types[0] ?? "" : "") ||
+      "",
     vigorousMinutesWeekly:
-      data.vigorous_minutes_weekly ??
-      (Array.isArray(data.movement_types) ? data.movement_types[1] ?? "" : ""),
+      getActivityOption("vigorousMinutesWeekly", data.activity_vigorous_minutes) ||
+      data.vigorous_minutes_weekly ||
+      (Array.isArray(data.movement_types) ? data.movement_types[1] ?? "" : "") ||
+      "",
 
     householdSize: data.household_size ? String(data.household_size) : "",
     householdAgeGroups: data.household_age_groups ?? [],

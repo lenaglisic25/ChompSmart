@@ -152,28 +152,47 @@ def pal_category_from_pal(pal: float) -> PalCategory:
     return "very_active"
 
 
-def activity_score_to_label(score: Optional[int]) -> Optional[str]:
+def activity_score_to_category(total_score: Optional[int]) -> Optional[str]:
     """
-    Convert numeric activity score (0-3) to label string for pal_from_labels.
-    0 = sedentary, 1 = light, 2 = moderate, 3 = vigorous
+    Convert total activity score (0-12) to activity category label.
+    Total score is sum of 4 questions, each scored 0-3.
+    0-3: Sedentary
+    4-6: Low Active
+    7-9: Active
+    10-12: Very Active
     """
-    if score is None:
+    if total_score is None:
         return None
-    if score == 0:
-        return "inactive"
-    elif score == 1:
+    if total_score <= 3:
+        return "sedentary"
+    elif total_score <= 6:
         return "low active"
-    elif score == 2:
+    elif total_score <= 9:
         return "active"
-    elif score == 3:
-        return "very active"
     else:
-        return "low active"  # Default fallback
+        return "very active"
+
+
+def pal_from_activity_category(category: Optional[str]) -> float:
+    if not category:
+        return 1.4  # Default to low active
+    
+    c = category.strip().lower()
+    if c.startswith("sedentary"):
+        return 1.2
+    elif c.startswith("low"):
+        return 1.4
+    elif c.startswith("active") and not c.startswith("very"):
+        return 1.75
+    elif c.startswith("very"):
+        return 2.05
+    else:
+        return 1.4  # Default fallback
 
 
 def pal_from_labels(steps_range: Optional[str], active_days: Optional[str]) -> float:
     """
-    Maps your UI buckets to typical PAL anchors:
+    PAL:
       inactive (score 0) ~ 1.2 (sedentary)
       low_active (score 1) ~ 1.4 (lightly active)
       active (score 2) ~ 1.75 (moderately active)
@@ -302,22 +321,19 @@ def compute_tdee(
     steps_range: Optional[str] = None,
     active_days_per_week: Optional[str] = None,
     weight_goal: Optional[str] = None,
+    activity_score: Optional[int] = None,
+    daily_movement: Optional[int] = None,
+    exercise_intensity: Optional[int] = None,
+    moderate_minutes_weekly: Optional[int] = None,
+    vigorous_minutes_weekly: Optional[int] = None,
     **kwargs
 ) -> TdeeResult:
-    # Check if we have numeric activity scores (new format)
-    daily_movement = kwargs.get("daily_movement")
-    exercise_intensity = kwargs.get("exercise_intensity")
-    
-    # If new activity parameters are provided (as integers 0-3), convert to labels
-    if isinstance(daily_movement, int) and isinstance(exercise_intensity, int):
-        steps_range = activity_score_to_label(daily_movement)
-        active_days_per_week = activity_score_to_label(exercise_intensity)
+    if isinstance(activity_score, int):
+        category = activity_score_to_category(activity_score)
+        pal = pal_from_activity_category(category)
     else:
-        # Fall back to legacy string fields or kwargs
-        if not steps_range:
-            steps_range = kwargs.get("daily_movement")
-        if not active_days_per_week:
-            active_days_per_week = kwargs.get("exercise_intensity")
+        # Fall back to legacy label-based approach
+        pal = pal_from_labels(steps_range, active_days_per_week)
     
     dob = parse_dob_mmddyyyy(birthday_text)
     age = calc_age_years(dob)
@@ -325,7 +341,6 @@ def compute_tdee(
     height_cm = parse_height_to_cm(height_text)
     weight_kg = parse_weight_to_kg(weight_text)
 
-    pal = pal_from_labels(steps_range, active_days_per_week)
     pal_cat = pal_category_from_pal(pal)
 
     bmr_m = mifflin_bmr(weight_kg, height_cm, age, "male")
