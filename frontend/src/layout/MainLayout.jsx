@@ -83,6 +83,9 @@ export default function MainLayout() {
         </div>
 
         <div className="topRightActions">
+          <div className="topCredits">
+            Made by Jack Ozemovitch - TL , Amelia Reeves - SM , Lena Glisic - FD , Yavna Chand - BD
+          </div>
           <button
             className="logoutBtn"
             type="button"

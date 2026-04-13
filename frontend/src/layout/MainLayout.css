@@ -118,6 +118,20 @@
   object-fit: contain;
 }
 
+.topRightActions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.topCredits {
+  color: #2b67aa;
+  font-size: 0.75rem;
+  text-align: right;
+}
+
 /* Content */
 
 .content {
