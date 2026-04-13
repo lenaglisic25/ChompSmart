@@ -483,6 +483,11 @@ def _build_recipes_with_flags(user_restrictions=None):
         else:
             photo_url = None
             image_filename = _find_image(r["slug"])
+       
+        # Dont use images from cookbooks DB rows (currently random stock images)
+        if not r.get("recommended"):
+            photo_url = None
+            image_filename = None
         recipe_out = dict(r)
         recipe_out.pop("diet_lookup_title", None)
         recipe_out.pop("equipment_tags_csv", None)
