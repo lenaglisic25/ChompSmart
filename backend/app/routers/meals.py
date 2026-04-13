@@ -36,6 +36,11 @@ def log_meal(meal: dict, db: Session = Depends(get_db)):
         sugar_val = 0
     meal["sugar"] = float(sugar_val)
 
+    if "total_sugar" not in meal:
+        meal["total_sugar"] = meal["sugar"]
+    else:
+        meal["total_sugar"] = float(meal.get("total_sugar") or 0)
+
     created_at_str = meal.get("created_at")
     if created_at_str:
         meal["created_at"] = datetime.strptime(created_at_str, "%Y-%m-%d %H:%M:%S")

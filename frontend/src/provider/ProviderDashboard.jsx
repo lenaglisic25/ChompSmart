@@ -77,6 +77,7 @@ export default function ProviderDashboard() {
   const [lastInteractionTimes, setLastInteractionTimes] = useState({});
   const [patientMeals, setPatientMeals] = useState({});
   const [patientVideos, setPatientVideos] = useState({});
+  const [patientWeights, setPatientWeights] = useState({});
   const [_nutrientView, _setNutrientView] = useState("daily");
 
   const providerEmail = localStorage.getItem("currentProviderEmail") || localStorage.getItem("currentUserEmail");
@@ -94,6 +95,7 @@ export default function ProviderDashboard() {
         const timesMap = {};
         const mealsMap = {};
         const videosMap = {};
+        const weightsMap = {};
         
         Promise.all(
           data.map((patient) =>
@@ -115,12 +117,39 @@ export default function ProviderDashboard() {
                     mealsMap[patient.email] = patientSpecificMeals;
                   }
                 })
+                .catch(() => {}),
+              apiFetch(`/tracker/weight/${encodeURIComponent(patient.email)}`)
+                .then((res) => res.json())
+                .then((weights) => {
+                  if (Array.isArray(weights)) {
+                    weightsMap[patient.email] = weights;
+                  }
+                })
+                .catch(() => {}),
+              apiFetch(`/badges/user/${encodeURIComponent(patient.email)}`)
+                .then((res) => res.json())
+                .then((badges) => {
+                  if (Array.isArray(badges)) {
+                    const vids = [];
+                    const loveToLearn = badges.find(b => b.badge_name === "Love to Learn");
+                    if (loveToLearn) {
+                      vids.push({ id: "edu_1", title: "Health Education Resource", date: loveToLearn.earned_at });
+                    }
+                    const curiousChef = badges.find(b => b.badge_name === "Curious Chef");
+                    if (curiousChef) {
+                      vids.push({ id: "rec_1", title: "Recipe Walkthrough", date: curiousChef.earned_at });
+                    }
+                    videosMap[patient.email] = vids;
+                  }
+                })
                 .catch(() => {})
             ])
           )
         ).then(() => {
           setLastInteractionTimes(timesMap);
           setPatientMeals(mealsMap);
+          setPatientWeights(weightsMap);
+          setPatientVideos(videosMap);
         });
       })
       .catch(() => {});
@@ -233,26 +262,54 @@ export default function ProviderDashboard() {
     }
 
     let weightChangePercent = 0;
-    const meals = patientMeals[selectedEmail] || [];
-    if (meals.length > 0) {
-      const sortedByDate = [...meals].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      const firstMealDate = new Date(sortedByDate[0].created_at);
-      const lastMealDate = new Date(sortedByDate[sortedByDate.length - 1].created_at);
-      const daysDiff = Math.max(1, (lastMealDate - firstMealDate) / (1000 * 60 * 60 * 24));
+    const weights = patientWeights[selectedEmail] || [];
+    if (weights.length >= 2) {
+      const sortedWeights = [...weights].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const firstWeight = sortedWeights[0].weight;
+      const lastWeight = sortedWeights[sortedWeights.length - 1].weight;
       
-      if (daysDiff >= 7) {
-        const mealsLast7 = meals.filter(m => {
-          const mealDate = new Date(m.created_at);
-          return (new Date() - mealDate) / (1000 * 60 * 60 * 24) <= 7;
-        });
-        weightChangePercent = mealsLast7.length > 0 ? -0.5 : 0;
+      if (firstWeight > 0) {
+        weightChangePercent = Number((((lastWeight - firstWeight) / firstWeight) * 100).toFixed(1));
       }
     }
 
-    const generatedAlerts = [];
     const profile = p.profile || {};
+    const conditions = profile.health_conditions || [];
+    const condLower = conditions.map(c => typeof c === 'string' ? c.toLowerCase() : '');
+
+    const isDiabetes = condLower.some(c => c.includes("diabetes"));
+    const isHypertension = condLower.some(c => c.includes("hypertension") || c.includes("blood pressure"));
+    const isObesity = condLower.some(c => c.includes("obes") || c.includes("overweight"));
+
+    const meals = patientMeals[selectedEmail] || [];
+    const mealsByDate = {};
     
-    if (meals.length < 5) {
+    meals.forEach(m => {
+      if (!m.created_at) return;
+      const dateStr = m.created_at.split(" ")[0].split("T")[0]; 
+      if (!mealsByDate[dateStr]) mealsByDate[dateStr] = { calories: 0, sodium: 0, sugar: 0 };
+      mealsByDate[dateStr].calories += Number(m.calories) || 0;
+      mealsByDate[dateStr].sodium += Number(m.sodium) || 0;
+      mealsByDate[dateStr].sugar += Number(m.sugar) || 0;
+    });
+
+    const calorieGoal = Number(profile.calorie_goal) || 2000;
+    const sodiumLimit = Number(profile.sodium_fda_limit) || 2300;
+    const sugarLimit = 50; 
+
+    let calorieDaysUnder = 0;
+    let sodiumDaysUnder = 0;
+    let sugarDaysUnder = 0;
+
+    Object.values(mealsByDate).forEach(dayStats => {
+       if (dayStats.calories > 0 && dayStats.calories <= calorieGoal) calorieDaysUnder++;
+       if (dayStats.sodium > 0 && dayStats.sodium <= sodiumLimit) sodiumDaysUnder++;
+       if (dayStats.sugar > 0 && dayStats.sugar <= sugarLimit) sugarDaysUnder++;
+    });
+
+    const generatedAlerts = [];
+    
+    if (meals.length < 5 && meals.length > 0) {
       generatedAlerts.push({
         id: "low_logging",
         title: "Low meal logging activity",
@@ -292,12 +349,18 @@ export default function ProviderDashboard() {
       adherence: p.adherence || mockPatient.adherence,
       progress: {
         ...mockPatient.progress,
-        weightChangePercent: weightChangePercent
+        weightChangePercent: weightChangePercent,
+        calorieDaysUnder,
+        sodiumDaysUnder,
+        sugarDaysUnder,
+        isDiabetes,
+        isHypertension,
+        isObesity
       },
       lastSync: lastSync,
       alerts: generatedAlerts.length > 0 ? generatedAlerts : mockPatient.alerts,
     };
-  }, [patients, selectedEmail, lastInteractionTimes, patientMeals]);
+  }, [patients, selectedEmail, lastInteractionTimes, patientMeals, patientWeights]);
 
   const handleMessageClick = () => {
     if (patient.id) {
@@ -407,14 +470,29 @@ export default function ProviderDashboard() {
               />
               <div className="providerMetricList">
                 <div>Streak: {patient.progress.streakDays} days</div>
-                <div>Weight trend: {patient.progress.weightChangePercent}%</div>
-                <div>Sodium days under limit: {patient.progress.sodiumDaysUnderLimit}</div>
+                <div>Weight trend: {patient.progress.weightChangePercent > 0 ? '+' : ''}{patient.progress.weightChangePercent}%</div>
+                
+                {patient.progress.isDiabetes && (
+                  <div>Days under sugar limit: {patient.progress.sugarDaysUnder}</div>
+                )}
+                {patient.progress.isHypertension && (
+                  <div>Sodium days under limit: {patient.progress.sodiumDaysUnder}</div>
+                )}
+                {patient.progress.isObesity && (
+                  <div>Calorie goal achieved: {patient.progress.calorieDaysUnder} days</div>
+                )}
+                {(!patient.progress.isDiabetes && !patient.progress.isHypertension && !patient.progress.isObesity) && (
+                  <div>Sodium days under limit: {patient.progress.sodiumDaysUnder}</div>
+                )}
               </div>
             </div>
           </SummaryCard>
 
           <SummaryCard title="Alerts">
             <div className="providerAlertsCompact">
+              {patient.alerts.length === 0 && (
+                <div style={{ color: "#888", fontStyle: "italic", fontSize: "13px" }}>No active alerts.</div>
+              )}
               {patient.alerts.map((alert) => (
                 <div key={alert.id} className="providerCompactAlertRow">
                   <AlertBadge severity={alert.severity} />
@@ -455,7 +533,7 @@ export default function ProviderDashboard() {
               <div className="providerResourceTitle">Engaged Resources</div>
               <div className="providerMetricList">
                 <div>Total videos viewed: {(patientVideos[selectedEmail] || []).length}</div>
-                <div>Avg watch time: {patientVideos[selectedEmail]?.length > 0 ? '15' : '0'} min</div>
+                <div>Avg watch time: {(patientVideos[selectedEmail] || []).length > 0 ? '15' : '0'} min</div>
               </div>
 
               <ul className="providerBulletList compact">

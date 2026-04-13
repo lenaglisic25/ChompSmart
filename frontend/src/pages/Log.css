@@ -1815,6 +1815,8 @@
   margin-top: 10px;
 }
 
+
+
 /* WEIGHT */
 
 .weightCuteCard {
@@ -1959,6 +1961,16 @@
   text-align: center;
 }
 
+.trackerCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.deleteTopBtn {
+  margin-left: auto;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 900px) {
@@ -2025,4 +2037,72 @@
   .logDateTitle {
     font-size: 1rem;
   }
+}
+.tdSlideAnim {
+  animation: tdSlideFade 0.35s ease;
+}
+
+@keyframes tdSlideFade {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.trackerFadeSlide {
+  animation: trackerFadeSlide 0.35s ease;
+}
+
+@keyframes trackerFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logExpand {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.35s ease;
+}
+
+.logExpand.open {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.logItemAnim {
+  animation: logItemFade 0.3s ease;
+}
+
+@keyframes logItemFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logContent {
+  transition: opacity 0.2s ease;
+}
+
+.fadeOut {
+  opacity: 0;
+}
+
+.fadeIn {
+  opacity: 1;
 }

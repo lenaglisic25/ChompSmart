@@ -135,6 +135,12 @@ export default function Message() {
   const [previewImage, setPreviewImage] = useState(null); // dataURL
   const [cameraStream, setCameraStream] = useState(null);
 
+  const [fadeIn, setFadeIn] = useState(false);
+  
+    useEffect(() => {
+      setTimeout(() => setFadeIn(true), 50);
+    }, []);
+
   function stopCamera() {
     try {
       if (streamRef.current) {
@@ -517,9 +523,13 @@ export default function Message() {
 
   if (view === "inbox") {
     return (
-      <div className="msgInboxPage">
+      <div className={`msgInboxPage fadePage ${fadeIn ? "visible" : ""}`}>
         <div className="msgInboxContainer">
-          <div className="msgInboxCard" role="button" onClick={() => openChat("chompy")}>
+          <div
+            className={`msgInboxCard fadeCard ${fadeIn ? "visible" : ""}`}
+            role="button"
+            onClick={() => openChat("chompy")}
+          >
             <div className="msgInboxAvatar gator" aria-hidden="true">
               🐊
             </div>

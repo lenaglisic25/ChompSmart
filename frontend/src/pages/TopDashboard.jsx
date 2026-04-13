@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./TopDashboard.css";
+import { apiFetch } from "../components/api";
 
 function clamp01(x) {
   return Math.max(0, Math.min(1, x));
@@ -45,11 +46,10 @@ function ProgressBar({ label, current, goal, unit = "", mode = "goal" }) {
   );
 }
 
-function Ring({ title, subtitle, current, goal, mode = "goal" }) {
+function Ring({ title, subtitle, current, goal, mode = "goal", size = 92 }) {
   const p = pct(current, goal);
   const status = mode === "limit" ? limitStatus(p) : goalStatus(p);
 
-  const size = 92;
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -125,40 +125,45 @@ function mapTotalsToGoals(data) {
   };
 }
 
-function TopDashboard({ user }) {
-  // (yavna) update to fetch from backend
+function TopDashboard({ user, userEmail, refreshKey, formattedDate, waterOz, waterGoalOz }) {
   const [profile, setProfile] = useState(null);
+  const [metrics, setMetrics] = useState({ calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0, sugar: 0, fluidsL: 0, streakDays: 0, weeklyAvgCalories: 0, sodiumMg: 0 });
 
   useEffect(() => {
-    if (!user) return;
-    fetch(`http://localhost:8000/profile/${user}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setProfile(data))
-      .catch((err) => console.error("Profile fetch failed:", err));
-  }, [user]);
+    if (!userEmail) return;
+    apiFetch(`/profile/${encodeURIComponent(userEmail)}`).then(res => res.ok && res.json()).then(data => data && setProfile(data));
+  }, [userEmail, refreshKey]);
 
-const goals = {
-  calories: Number(profile?.calorie_goal ?? 2100),
-  carbs: Number(profile?.carbs_g ?? 275),
-  fiber: Number(profile?.fiber_g ?? 25),
-  protein: Number(profile?.protein_g ?? 95),
-  fats: Number(profile?.fats_g ?? 90),
-  sodiumMg: Number(profile?.sodium_fda_limit ?? 2300),
-  fluidsL: 3.0,
-};
+  useEffect(() => {
+    if (!userEmail || !formattedDate) return;
+    apiFetch(`/meals/daily/${encodeURIComponent(userEmail)}?target_date=${formattedDate}`)
+      .then(res => res.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : data ? Object.values(data).flat() : [];
+        setMetrics(prev => ({
+          ...prev,
+          calories: list.reduce((acc, item) => acc + (Number(item.calories) || 0), 0),
+          protein: list.reduce((acc, item) => acc + (Number(item.protein) || 0), 0),
+          carbs: list.reduce((acc, item) => acc + (Number(item.carbs) || 0), 0),
+          fats: list.reduce((acc, item) => acc + (Number(item.fats) || 0), 0),
+          fiber: list.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0),
+          sugar: list.reduce((acc, item) => acc + (Number(item.total_sugar) || Number(item.sugar) || 0), 0),
+          sodiumMg: list.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0),
+          fluidsL: (Number(waterOz) * 0.0295735)
+        }));
+      });
+  }, [userEmail, refreshKey, formattedDate, waterOz]);
 
- const metrics = {
-  calories: 0,
-  carbs: 0,
-  fiber: 0,
-  protein: 0,
-  fats: 0,
-  sodiumMg: 0,
-  fluidsL: 0,
-  streakDays: 0,
-  weeklyAvgCalories: 0,
-};
-
+  const goals = {
+    calories: Number(profile?.calorie_goal ?? 2100),
+    protein: Number(profile?.protein_g ?? 95),
+    carbs: Number(profile?.carbs_g ?? 275),
+    fats: Number(profile?.fats_g ?? 90),
+    fiber: Number(profile?.fiber_g ?? 25),
+    sugar: Number(profile?.sugar_g ?? 50),
+    sodiumMg: 2300,
+    fluidsL: (waterGoalOz * 0.0295735) || 2.0,
+  };
 
   const remainingCalories = Math.max(0, goals.calories - metrics.calories);
 

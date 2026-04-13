@@ -39,15 +39,6 @@ export default function ProviderLayout() {
           </div>
         </div>
 
-        <div className="providerSearchWrap">
-          <input
-            className="providerSearchInput"
-            type="text"
-            placeholder="Search patient..."
-            value={patientSearch}
-            onChange={(e) => setPatientSearch(e.target.value)}
-          />
-        </div>
 
         <nav className="providerNav">
           <NavLink
@@ -90,15 +81,6 @@ export default function ProviderLayout() {
             <div className="providerTopBarSub">{getPageSubtitle()}</div>
           </div>
 
-          <div className="providerTopBarActions">
-            <button
-              type="button"
-              className="providerTopAction ghost"
-              onClick={() => navigate("/app")}
-            >
-              Patient App
-            </button>
-          </div>
         </header>
 
         <main className="providerMain">

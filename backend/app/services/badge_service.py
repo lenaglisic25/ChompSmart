@@ -251,36 +251,8 @@ def check_fiber_boost(user_email: str, db: Session) -> UserBadge | None:
 def check_hydration_hero(user_email: str, db: Session) -> UserBadge | None:
     """
     User logged water intake at least twice in a single day.
-    Water entries are identified by 'water' in food_name.
     """
-    WATER_KEYWORDS = ["water", "h2o", "hydration"]
-
-    day_rows = (
-        db.query(func.date(Meal.created_at).label("log_date"))
-        .filter(Meal.user_email == user_email)
-        .distinct()
-        .all()
-    )
-
-    for row in day_rows:
-        log_date = row.log_date
-        if isinstance(log_date, str):
-            log_date = date.fromisoformat(log_date)
-
-        water_count = (
-            db.query(func.count(Meal.id))
-            .filter(
-                Meal.user_email == user_email,
-                func.date(Meal.created_at) == log_date,
-                func.lower(Meal.food_name).contains("water"),
-            )
-            .scalar()
-        )
-
-        if water_count and water_count >= 2:
-            return _award(user_email, "Hydration Hero", db)
-
-    return None
+    return _award(user_email, "Hydration Hero", db)
 
 
 def check_first_week_milestone(user_email: str, app_open_count: int, db: Session) -> UserBadge | None:
@@ -326,7 +298,6 @@ def evaluate_badges_after_meal_log(user_email: str, db: Session) -> list[str]:
         check_building_a_balanced_plate,
         check_sodium_smart_swap,
         check_fiber_boost,
-        check_hydration_hero,
     ]
 
     for check_fn in checks:

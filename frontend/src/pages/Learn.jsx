@@ -527,6 +527,11 @@ export default function Learn() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setFadeIn(true), 50);
+  }, []);
 
   const { isFavorite, toggleFavorite, favoritesList } = useFavorites();
 
@@ -907,7 +912,7 @@ export default function Learn() {
     });
 
   return (
-    <div className="learnPage">
+    <div className={`learnPage fadePage ${fadeIn ? "visible" : ""}`}>
       <div className="learnHeader">
         <div className="learnTitle">Discover New Recipes</div>
 

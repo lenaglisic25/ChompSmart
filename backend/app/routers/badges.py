@@ -24,6 +24,7 @@ from app.services.badge_service import (
     check_curious_chef,
     check_first_week_milestone,
     seed_badges,
+    check_hydration_hero
 )
 
 router = APIRouter(prefix="/badges", tags=["badges"])
@@ -55,6 +56,9 @@ class UserBadgeOut(BaseModel):
     badge_name: str
     earned_at: str
     notified: bool
+
+class HydrationPayload(BaseModel):
+    user_email: str
 
     class Config:
         from_attributes = True
@@ -151,4 +155,15 @@ def trigger_app_open_badge(payload: AppOpenPayload, db: Session = Depends(get_db
     result = check_first_week_milestone(payload.user_email, payload.app_open_count, db)
     if result:
         return {"awarded": True, "badge": result.badge_name}
+    return {"awarded": False, "message": "Badge already earned or threshold not met yet."}
+
+# added hydration trigger
+
+@router.post("/trigger/hydration")
+def trigger_hydration_badge(payload: HydrationPayload, db: Session = Depends(get_db)):
+    result = check_hydration_hero(payload.user_email, db)
+    
+    if result:
+        return {"awarded": True, "badge": result.badge_name}
+        
     return {"awarded": False, "message": "Badge already earned or threshold not met yet."}

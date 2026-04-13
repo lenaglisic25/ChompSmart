@@ -171,6 +171,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
     carbs: 0,
     fats: 0,
     fiber: 0,
+    sugar: 0,
     fluidsL: 0,
     streakDays: 0,
     weeklyAvgCalories: 0,
@@ -219,6 +220,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
         const totalFluids = todayList.reduce((acc, item) => acc + (Number(item.fluids) || 0), 0);
         const totalFiber = todayList.reduce((acc, item) => acc + (Number(item.fiber) || 0), 0);
         const totalSodium = todayList.reduce((acc, item) => acc + (Number(item.sodium) || 0), 0);
+        const totalSugar = todayList.reduce((acc, item) => acc + (Number(item.total_sugar) || Number(item.sugar) || 0), 0);
 
         const baseDate = new Date(`${formattedDate}T12:00:00`);
 
@@ -277,6 +279,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
           carbs: totalCarbs,
           fats: totalFats,
           fiber: totalFiber,
+          sugar: totalSugar,
           sodiumMg: totalSodium,
           fluidsL: totalFluids,
           streakDays,
@@ -296,6 +299,7 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
     carbs: Number(profile?.carbs_g ?? 275),
     fats: Number(profile?.fats_g ?? 90),
     fiber: Number(profile?.fiber_g ?? 25),
+    sugar: Number(profile?.sugar_g ?? 50),
     sodiumMg: 2300,
     fluidsL: ozToLiters(waterGoalOz) || 3.0,
   };
@@ -340,16 +344,17 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
               current={remainingCalories}
               goal={goals.calories}
               mode="goal"
+              size = {140}
             />
           </div>
 
           <div className="tdMiniCard tdGoalCard">
             <div className="tdGoalTitle">Goal</div>
-            <div className="tdGoalLine">Cals: {Math.round(metrics.calories)}/{Math.round(goals.calories)}</div>
             <div className="tdGoalLine">Carbs: {Math.round(metrics.carbs)}/{Math.round(goals.carbs)}g</div>
             <div className="tdGoalLine">Protein: {Math.round(metrics.protein)}/{Math.round(goals.protein)}g</div>
             <div className="tdGoalLine">Fats: {Math.round(metrics.fats)}/{Math.round(goals.fats)}g</div>
             <div className="tdGoalLine">Fiber: {Math.round(metrics.fiber)}/{Math.round(goals.fiber)}g</div>
+            <div className="tdGoalLine">Sugar: {Math.round(metrics.sugar)}/{Math.round(goals.sugar)}g</div>
             <div className="tdGoalLine">Sodium: {Math.round(metrics.sodiumMg)}/{Math.round(goals.sodiumMg)}mg</div>
           </div>
 
@@ -418,10 +423,12 @@ function TopDashboard({ userEmail, refreshKey, formattedDate, waterOz = 0, water
   ];
 
   return (
-    <div className="tdOuter">
-      <div className="tdWidget">
-        <div className="tdInner">{slides[slide].content}</div>
-        <div className="tdDots">
+  <div className="tdOuter">
+    <div className="tdWidget">
+      <div key={slide} className="tdInner tdSlideAnim">
+        {slides[slide].content}
+      </div>
+      <div className="tdDots">
           {slides.map((s, idx) => (
             <button
               key={s.key}
@@ -460,7 +467,9 @@ function TrackerTabs({ activeTab, setActiveTab, children }) {
         </button>
       </div>
 
-      <div className="trackerPanel">{children}</div>
+      <div key={activeTab} className="trackerPanel trackerFadeSlide">
+        {children}
+      </div>
     </section>
   );
 }
@@ -488,7 +497,6 @@ function WaterTrackerCompact({
         <div>
           <div className="trackerEyebrow">Hydration</div>
           <h2 className="trackerTitle">Water Tracker</h2>
-          <p className="trackerSubtitle">Smaller, cleaner, and easier to tap.</p>
         </div>
 
         <button
@@ -598,6 +606,7 @@ function WaterTrackerCompact({
 }
 
 function WeightTracker({
+  email,
   formattedDate,
   weightEntries,
   setWeightEntries,
@@ -637,11 +646,29 @@ function WeightTracker({
       );
       return next;
     });
+
+    if (email) {
+      apiFetch("/tracker/weight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_email: email,
+          date: formattedDate,
+          weight: value
+        })
+      }).catch(console.error);
+    }
   }
 
   function deleteTodayWeight() {
     setWeightEntries((prev) => prev.filter((entry) => entry.date !== formattedDate));
     setInputWeight("");
+
+    if (email) {
+      apiFetch(`/tracker/weight/${encodeURIComponent(email)}?date=${formattedDate}`, {
+        method: "DELETE"
+      }).catch(console.error);
+    }
   }
 
   const sorted = [...weightEntries].sort((a, b) => a.date.localeCompare(b.date));
@@ -659,6 +686,14 @@ function WeightTracker({
           <h2 className="trackerTitle">Weight Tracker</h2>
           <p className="trackerSubtitle">Enter today’s weight and watch the trend build.</p>
         </div>
+
+        <button
+          type="button"
+          className="trackerGhostBtn deleteTopBtn"
+          onClick={deleteTodayWeight}
+        >
+          Delete today
+        </button>
       </div>
 
       <div className="weightTopStats">
@@ -762,11 +797,6 @@ function WeightTracker({
         )}
       </div>
 
-      <div className="trackerBottomRow">
-        <button type="button" className="trackerGhostBtn" onClick={deleteTodayWeight}>
-          Delete today
-        </button>
-      </div>
     </section>
   );
 }
@@ -782,6 +812,12 @@ const MEAL_LABELS = {
 async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
   const email = localStorage.getItem("currentUserEmail");
   const mult = Number(servingMultiplier) || 1;
+
+  const sugarVal = food.sugar ?? 
+                   food.macros?.sugar ?? 
+                   food.extras?.sugar ?? 
+                   food.sugars ?? 
+                   food.sugars_g ?? 0;
 
   const calories = food.macros?.calories ?? food.calories ?? 0;
   const protein = food.macros?.protein ?? food.protein ?? 0;
@@ -803,6 +839,7 @@ async function logMealWithFood(mealType, food, servingMultiplier, targetDate) {
       fats: Number(fats) * mult,
       fiber: Number(fiber) * mult,
       sodium: Number(sodium) * mult,
+      total_sugar: Number(sugarVal) * mult,
       created_at: `${targetDate} 12:00:00`,
     }),
   });
@@ -837,6 +874,7 @@ function scaledNutrient(value, servingMult) {
 export default function Log() {
   const email = localStorage.getItem("currentUserEmail");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isDayFading, setIsDayFading] = useState(false);
 
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -874,6 +912,16 @@ export default function Log() {
     setBottleOz(saved.bottleOz);
     setWaterOz(saved.totalOz);
     setWaterHistory(saved.history);
+
+    apiFetch(`/tracker/water/${encodeURIComponent(email)}?date=${formattedDate}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && typeof data.water_oz !== "undefined") {
+          setWaterOz(data.water_oz);
+          if (data.water_goal_oz) setWaterGoalOz(data.water_goal_oz);
+        }
+      })
+      .catch(console.error);
   }, [email, formattedDate]);
 
   useEffect(() => {
@@ -885,11 +933,36 @@ export default function Log() {
       totalOz: waterOz,
       history: waterHistory,
     });
+
+    const syncTimeout = setTimeout(() => {
+      apiFetch("/tracker/water", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_email: email,
+          date: formattedDate,
+          water_oz: waterOz,
+          water_goal_oz: waterGoalOz
+        })
+      }).catch(console.error);
+    }, 500);
+
+    return () => clearTimeout(syncTimeout);
   }, [email, formattedDate, waterGoalOz, cupOz, bottleOz, waterOz, waterHistory]);
 
   useEffect(() => {
     if (!email) return;
     setWeightEntries(loadWeightEntries(email));
+
+    apiFetch(`/tracker/weight/${encodeURIComponent(email)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (Array.isArray(data)) {
+          setWeightEntries(data);
+          saveWeightEntries(email, data);
+        }
+      })
+      .catch(console.error);
 
     const trackerSettings = loadTrackerSettings(email);
     setReminderEnabled(trackerSettings.reminderEnabled);
@@ -938,7 +1011,17 @@ export default function Log() {
     const oz = Math.max(0, Number(amount) || 0);
     if (!oz) return;
     setWaterOz((prev) => prev + oz);
-    setWaterHistory((prev) => [...prev, { oz, type, ts: Date.now() }]);
+    setWaterHistory((prev) => {
+      const newHistory = [...prev, { oz, type, ts: Date.now() }];
+      if (newHistory.length === 2) {
+         apiFetch("/badges/trigger/hydration", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_email: email })
+         }).catch(console.error);
+      }
+      return newHistory;
+    });
   }
 
   function undoWater() {
@@ -984,24 +1067,36 @@ export default function Log() {
   }, [email, refreshKey, formattedDate]);
 
   function goToPrevDay() {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(newDate.getDate() - 1);
-      return newDate;
-    });
+    setIsDayFading(true);
+    setTimeout(() => {
+      setCurrentDate((prev) => {
+        const newDate = new Date(prev);
+        newDate.setDate(newDate.getDate() - 1);
+        return newDate;
+      });
+      setIsDayFading(false);
+    }, 150);
   }
 
   function goToNextDay() {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(newDate.getDate() + 1);
-      return newDate;
-    });
+    setIsDayFading(true);
+    setTimeout(() => {
+      setCurrentDate((prev) => {
+        const newDate = new Date(prev);
+        newDate.setDate(newDate.getDate() + 1);
+        return newDate;
+      });
+      setIsDayFading(false);
+    }, 150);
   }
 
-  function goToToday() {
+ function goToToday() {
+  setIsDayFading(true);
+  setTimeout(() => {
     setCurrentDate(new Date());
-  }
+    setIsDayFading(false);
+  }, 150);
+}
 
   const isToday = formattedDate === new Date().toLocaleDateString("en-CA");
 
@@ -1213,7 +1308,7 @@ export default function Log() {
 
   return (
     <div className="logPage">
-      <div className="logContent">
+      <div className={`logContent ${isDayFading ? "fadeOut" : "fadeIn"}`}>
         <div className="logDateBar">
           <button onClick={goToPrevDay} className="logDateBtn" type="button">
             ← Prev
@@ -1267,6 +1362,7 @@ export default function Log() {
             />
           ) : (
             <WeightTracker
+              email={email}
               formattedDate={formattedDate}
               weightEntries={weightEntries}
               setWeightEntries={setWeightEntries}
@@ -1319,7 +1415,7 @@ export default function Log() {
                   </span>
                 </div>
 
-                {isExpanded && (
+                <div className={`logExpand ${isExpanded ? "open" : ""}`}>
                   <>
                     <div className="logSearchWrap">
                       <input
@@ -1411,12 +1507,15 @@ export default function Log() {
                       </div>
                     ) : null}
                   </>
-                )}
+                </div>
 
                 {items.length > 0 ? (
                   <ul className="logItemList">
                     {items.map((item, index) => (
-                      <li key={item.id ?? `${item.food_name}-${index}`} className="logItem">
+                      <li
+                        key={item.id ?? `${item.food_name}-${index}`}
+                        className="logItem logFadeIn"
+                      >
                         <div className="logItemName">
                           {item.food_name || item.name || "Logged food"}
                           {typeof item.calories !== "undefined" && (
@@ -1509,6 +1608,15 @@ export default function Log() {
                       selectedForModal.food.sodium ?? selectedForModal.food.extras?.sodium,
                       servingMultiplier
                     )}mg
+                  </span>
+                </div>
+                <div className="logModalNutrientRow">
+                  <span>Sugar</span>
+                  <span>
+                    {scaledNutrient(
+                      selectedForModal.food.sugar ?? selectedForModal.food.macros?.sugar ?? selectedForModal.food.extras?.sugar,
+                      servingMultiplier
+                    )}g
                   </span>
                 </div>
               </div>

@@ -15,11 +15,13 @@ from app.routers import grocery
 from app.routers import badges
 from app.api import providers
 from app.api import messages
+from app.routers import tracker
 
 # Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ChompSmart DB")
 
+app.include_router(tracker.router)
 app.include_router(users.router)
 app.include_router(chat.router)
 app.include_router(profile.router)

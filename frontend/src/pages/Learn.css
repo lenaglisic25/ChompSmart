@@ -980,3 +980,14 @@
     font-size: 17px;
   }
 }
+
+.msgInboxPage {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.msgInboxPage.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

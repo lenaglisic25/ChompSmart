@@ -131,15 +131,17 @@ export default function Login() {
             </button>
           </div>
 
-          <h1 className="loginTitle">
-            {isProvider ? "Provider Portal" : "Patient Login"}
-          </h1>
+          <div key={isProvider ? "provider" : "patient"} style={{ animation: "fadeUp 0.3s ease-out" }}>
+            <h1 className="loginTitle">
+              {isProvider ? "Provider Portal" : "Patient Login"}
+            </h1>
 
-          <p className="loginHelperText">
-            {isProvider
-              ? "Sign in to view your dashboard, patients, and messages."
-              : "Sign in to track meals, chat with Chompy, and stay on goal."}
-          </p>
+            <p className="loginHelperText">
+              {isProvider
+                ? "Sign in to view your dashboard, patients, and messages."
+                : "Sign in to track meals, chat with Chompy, and stay on goal."}
+            </p>
+          </div>
 
           <form
             className="loginForm"
@@ -180,8 +182,17 @@ export default function Login() {
               {isProvider ? "Enter Provider Portal" : "Log In"}
             </button>
 
-            {!isProvider && (
-              <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: isProvider ? "0fr" : "1fr",
+                opacity: isProvider ? 0 : 1,
+                transition: "all 0.7s ease-out",
+                overflow: "hidden",
+                marginTop: isProvider ? "-10px" : "0",
+              }}
+            >
+              <div style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
                 <button
                   type="button"
                   className="loginButton loginButtonSecondary"
@@ -209,8 +220,8 @@ export default function Login() {
                     />
                   </div>
                 </div>
-              </>
-            )}
+              </div>
+            </div>
           </form>
         </div>
 
